@@ -20,8 +20,22 @@ test_reset_event_even_if_counts_exceed_old_counts (test_core.ScientificRules.tes
 test_seven_days_no_rolling_limit_and_count_conservation (test_core.ScientificRules.test_seven_days_no_rolling_limit_and_count_conservation) ... ok
 test_telemetry_gap_is_not_interpolated (test_core.ScientificRules.test_telemetry_gap_is_not_interpolated) ... ok
 test_unsigned_underflow_is_reset_not_clipped (test_core.ScientificRules.test_unsigned_underflow_is_reset_not_clipped) ... ok
+test_cache_lock_is_nonfatal_and_recovers (test_reliability.Reliability.test_cache_lock_is_nonfatal_and_recovers) ... ok
+test_corrupt_raw_data_suppresses_automatic_restart (test_reliability.Reliability.test_corrupt_raw_data_suppresses_automatic_restart) ... ok
+test_empty_and_unknown_payload_preserve_valid_prefix (test_reliability.Reliability.test_empty_and_unknown_payload_preserve_valid_prefix) ... ok
+test_exact_overnight_decoder_fixture (test_reliability.Reliability.test_exact_overnight_decoder_fixture) ... ok
+test_gui_reads_journal_even_with_corrupt_status_cache (test_reliability.Reliability.test_gui_reads_journal_even_with_corrupt_status_cache) ... ok
+test_historical_counter_is_not_a_dose_reset (test_reliability.Reliability.test_historical_counter_is_not_a_dose_reset) ... ok
+test_recording_continues_under_real_windows_status_lock (test_reliability.Reliability.test_recording_continues_under_real_windows_status_lock) ... ok
+test_repeated_empty_usb_packets_fail_with_bounded_reads (test_reliability.Reliability.test_repeated_empty_usb_packets_fail_with_bounded_reads) ... ok
+test_reproduce_overnight_status_replace_error (test_reliability.Reliability.test_reproduce_overnight_status_replace_error) ... ok
+test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... ok
+test_supervisor_restarts_killed_recorder_and_stop_is_final (test_reliability.Reliability.test_supervisor_restarts_killed_recorder_and_stop_is_final) ... ok
+test_unknown_group4_schema_is_not_guessed (test_reliability.Reliability.test_unknown_group4_schema_is_not_guessed) ... ok
+test_watchdog_uses_monotonic_progress_not_wall_time (test_reliability.Reliability.test_watchdog_uses_monotonic_progress_not_wall_time) ... ok
+test_zero_length_and_split_usb_headers (test_reliability.Reliability.test_zero_length_and_split_usb_headers) ... ok
 
 ----------------------------------------------------------------------
-Ran 22 tests in 2.027s
+Ran 36 tests in 28.409s
 
 OK

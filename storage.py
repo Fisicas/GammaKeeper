@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 import uuid
+import time
 
 from analysis import reconstruct, midpoint, VERSION
 
@@ -28,7 +29,14 @@ def immutable_json(path, value):
         handle.flush()
         os.fsync(handle.fileno())
     # os.rename on Windows refuses an existing destination and is atomic on this volume.
-    os.rename(temporary, path)
+    for attempt in range(7):
+        try:
+            os.rename(temporary,path)
+            break
+        except PermissionError:
+            if attempt==6:
+                raise
+            time.sleep(.01*2**attempt)
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -112,6 +120,8 @@ class RunStore:
         for file in sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem)):
             payload = file.read_bytes()
             value = json.loads(payload)
+            if not isinstance(value,dict) or not isinstance(value.get('seq'),int):
+                raise ValueError(f'Invalid raw snapshot schema: {file}')
             seq = value['seq']
             if seq != int(file.stem):
                 raise ValueError(f'Snapshot filename/sequence mismatch: {file}')
@@ -121,7 +131,10 @@ class RunStore:
             name = file.relative_to(self.path).as_posix()
             if seq in rows and rows[seq] != (name, digest):
                 raise ValueError(f'Raw snapshot integrity mismatch: {file}')
-            derived = reconstruct(self.previous, value, self.config['interval_s'], self.epoch)
+            try:
+                derived = reconstruct(self.previous, value, self.config['interval_s'], self.epoch)
+            except (KeyError,TypeError,ValueError) as error:
+                raise ValueError(f'Invalid raw snapshot data: {file}: {error}') from error
             if seq not in rows:
                 # Crash between atomic raw-file commit and index commit: recover from raw.
                 self.db.execute('INSERT INTO snapshots VALUES(?,?,?,?,?,?)',

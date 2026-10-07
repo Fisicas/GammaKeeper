@@ -1,0 +1,156 @@
+"""Restart unexpected recorder exits; never auto-restart a durable-data failure."""
+import bootstrap
+import datetime as dt
+import json
+import os
+from pathlib import Path
+import sqlite3
+import subprocess
+import sys
+import time
+import uuid
+
+from analysis import retry_delay
+from runtime import python_command
+from storage import DeviceMutex
+
+ROOT = Path(__file__).resolve().parent
+
+
+def save_supervisor_state(run, state):
+    # Only metadata; no raw rows or configuration are changed here.
+    try:
+        if not (run/'run.sqlite').exists():
+            return
+        db = sqlite3.connect(run/'run.sqlite',timeout=.2)
+        try:
+            with db:
+                db.execute('INSERT OR REPLACE INTO state VALUES(?,?)',('supervisor',json.dumps(state,allow_nan=False)))
+        finally:
+            db.close()
+    except (OSError,sqlite3.Error):
+        pass  # Cache/journal reporting cannot kill supervision.
+
+
+def inspect_run(run):
+    try:
+        db = sqlite3.connect((run/'run.sqlite').as_uri()+'?mode=ro',uri=True,timeout=.2)
+        try:
+            recorder = db.execute("SELECT value FROM state WHERE key='recorder'").fetchone()
+            # Device absence produces retry events at <=75s intervals. A stalled
+            # recorder has no journal progress; GUI-cache activity is not progress.
+            progress = tuple(db.execute(f'SELECT max({field}) FROM {table}').fetchone()[0]
+                             for table,field in [('events','id'),('telemetry','id'),('snapshots','seq')])
+            return (json.loads(recorder[0]) if recorder else None),progress
+        finally:
+            db.close()
+    except (OSError,sqlite3.Error,ValueError):
+        return None,None
+
+
+class ProgressWatchdog:
+    def __init__(self, timeout=180, startup_grace=300):
+        self.timeout = timeout
+        self.startup_grace = startup_grace
+        self.started = time.monotonic()
+        self.last_progress = self.started
+        self.token = None
+
+    def observe(self, token, now=None):
+        now = time.monotonic() if now is None else now
+        if token is not None and token != self.token:
+            self.token = token
+            self.last_progress = now
+        grace = self.startup_grace if self.token is None else self.timeout
+        return now-self.last_progress>grace
+
+
+def supervise(arguments, max_restarts=3, stall_timeout=180):
+    run = Path(arguments[arguments.index('--run')+1]).resolve()
+    serial = arguments[arguments.index('--serial')+1] if '--serial' in arguments else 'RC-103-006489'
+    if '--resume' in arguments:
+        serial = json.loads((run/'manifest.json').read_text())['serial']
+    elif '--demo' in arguments:
+        serial = 'SIMULATED'
+    mutex = DeviceMutex(serial+'_supervisor')
+    token = uuid.uuid4().hex
+    stop = run/f'stop_supervisor_{token}.request'
+    state = dict(pid=os.getpid(),token=token,status='starting',restarts=0,stop_request=str(stop),
+                 utc=dt.datetime.now(dt.timezone.utc).isoformat())
+    logs = ROOT/'logs'
+    logs.mkdir(exist_ok=True)
+    (ROOT/'validation').mkdir(exist_ok=True)
+    first = True
+    rapid_failures = 0
+    child = None
+    rc = 0
+    try:
+        while True:
+            if stop.exists():
+                break
+            child_args = list(arguments) if first else ['--run',str(run),'--resume']
+            child_args += ['--stop-request',str(stop)]
+            log = logs/(dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'_recorder.log')
+            with log.open('xb') as output:
+                child = subprocess.Popen([python_command(),'-X','utf8',str(ROOT/'recorder.py'),*child_args],
+                                         cwd=ROOT,stdin=subprocess.DEVNULL,stdout=output,stderr=output,
+                                         creationflags=subprocess.CREATE_NO_WINDOW)
+            state.update(status='running',child_pid=child.pid,child_log=str(log),utc=dt.datetime.now(dt.timezone.utc).isoformat())
+            started = time.monotonic()
+            watchdog = ProgressWatchdog(stall_timeout,max(300,stall_timeout))
+            last_persist = -float('inf')
+            while child.poll() is None:
+                now = time.monotonic()
+                if now-last_persist >= 2:
+                    state['utc'] = dt.datetime.now(dt.timezone.utc).isoformat()
+                    save_supervisor_state(run,state)
+                    last_persist = now
+                    _,progress = inspect_run(run)
+                    stalled = watchdog.observe(progress,now)
+                    if stalled:
+                        state['watchdog_reason'] = 'No durable telemetry/event progress within watchdog deadline'
+                        # Kill only this supervisor's child tree. Windows venv
+                        # redirectors can have another Python process below them.
+                        terminate_tree(child.pid)
+                if stop.exists() and now-started>1:
+                    # Recorder sees the same stable stop file across restarts.
+                    state['status'] = 'stopping'
+                time.sleep(.2)
+            rc = child.returncode
+            _,last_progress = inspect_run(run)
+            state['last_durable_progress'] = last_progress
+            state.update(last_exit_code=rc,utc=dt.datetime.now(dt.timezone.utc).isoformat())
+            if stop.exists() or rc==0:
+                state['status'] = 'stopped'
+                break
+            if rc==2:
+                state.update(status='attention_required',reason='Durable storage, integrity, or validation failure; automatic restart suppressed')
+                break
+            rapid_failures = 0 if time.monotonic()-started>=60 else rapid_failures
+            rapid_failures += 1
+            if rapid_failures>max_restarts or not (run/'manifest.json').exists():
+                state.update(status='attention_required',reason='Repeated unexpected exits or startup failure; see child log')
+                break
+            delay = retry_delay(rapid_failures-1)
+            state.update(status='restart_wait',restarts=state['restarts']+1,retry_delay_s=delay,
+                         reason='Unexpected recorder exit; verify raw data and resume',utc=dt.datetime.now(dt.timezone.utc).isoformat())
+            save_supervisor_state(run,state)
+            deadline = time.monotonic()+delay
+            while time.monotonic()<deadline and not stop.exists():
+                time.sleep(.1)
+            first = False
+        save_supervisor_state(run,state)
+        return rc
+    finally:
+        if child and child.poll() is None:
+            terminate_tree(child.pid)
+        mutex.close()
+
+
+def terminate_tree(pid):
+    subprocess.run(['taskkill','/PID',str(int(pid)),'/T','/F'],stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW,timeout=10)
+
+
+if __name__=='__main__':
+    raise SystemExit(supervise(sys.argv[1:]))

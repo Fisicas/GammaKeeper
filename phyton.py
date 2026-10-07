@@ -130,9 +130,21 @@ class PhytonTransport:
     def execute(self, request):
         deadline = time.monotonic() + 4
         self._io(True, request, 3000)
-        data = self._io(False, 256, 3000)
-        if len(data) < 4:
-            raise OSError('Truncated USB length header')
+        data = b''
+        empty_reads = 0
+        # USB can deliver zero-length packets and the framing header can span
+        # reads. Neither should force a reconnect while a response is available.
+        while len(data)<4:
+            remaining=deadline-time.monotonic()
+            if remaining<=0:
+                raise TimeoutError('USB response header deadline exceeded')
+            chunk=self._io(False,256,remaining*1000)
+            if not chunk:
+                empty_reads+=1
+                if empty_reads>=3:
+                    raise OSError('Three empty USB packets without a response header')
+                continue
+            data+=chunk
         size = struct.unpack_from('<I', data)[0]
         if not 4 <= size <= 4_194_304:
             raise OSError(f'Invalid USB response length {size}')

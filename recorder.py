@@ -18,68 +18,11 @@ import uuid
 from analysis import VERSION, midpoint, timestamp, retry_delay, weighted_telemetry, DOSE_R_TO_USV
 from device import io_worker, utc_now
 from storage import RunStore, DeviceMutex, immutable_json, canonical
-
-
-class DeviceFailure(Exception):
-    pass
-
-
-class WorkerClient:
-    def __init__(self, serial, clock=None):
-        ctx = mp.get_context('spawn')
-        self.pipe, child = ctx.Pipe()
-        self.process = ctx.Process(target=io_worker, args=(child, serial, clock), daemon=True)
-        try:
-            self.process.start()
-        except (OSError, RuntimeError) as error:
-            self.pipe.close()
-            child.close()
-            raise DeviceFailure(f'Cannot start device worker: {error}') from error
-        child.close()
-        try:
-            self.info = self.receive(15)['info']
-        except BaseException:
-            self.close()
-            raise
-
-    def receive(self, timeout=12):
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            if self.pipe.poll(.1):
-                try:
-                    value = self.pipe.recv()
-                except (EOFError, OSError) as error:
-                    raise DeviceFailure(f'Worker exited: {error}') from error
-                if value.get('kind') == 'error':
-                    raise DeviceFailure(value['error'])
-                return value
-            if not self.process.is_alive():
-                raise DeviceFailure(f'Worker exited with code {self.process.exitcode}')
-        raise DeviceFailure(f'Device worker exceeded {timeout}s deadline')
-
-    def request(self, command, timeout=12):
-        try:
-            self.pipe.send(command)
-            return self.receive(timeout)
-        except (EOFError, BrokenPipeError, OSError) as error:
-            raise DeviceFailure(str(error)) from error
-
-    def close(self):
-        try:
-            if self.process.is_alive():
-                try:
-                    self.pipe.send('close')
-                except (EOFError, BrokenPipeError, OSError):
-                    pass
-                self.process.join(.5)
-                if self.process.is_alive():
-                    self.process.terminate()
-                    self.process.join(2)
-                    if self.process.is_alive():
-                        self.process.kill()
-                        self.process.join(2)
-        finally:
-            self.pipe.close()
+from status_cache import StatusPublisher
+from worker_client import WorkerClient, DeviceFailure
+from runtime import python_command
+import sqlite3
+from status_observations import select_rare
 
 
 class DemoClient:
@@ -121,16 +64,6 @@ class DemoClient:
         pass
 
 
-def status_file(path, value):
-    # Mutable UI cache only; scientific files remain immutable/append-only.
-    path = Path(path) / 'status.json'
-    temp = path.with_name('status.' + uuid.uuid4().hex + '.partial')
-    with temp.open('xb') as file:
-        file.write(canonical(value))
-        file.flush()
-    os.replace(temp, path)
-
-
 def clock_audit(results):
     measurement = clock_measurement()
     try:
@@ -147,7 +80,7 @@ def clock_audit(results):
 def clock_measurement():
     # Bound DNS/network hangs in a child process, independently of acquisition.
     try:
-        p = subprocess.run([sys.executable, '-X', 'utf8', str(Path(__file__).with_name('clock_check.py'))],
+        p = subprocess.run([python_command(), '-X', 'utf8', str(Path(__file__).with_name('clock_check.py'))],
                            capture_output=True, timeout=8, creationflags=subprocess.CREATE_NO_WINDOW)
         if p.returncode:
             raise RuntimeError(p.stderr.decode('utf-8', 'replace'))
@@ -160,6 +93,7 @@ def clock_measurement():
 def versions():
     import platform
     out = {'python': platform.python_version(), 'platform': platform.platform(), 'app': VERSION}
+    out.update(python_executable=sys.executable,python_prefix=sys.prefix)
     for name in ['radiacode', 'PySide6', 'numpy', 'matplotlib', 'pyusb', 'libusb-package']:
         try:
             out[name] = importlib.metadata.version(name)
@@ -168,7 +102,7 @@ def versions():
     return out
 
 
-def record(path, config=None, test_reconnect_at=None):
+def record(path, config=None, test_reconnect_at=None, stop_request=None):
     store = None
     client = None
     mutex = None
@@ -198,14 +132,41 @@ def record(path, config=None, test_reconnect_at=None):
     dose_integral = 0.
     dose_observed_s = 0.
     dose_elapsed_s = 0.
+    publisher = None
+    last_ui_persist = -float('inf')
+    last_ui_state = None
+    exit_code = 0
+    def publish(value, force=False):
+        nonlocal last_ui_persist,last_ui_state
+        if publisher:
+            publisher.submit(value)
+        # Authoritative compact fallback is independent of replaceable JSON.
+        # Optional UI persistence never turns a cache problem into acquisition failure.
+        if store and getattr(store,'db',None) and (force or value.get('state') != last_ui_state or time.monotonic()-last_ui_persist>=10):
+            compact = {k:v for k,v in value.items() if k not in ('last_snapshot','last_interval')}
+            compact['last_snapshot_seq'] = store.next_seq-1 if store.next_seq else None
+            try:
+                store.db.execute('PRAGMA busy_timeout=0')
+                store.set_state('ui_status',compact)
+                last_ui_persist,last_ui_state = time.monotonic(),value.get('state')
+            except (sqlite3.Error,OSError) as error:
+                print(f'Optional UI state persistence failed: {error}',file=sys.stderr,flush=True)
+            finally:
+                try:
+                    store.db.execute('PRAGMA busy_timeout=5000')
+                except sqlite3.Error:
+                    pass
     try:
         mutex = DeviceMutex(serial)
         store = RunStore(path, config)
         owns_status = True
+        publisher = StatusPublisher(path)
         config = store.config
         state['interval_s'] = config['interval_s']
         state['planned_end_utc'] = config.get('planned_end_utc')
         state['snapshots'] = store.next_seq
+        if stop_request:
+            state['stop_request'] = str(Path(stop_request).resolve())
         if store.previous:
             generation = store.previous['spectrum_generation']
             gap = True
@@ -224,7 +185,7 @@ def record(path, config=None, test_reconnect_at=None):
             dose_observed_s += bin_data.get('observed_duration_s', 0.)
             if old.get('derived_observed_dose_elapsed_s') is not None:
                 dose_elapsed_s = old['derived_observed_dose_elapsed_s']
-        status_file(path, dict(state, utc=utc_now(), message='Checking UTC reference'))
+        publish( dict(state, utc=utc_now(), message='Checking UTC reference'))
         if mode == 'device':
             clock = clock_measurement()
             store.event('clock_measurement', clock)
@@ -248,7 +209,7 @@ def record(path, config=None, test_reconnect_at=None):
         while True:
             now = time.monotonic()
             stop_file = Path(path) / f'stop_{boot}.request'
-            if stop_file.exists() or now >= stop_deadline:
+            if stop_file.exists() or (stop_request and Path(stop_request).exists()) or now >= stop_deadline:
                 outcome = 'completed' if now >= stop_deadline else 'stopped'
                 # A short final interval is explicit, never expanded into a nominal 10s bin.
                 if client and store.previous and now - (store.previous['monotonic_after'] if store.previous['boot_id'] == boot else start) > .5:
@@ -273,6 +234,11 @@ def record(path, config=None, test_reconnect_at=None):
             if now >= next_audit:
                 threading.Thread(target=clock_audit, args=(results,), daemon=True).start()
                 next_audit = now + 3600
+            while publisher and not publisher.warnings.empty():
+                warning = publisher.warnings.get_nowait()
+                kind = warning.pop('kind')
+                store.event(kind,warning)
+                state['status_cache_warning'] = warning if kind == 'status_cache_unavailable' else None
             while not results.empty():
                 audit = results.get_nowait()
                 store.event('clock_audit', audit)
@@ -295,7 +261,7 @@ def record(path, config=None, test_reconnect_at=None):
                             store.event('disconnected', dict(error=str(error), delay_s=delay))
             if client is None and now >= retry_at:
                 state.update(state='connecting', message='Opening device', retry_delay_s=None)
-                status_file(path, dict(state, utc=utc_now()))
+                publish( dict(state, utc=utc_now()))
                 try:
                     client = DemoClient(store.previous) if mode == 'demo' else WorkerClient(serial, clock)
                     connection_id = uuid.uuid4().hex
@@ -331,6 +297,9 @@ def record(path, config=None, test_reconnect_at=None):
                             if future and r['type'] not in ('RareData', 'Event'):
                                 continue
                             if r['type'] == 'Event':
+                                if store.previous and timestamp(r['dt'])<midpoint(store.previous) and not future:
+                                    store.event('historical_device_event',r)
+                                    continue
                                 store.event('device_event', r)
                                 if r['event'] in (0, 1, 2, 19):
                                     generation += 1
@@ -341,10 +310,10 @@ def record(path, config=None, test_reconnect_at=None):
                                 last_rt = r
                                 records.append(r)
                             elif r['type'] == 'RareData':
-                                observation = dict(r)
-                                if future:
-                                    observation.update(original_device_dt=r['dt'], dt=msg['utc_after'],
-                                                       timestamp_quality='reception time; device timestamp future during initialization')
+                                observation,stale = select_rare(last_rare,r,msg['utc_after'])
+                                if stale:
+                                    store.event(stale,dict(record=r,previous=last_rare))
+                                    continue
                                 if last_rare and r['dose'] < last_rare['dose']:
                                     dose_reset_seen = True
                                     store.set_state('dose_reset_seen', True)
@@ -400,11 +369,16 @@ def record(path, config=None, test_reconnect_at=None):
                     store.event('disconnected', dict(error=str(error), delay_s=delay, failure_index=failure_index))
             if time.monotonic() >= next_status:
                 state['connected_elapsed_s'] = time.monotonic() - connected_since if client else None
-                status_file(path, dict(state, utc=utc_now(), uptime_s=time.monotonic() - start))
+                publish( dict(state, utc=utc_now(), uptime_s=time.monotonic() - start))
                 next_status = time.monotonic() + 1
             time.sleep(.05)
     except BaseException as error:
         outcome = 'error'
+        # Automatic restart must never conceal invalid/missing raw data or a disk failure.
+        permanent = isinstance(error,(OSError,sqlite3.Error,ValueError)) or (
+            isinstance(error,RuntimeError) and any(word in str(error) for word in ('another','already owns','end has passed')))
+        exit_code = 2 if permanent else 1
+        state['failure_class'] = 'durable_storage_or_validation' if permanent else 'unexpected_exception'
         state['message'] = f'{type(error).__name__}: {error}'
         state['traceback'] = traceback.format_exc()
         print(state['traceback'], file=sys.stderr, flush=True)
@@ -415,13 +389,24 @@ def record(path, config=None, test_reconnect_at=None):
                 pass
     finally:
         if client:
-            client.close()
+            try:
+                client.close()
+            except Exception as error:
+                print(f'Worker cleanup failed: {error}',file=sys.stderr,flush=True)
         if store:
             try:
                 store.event('recorder_ended', dict(outcome=outcome, boot_id=boot))
                 store.set_state('recorder', dict(boot_id=boot, pid=os.getpid(), status=outcome))
+                publish(dict(state,state=outcome,utc=utc_now(),uptime_s=time.monotonic()-start),force=True)
+            except Exception as error:
+                exit_code = 2
+                print(f'Durable shutdown failed: {error}',file=sys.stderr,flush=True)
             finally:
-                store.close()
+                try:
+                    store.close()
+                except Exception as error:
+                    exit_code = 2
+                    print(f'Storage cleanup failed: {error}',file=sys.stderr,flush=True)
         if mutex:
             mutex.close()
         try:
@@ -429,9 +414,9 @@ def record(path, config=None, test_reconnect_at=None):
             ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
         except Exception:
             pass
-        if owns_status:
-            status_file(path, dict(state, state=outcome, utc=utc_now(), uptime_s=time.monotonic() - start))
-    return 1 if outcome == 'error' else 0
+        if publisher:
+            publisher.close(dict(state,state=outcome,utc=utc_now(),uptime_s=time.monotonic()-start))
+    return exit_code
 
 
 def make_snapshot(msg, serial, boot, connection, generation, gap, realtime, rare, final=False,
@@ -474,12 +459,13 @@ def main():
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--label', default='')
     parser.add_argument('--test-reconnect-at', type=float, default=None)
+    parser.add_argument('--stop-request', type=Path)
     args = parser.parse_args()
     if not 1 <= args.interval <= 600 or args.seconds < 0:
         parser.error('Interval must be 1..600 seconds; duration must be >=0')
     config = None if args.resume else make_config('SIMULATED' if args.demo else args.serial, args.interval, args.seconds,
                                                   'demo' if args.demo else 'device', args.label)
-    return record(args.run.resolve(), config, args.test_reconnect_at)
+    return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request)
 
 
 if __name__ == '__main__':

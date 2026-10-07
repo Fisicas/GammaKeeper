@@ -227,12 +227,13 @@ class BoundedIOAndTime(unittest.TestCase):
         client.process = ctx.Process(target=blocked_worker, args=(child,), daemon=True)
         client.process.start()
         child.close()
+        client._start_pump()
         try:
             with self.assertRaises(DeviceFailure):
                 client.receive(.15)
         finally:
             client.close()
-        self.assertFalse(client.process.is_alive())
+        self.assertTrue(client._closed)
 
     def test_sntp_offset_and_invalid_origin(self):
         t1, t2, t3, t4 = 1000., 1000.11, 1000.12, 1000.03

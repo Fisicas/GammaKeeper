@@ -21,6 +21,9 @@ import matplotlib
 
 from analysis import VERSION, midpoint, timestamp, DOSE_R_TO_USV
 from export_run import readonly
+from saved_status import load_status
+from runtime import python_command
+from winfiles import process_alive
 
 ROOT = Path(__file__).resolve().parent
 BG, PANEL, TEXT, MUTED, TEAL, GOLD = '#101923', '#182532', '#e6edf3', '#93a6b8', '#43d8bf', '#f5bc66'
@@ -133,6 +136,7 @@ class Window(Q.QMainWindow):
         self.export_process = None
         self.export_log = None
         self.export_destination = None
+        self.last_launch_log = None
         self.last_seq = None
         self.last_status = {}
         self.status_stale = False
@@ -174,7 +178,7 @@ class Window(Q.QMainWindow):
         panel.setFixedWidth(300)
         settings = Q.QVBoxLayout(panel)
         settings.setContentsMargins(16, 16, 16, 16)
-        settings.addWidget(Q.QLabel('EXPERIMENT'))
+        settings.addWidget(Q.QLabel('NEW RECORDING'))
         self.label = Q.QLineEdit()
         self.label.setPlaceholderText('Run label / sample / conditions')
         self.serial = Q.QLineEdit('RC-103-006489')
@@ -279,9 +283,10 @@ class Window(Q.QMainWindow):
         log_path = ROOT / 'logs'
         log_path.mkdir(exist_ok=True)
         log_file = log_path / (dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '.log')
+        self.last_launch_log = log_file
         handle = log_file.open('xb')
         try:
-            process = subprocess.Popen([sys.executable, '-X', 'utf8', str(ROOT / 'recorder.py'), *args],
+            process = subprocess.Popen([python_command(), '-X', 'utf8', str(ROOT / 'supervisor.py'), *args],
                                        cwd=ROOT, stdin=subprocess.DEVNULL, stdout=handle, stderr=handle,
                                        creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
         finally:
@@ -312,13 +317,19 @@ class Window(Q.QMainWindow):
     def active(self):
         if self.recorder and self.recorder.poll() is None:
             return True
-        return self.last_status.get('state') in ('starting', 'connecting', 'recording', 'reconnecting') and not self.status_stale
+        sup = self.last_status.get('supervisor') or {}
+        if sup.get('status') in ('starting','running','restart_wait','stopping') and process_alive(sup['pid']):
+            return True
+        return (self.last_status.get('state') in ('starting','connecting','recording','reconnecting')
+                and process_alive(self.last_status.get('pid',0)))
 
     def stop_recording(self):
         try:
             if not self.run or not self.last_status.get('boot_id'):
                 return
-            file = self.run / f"stop_{self.last_status['boot_id']}.request"
+            file = Path(self.last_status.get('stop_request') or self.run / f"stop_{self.last_status['boot_id']}.request")
+            if file.resolve().parent != self.run.resolve():
+                raise ValueError('Invalid stop-control path')
             if not file.exists():
                 file.write_text('Stop requested from RadiaLog GUI\n', encoding='utf-8')
             self.message('Stop requested; waiting for the recorder to save and close')
@@ -360,7 +371,7 @@ class Window(Q.QMainWindow):
                 raise ValueError('Open or record a run first')
             self.export_destination = self.run / ('export_' + dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ'))
             self.export_log = (ROOT / ('export_' + uuid.uuid4().hex + '.log')).open('xb')
-            self.export_process = subprocess.Popen([sys.executable, '-X', 'utf8', str(ROOT / 'export_run.py'), str(self.run),
+            self.export_process = subprocess.Popen([python_command(), '-X', 'utf8', str(ROOT / 'export_run.py'), str(self.run),
                                                     '--target', str(self.export_destination)], cwd=ROOT,
                                                    stdout=self.export_log, stderr=self.export_log, stdin=subprocess.DEVNULL,
                                                    creationflags=subprocess.CREATE_NO_WINDOW)
@@ -376,17 +387,39 @@ class Window(Q.QMainWindow):
             self.export_process = None
             self.export_button.setEnabled(True)
             self.message(f'Export {"complete" if code == 0 else "failed; see export log"}: {self.export_destination}')
-        if not self.run or not (self.run / 'status.json').exists():
+        if not self.run:
+            return
+        if not self.run.exists():
+            if self.recorder and self.recorder.poll() is not None:
+                self.connection.setText('START FAILED — see diagnostics log')
+                self.start_button.setEnabled(True)
+                self.stop_button.setEnabled(False)
+                self.detail.setText(str(self.last_launch_log))
             return
         try:
-            state = json.loads((self.run / 'status.json').read_text(encoding='utf-8'))
+            state = load_status(self.run)
+            if not state:
+                if self.recorder and self.recorder.poll() is not None:
+                    self.connection.setText('START FAILED — see diagnostics log')
+                    self.start_button.setEnabled(True)
+                    self.resume_button.setEnabled(True)
+                return
             age = dt.datetime.now(dt.timezone.utc).timestamp() - timestamp(state['utc'])
             self.status_stale = age > 25 and state['state'] in ('starting', 'connecting', 'recording', 'reconnecting')
             self.last_status = state
             active = self.active()
             prefix = 'SIMULATED • ' if state['mode'] == 'demo' else ''
             name = 'STATUS STALE — recorder may have stopped' if self.status_stale else state['state'].upper()
+            sup = state.get('supervisor') or {}
+            if sup.get('status') == 'restart_wait' and active:
+                name = 'RESTARTING RECORDER'
+            elif sup.get('status') == 'attention_required':
+                name = 'ATTENTION REQUIRED — recording stopped'
+            elif state['state'] in ('recording','reconnecting','connecting') and not active:
+                name = 'RECORDER EXITED — resume available'
             self.connection.setText(prefix + name)
+            warning_color = '#ff7b86' if ('ERROR' in name or 'ATTENTION' in name or 'EXITED' in name or 'STALE' in name) else GOLD if ('RECONNECT' in name or 'RESTART' in name) else TEAL
+            self.connection.setStyleSheet(f'color: {warning_color}; font-weight: 600;')
             self.start_button.setEnabled(not active)
             self.stop_button.setEnabled(active)
             self.resume_button.setEnabled(not active)
@@ -420,7 +453,16 @@ class Window(Q.QMainWindow):
             saved_snapshot = state.get('last_snapshot') or {}
             coverage = saved_snapshot.get('derived_observed_dose_coverage')
             coverage_text = f' • dose time coverage: {coverage:.2%}' if coverage is not None else ''
-            self.detail.setText(f"{self.run}\n{state.get('message', '')}{retry} • retries: {state.get('retries', 0)}{coverage_text}")
+            diagnostics = ''
+            if state.get('status_cache_warning'):
+                diagnostics += '\nDisplay cache unavailable; reading saved journal. Recording continues.'
+            if state.get('decoder_warning'):
+                diagnostics += '\nTelemetry decoder warning; raw payload retained. See events for details.'
+            if state.get('raw_preview_error'):
+                diagnostics += '\nRaw preview unavailable: '+state['raw_preview_error']
+            if sup.get('reason'):
+                diagnostics += '\n'+sup['reason']
+            self.detail.setText(f"{self.run}\n{state.get('message', '')}{retry} • retries: {state.get('retries', 0)}{coverage_text}{diagnostics}")
             cm = state.get('clock_measurement') or {}
             timing = f"SNTP {cm.get('server')} • offset {cm['offset_s']:+.3f} s • estimated ±{cm['estimated_uncertainty_s']:.3f} s" if cm.get('verified') else 'UTC accuracy unverified • host clock fallback'
             self.footer.setText('Raw counts preserved • dose uses the device R→Sv convention • ' + timing)

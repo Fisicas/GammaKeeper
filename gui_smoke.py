@@ -29,6 +29,9 @@ started = time.monotonic()
 phase = 0
 second_window = None
 report = {'mode': 'SIMULATED', 'run': str(run)}
+revision=1
+while (ROOT/'validation'/f'gui_smoke_report_v{revision:02d}.json').exists():
+    revision+=1
 
 def poll():
     global phase, second_window
@@ -63,8 +66,8 @@ def poll():
             report['export_button_completed'] = True
             report['snapshots'] = second_window.last_status['snapshots']
             second_window.charts.draw()
-            second_window.grab().save(str(ROOT / 'validation' / 'gui_smoke_preview_v01.png'))
-            immutable_json(ROOT / 'validation' / 'gui_smoke_report_v01.json', report)
+            second_window.grab().save(str(ROOT / 'validation' / f'gui_smoke_preview_v{revision:02d}.png'))
+            immutable_json(ROOT / 'validation' / f'gui_smoke_report_v{revision:02d}.json', report)
             print(json.dumps(report, indent=2), flush=True)
             timer.stop()
             second_window.close()

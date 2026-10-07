@@ -14,6 +14,7 @@ from radiacode.bytes_buffer import BytesBuffer
 from radiacode.decoders.databuf import decode_VS_DATA_BUF
 from radiacode.decoders.spectrum import decode_RC_VS_SPECTRUM
 from phyton import PhytonTransport
+from telemetry_decoder import decode_buffer
 
 
 def utc_now():
@@ -133,17 +134,7 @@ class ReadoutDevice(RadiaCode):
 
     def read_buffer(self):
         raw = self.read_request(VS.DATA_BUF).data()
-        buffer = BytesBuffer(raw)
-        warning = None
-        try:
-            decoded = decode_VS_DATA_BUF(buffer, self._base_time, ignore_errors=False)
-            records = [dict(type=type(rec).__name__, **clean(asdict(rec))) for rec in decoded]
-            if buffer.size():
-                warning = f'{buffer.size()} unparsed bytes; complete raw payload retained'
-        except Exception as error:
-            records = []
-            warning = f'Decode failed: {type(error).__name__}: {error}; complete raw payload retained'
-        return dict(raw_hex=raw.hex(), records=records, decode_warning=warning)
+        return decode_buffer(raw,self._base_time,self.configuration_text)
 
     def read_spectrum(self):
         raw = self.read_request(VS.SPECTRUM).data()
@@ -188,7 +179,10 @@ def io_worker(connection, serial, clock=None):
                                  monotonic_before=m0, monotonic_after=time.monotonic()))
     except BaseException as error:
         try:
-            connection.send(dict(kind='error', error=f'{type(error).__name__}: {error}'))
+            import traceback
+            connection.send(dict(kind='error', error=f'{type(error).__name__}: {error}',
+                                 error_type=type(error).__name__,winerror=getattr(error,'winerror',None),
+                                 traceback=traceback.format_exc()))
         except (BrokenPipeError, EOFError, OSError):
             pass
     finally:

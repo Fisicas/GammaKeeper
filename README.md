@@ -1,6 +1,17 @@
-# RadiaLog 0.1.0
+# RadiaLog 0.2.0
 
-Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This is a tested first release; a real seven-day soak test is still required before experimental qualification.
+Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
+
+
+## October 7 reliability update
+
+The overnight v0.1 run exited at 01:21:49 EDT when Windows denied replacement of `status.json`. The USB retry loop ended with the recorder process. This release fixes that failure path and adds an independent supervisor for automatic recorder restart/resume. The detailed evidence and limitations are in `../investigation_20261007_v01/failure_report_v02.md`. The old software and failed run are preserved.
+
+The GUI now reads the SQLite WAL journal and never opens the replaceable JSON cache. Compatibility-cache updates are isolated, bounded and nonfatal. The supervisor remains running after the window closes, restarts unexpected recorder exits, and monitors durable journal progress with a monotonic watchdog. Persistent raw-data/integrity/storage failures stop with an explicit diagnostic rather than retrying over damaged data.
+
+The device declares group 4 as a six-byte dose-counter record; the earlier library expected sixteen-byte user data. Configuration-aware decoding fixes that exact recorded payload, retains valid prefixes on unknown/malformed frames, and preserves all raw bytes. Historical status records are kept in telemetry but do not replace newer live status or create false dose-reset detections. USB framing handles zero-length packets/split headers; blocking IPC cannot escape the parent's deadline. Short raw-file commit retries tolerate transient locks without overwriting raw data.
+
+The release regression suite passes **38 tests**. Two real-device fault pilots reproduced a locked cache, USB reopening and forced recorder termination; both resumed automatically, conserved counts and retained calibration. GUI integration covers start, window closure/reopening, stop and export. A full overnight/24-hour soak remains a separate qualification; its request/result files are under `validation`. Original 655 overnight spectra remain hash-identical.
 
 ## Start
 
@@ -10,7 +21,7 @@ Double-click `Open_RadiaLog.cmd` in `C:\Users\nelso\Desktop\Radiacode Data`, or 
 2. Enter the sample/condition label, confirm serial `RC-103-006489`, interval **10 s**, duration **7 days**, and save folder.
 3. Click **Start new recording**. Check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
 4. The recorder continues if the GUI closes. Reopen the GUI and use **Open saved run** to monitor it. Use **Stop recording** to end it. Stopping attempts a final short snapshot, explicitly marked in the data.
-5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. **Resume selected run** verifies every raw snapshot and continues the same run after a recorder crash or manual stop, until the original planned end. A Windows reboot requires reopening and resuming; no system startup task was installed.
+5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. Unexpected recorder exits are restarted and resumed automatically by the supervisor. **Resume selected run** remains available for manually stopped or reboot-interrupted runs, until the original planned end. A Windows reboot requires reopening and resuming; no system startup task was installed.
 
 Maintain power and prevent deliberate sleep/reboot during the experiment. The recorder requests inhibition of automatic system sleep while active; success is recorded. A power loss or disconnected device creates a real acquisition gap.
 
@@ -20,7 +31,7 @@ Maintain power and prevent deliberate sleep/reboot during the experiment. The re
 - `spectra/YYYY-MM-DD/#########.json`: immutable cumulative spectra, original 1,024 integer channels, device elapsed time, polynomial calibration, original binary payload, UTC read bounds, original host timestamps, connection identity and status samples. There is no rolling retention limit or 24-hour overwrite.
 - `run.sqlite`: append-only telemetry batches including complete raw binary payloads, all decoded flags/error percentages/events, spectrum index with SHA-256, and connection/retry/clock audit history. SQLite uses WAL and `synchronous=FULL`. Mutable state and index are separate from immutable raw spectra. Back up the whole run folder; while active, also retain `run.sqlite-wal` and `run.sqlite-shm`, or use the app's consistent export.
 - `connections`: immutable device configuration, firmware and exchange-clock initialization provenance. Pre-anchor buffered data is retained with its prior time mapping explicitly unknown.
-- `status.json`: replaceable GUI cache, not the authoritative scientific record.
+- `status.json`: optional replaceable compatibility cache. The GUI reads `ui_status` and supervisor metadata from SQLite WAL; cache errors cannot stop recording.
 
 The first spectrum is a **baseline**, even if the device already holds millions of counts. Interval counts are `C(t2) - C(t1)` channel by channel. Spectrum-derived cps is the summed difference divided by the **actual device elapsed-time increment**, not blindly by 10. Nominal 10-second requests can yield other durations; the device duration is quantized to whole seconds. The displayed device count-rate estimator has a different averaging history and is saved separately.
 
@@ -58,13 +69,13 @@ Do not concatenate cumulative spectra directly as if they were independent time 
 ```powershell
 & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s '.\tests' -v
 & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\gui.py'
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\recorder.py' --run '.\runs\example_unique_run' --seconds 604800 --interval 10
+& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\supervisor.py' --run '.\runs\example_unique_run' --seconds 604800 --interval 10
 & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\export_run.py' '.\runs\example_unique_run'
 ```
 
-Run these commands from this application folder. Simulation requires `--demo` and is prominently labeled. Live pilots are in `validation`; original spectra elsewhere in the workspace were preserved. The latest numbered `validation/validation_report_v*.json` records automated/integration/pilot checks and source hashes. Earlier reports remain preserved.
+Run these commands from this application folder. Simulation requires `--demo` and is prominently labeled. Live pilots are in `validation`; original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_validation_v*.json` records automated/integration/pilot checks and source hashes. Earlier reports remain preserved.
 
-Twenty-two automated checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
+The 38 release checks include the original baseline/duration/conservation tests and new locking, automatic restart, decoder, historical-status and integrity checks. Original checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
 
 Before the experiment: perform an unattended 24–48 hour soak, physically unplug/replug USB once, verify an app stop/resume and a Windows restart/resume on a disposable run, and audit exported counts and gap flags. Then complete a representative week if the experiment requires that qualification. Do not use experimental raw data as a fault-injection target.
 

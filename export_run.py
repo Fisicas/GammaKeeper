@@ -137,7 +137,10 @@ def export_run(run, target=None, with_npz=True):
             flush_chunk()
         telemetry_fields = ['batch_id', 'connection_id', 'received_utc', 'type', 'dt', 'count_rate', 'dose_rate',
                             'count_rate_err', 'dose_rate_err', 'count', 'duration', 'dose', 'temperature',
-                            'charge_level', 'flags', 'real_time_flags', 'event', 'event_param1']
+                            'charge_level', 'flags', 'real_time_flags', 'event', 'event_param1',
+                            'sequence','event_group','group_id','timestamp_offset_10ms','dose_counter_raw',
+                            'declared_unit','scale_validation','samples','period_ms','sample_payload_hex',
+                            'x_raw','y_raw','z_raw']
         nrecords = 0
         warnings = 0
         with (target / 'telemetry.csv').open('x', newline='', encoding='utf-8') as file:
