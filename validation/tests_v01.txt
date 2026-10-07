@@ -24,6 +24,7 @@ test_cache_lock_is_nonfatal_and_recovers (test_reliability.Reliability.test_cach
 test_corrupt_raw_data_suppresses_automatic_restart (test_reliability.Reliability.test_corrupt_raw_data_suppresses_automatic_restart) ... ok
 test_empty_and_unknown_payload_preserve_valid_prefix (test_reliability.Reliability.test_empty_and_unknown_payload_preserve_valid_prefix) ... ok
 test_exact_overnight_decoder_fixture (test_reliability.Reliability.test_exact_overnight_decoder_fixture) ... ok
+test_gui_never_previews_modified_raw_snapshot (test_reliability.Reliability.test_gui_never_previews_modified_raw_snapshot) ... ok
 test_gui_reads_journal_even_with_corrupt_status_cache (test_reliability.Reliability.test_gui_reads_journal_even_with_corrupt_status_cache) ... ok
 test_historical_counter_is_not_a_dose_reset (test_reliability.Reliability.test_historical_counter_is_not_a_dose_reset) ... ok
 test_recording_continues_under_real_windows_status_lock (test_reliability.Reliability.test_recording_continues_under_real_windows_status_lock) ... ok
@@ -35,8 +36,12 @@ test_transient_raw_commit_lock_retries_without_overwrite (test_reliability.Relia
 test_unknown_group4_schema_is_not_guessed (test_reliability.Reliability.test_unknown_group4_schema_is_not_guessed) ... ok
 test_watchdog_uses_monotonic_progress_not_wall_time (test_reliability.Reliability.test_watchdog_uses_monotonic_progress_not_wall_time) ... ok
 test_zero_length_and_split_usb_headers (test_reliability.Reliability.test_zero_length_and_split_usb_headers) ... ok
+test_export_rebuilds_bad_old_dose_bins_without_changing_raws (test_telemetry_observations.TelemetryObservationTests.test_export_rebuilds_bad_old_dose_bins_without_changing_raws) ... ok
+test_future_projection_is_preserved_and_not_discarded (test_telemetry_observations.TelemetryObservationTests.test_future_projection_is_preserved_and_not_discarded) ... ok
+test_incremental_reader_matches_complete_bin_integral (test_telemetry_observations.TelemetryObservationTests.test_incremental_reader_matches_complete_bin_integral) ... ok
+test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.TelemetryObservationTests.test_reception_bins_do_not_impute_through_outage) ... ok
 
 ----------------------------------------------------------------------
-Ran 37 tests in 28.474s
+Ran 42 tests in 29.264s
 
 OK

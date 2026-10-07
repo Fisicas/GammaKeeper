@@ -23,6 +23,7 @@ from worker_client import WorkerClient, DeviceFailure
 from runtime import python_command
 import sqlite3
 from status_observations import select_rare
+from telemetry_analysis import observation_from_batch
 
 
 class DemoClient:
@@ -219,6 +220,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                                                  last_rt, last_rare, final=True, dose_baseline=dose_baseline,
                                                  dose_reset_seen=dose_reset_seen)
                         snapshot['telemetry_bin'] = weighted_telemetry(records, midpoint(store.previous), midpoint(snapshot))
+                        snapshot['telemetry_bin']['timestamp_basis']='host_reception_utc'
                         tb = snapshot['telemetry_bin']
                         dose_integral += tb.get('observed_integrated_dose_uSv', 0.)
                         dose_observed_s += tb.get('observed_duration_s', 0.)
@@ -290,11 +292,17 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                         msg = client.request('buffer')
                         batch = dict(msg, connection_id=connection_id, boot_id=boot)
                         store.append_telemetry(batch)  # Persist before using decoded values.
+                        observation=observation_from_batch(batch)
+                        if observation:
+                            last_rt=observation
+                            records.append(observation)
+                            state['device_projection_lead_s']=observation['device_projection_lead_s']
+                            state['telemetry_time_basis']=observation['timestamp_basis']
                         for r in msg['result']['records']:
                             # First exchange status records can carry the previous timestamp base.
                             # Preserve them, but never use future-dated records in live averages.
                             future = timestamp(r['dt']) > timestamp(msg['utc_after']) + 1
-                            if future and r['type'] not in ('RareData', 'Event'):
+                            if future and r['type'] not in ('RareData', 'Event','RealTimeData'):
                                 continue
                             if r['type'] == 'Event':
                                 if store.previous and timestamp(r['dt'])<midpoint(store.previous) and not future:
@@ -307,8 +315,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                                     dose_reset_seen = True
                                     store.set_state('dose_reset_seen', True)
                             elif r['type'] == 'RealTimeData':
-                                last_rt = r
-                                records.append(r)
+                                pass  # Already selected as a reception-time observation; never discard for clock projection drift.
                             elif r['type'] == 'RareData':
                                 observation,stale = select_rare(last_rare,r,msg['utc_after'])
                                 if stale:
@@ -339,6 +346,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                                                  dose_baseline=dose_baseline, dose_reset_seen=dose_reset_seen)
                         if store.previous:
                             snapshot['telemetry_bin'] = weighted_telemetry(records, midpoint(store.previous), midpoint(snapshot))
+                            snapshot['telemetry_bin']['timestamp_basis']='host_reception_utc'
                             tb = snapshot['telemetry_bin']
                             dose_integral += tb.get('observed_integrated_dose_uSv', 0.)
                             dose_observed_s += tb.get('observed_duration_s', 0.)

@@ -24,6 +24,8 @@ from export_run import readonly
 from saved_status import load_status
 from runtime import python_command
 from winfiles import process_alive
+from telemetry_analysis import LiveJournalTelemetry
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 ROOT = Path(__file__).resolve().parent
 BG, PANEL, TEXT, MUTED, TEAL, GOLD = '#101923', '#182532', '#e6edf3', '#93a6b8', '#43d8bf', '#f5bc66'
@@ -140,6 +142,8 @@ class Window(Q.QMainWindow):
         self.last_seq = None
         self.last_status = {}
         self.status_stale = False
+        self.telemetry_reader=None
+        self.telemetry_run=None
         self.setStyleSheet(f'''
           QMainWindow, QWidget {{ background: {BG}; color: {TEXT}; font-family: 'Segoe UI'; font-size: 10pt; }}
           QFrame#panel {{ background: {PANEL}; border: 1px solid #26384a; border-radius: 10px; }}
@@ -234,7 +238,7 @@ class Window(Q.QMainWindow):
         content.addLayout(right, 1)
         cards = Q.QHBoxLayout()
         self.metrics = []
-        for text in ['Spectrum count rate', 'Device dose-rate estimator', 'Integrated dose • observed', 'Saved spectra']:
+        for text in ['Count rate • spectrum', 'Dose rate • latest', 'Dose • observed', 'Saved spectra']:
             frame = Q.QFrame()
             frame.setObjectName('panel')
             stack = Q.QVBoxLayout(frame)
@@ -248,7 +252,13 @@ class Window(Q.QMainWindow):
             cards.addWidget(frame)
         right.addLayout(cards)
         self.charts = Charts()
+        self.chart_toolbar=NavigationToolbar2QT(self.charts,self)
+        right.addWidget(self.chart_toolbar)
         right.addWidget(self.charts, 1)
+        self.health=Q.QLabel('Waiting for run health')
+        self.health.setObjectName('muted')
+        self.health.setWordWrap(True)
+        right.addWidget(self.health)
         self.detail = Q.QLabel('Start a new run or open a saved run. Device accumulators and calibration are preserved.')
         self.detail.setObjectName('muted')
         self.detail.setWordWrap(True)
@@ -318,6 +328,12 @@ class Window(Q.QMainWindow):
         if self.recorder and self.recorder.poll() is None:
             return True
         sup = self.last_status.get('supervisor') or {}
+        if sup.get('status') in ('starting','running','restart_wait','stopping'):
+            try:
+                if dt.datetime.now(dt.timezone.utc).timestamp()-timestamp(sup['utc'])<6:
+                    return True  # Fresh journal heartbeat also works when process queries are unavailable.
+            except (KeyError,ValueError):
+                pass
         if sup.get('status') in ('starting','running','restart_wait','stopping') and process_alive(sup['pid']):
             return True
         return (self.last_status.get('state') in ('starting','connecting','recording','reconnecting')
@@ -424,21 +440,32 @@ class Window(Q.QMainWindow):
             self.stop_button.setEnabled(active)
             self.resume_button.setEnabled(not active)
             self.metrics[3].setText(f"{state.get('snapshots', 0):,}")
+            db=readonly(self.run/'run.sqlite')
+            try:
+                first=db.execute('SELECT utc FROM snapshots ORDER BY seq LIMIT 1').fetchone()
+                if first and self.telemetry_run!=str(self.run):
+                    self.telemetry_reader=LiveJournalTelemetry(first[0],state.get('interval_s',10)*240)
+                    self.telemetry_run=str(self.run)
+                caught_up=self.telemetry_reader.update(db) if self.telemetry_reader else False
+                observation=self.telemetry_reader.previous if self.telemetry_reader else None
+                coverage=self.telemetry_reader.coverage() if self.telemetry_reader else 0.
+            finally:
+                db.close()
             snapshot = state.get('last_snapshot')
             interval = state.get('last_interval', {})
             if snapshot:
                 rate = interval.get('count_rate_cps')
                 self.metrics[0].setText(f'{rate:.2f} cps' if rate is not None else 'Baseline')
-                rt = snapshot.get('realtime') or {}
+                rt = observation or {}
                 dose = rt.get('dose_rate')
                 self.metrics[1].setText(f'{dose * DOSE_R_TO_USV:.3f} µSv/h' if dose is not None else '—')
                 rare = snapshot.get('accumulated_dose') or {}
-                experiment_dose = snapshot.get('derived_observed_dose_uSv')
+                experiment_dose = self.telemetry_reader.dose_uSv if self.telemetry_reader and caught_up else None
                 self.metrics[2].setText(f'{experiment_dose:.4f} µSv' if experiment_dose is not None else 'Waiting')
-                coverage = snapshot.get('derived_observed_dose_coverage', 0)
-                self.metrics[2].setToolTip(f'Derived from measured dose rate; observed time coverage {coverage:.2%}. Missing periods are excluded. Device counter and its sample age are saved separately.')
+                self.metrics[2].setToolTip(f'Recomputed from received real-time estimators. Time coverage {coverage:.2%}; host reception UTC. Exact device sample/filter latency is unverified. Original device timestamps remain saved.')
                 seq = snapshot['seq']
-                if self.last_seq != (str(self.run), seq):
+                render_key=(str(self.run),seq,caught_up)
+                if self.last_seq != render_key:
                     db = readonly(self.run / 'run.sqlite')
                     try:
                         entries = list(db.execute('SELECT utc,epoch,derived,file FROM snapshots ORDER BY seq DESC LIMIT 241'))
@@ -446,13 +473,27 @@ class Window(Q.QMainWindow):
                         db.close()
                     rows = [(utc, epoch, json.loads(derived), json.loads((self.run / file).read_text(encoding='utf-8')))
                             for utc, epoch, derived, file in reversed(entries)]
+                    if self.telemetry_reader:
+                        obs_index=self.telemetry_reader.index()
+                        for utc,epoch,d,s in rows:
+                            if d.get('wall_duration_s') is not None:
+                                s['telemetry_bin']=obs_index.bin(utc-d['wall_duration_s'],utc)
                     self.charts.show_rows(rows, snapshot, state['mode'])
-                    self.last_seq = (str(self.run), seq)
+                    self.last_seq = render_key
                     self.message(f'Saved spectrum {seq}; ' + ', '.join(interval.get('quality', [])))
             retry = f" • retry in {state.get('retry_delay_s')} s" if state['state'] == 'reconnecting' else ''
             saved_snapshot = state.get('last_snapshot') or {}
-            coverage = saved_snapshot.get('derived_observed_dose_coverage')
             coverage_text = f' • dose time coverage: {coverage:.2%}' if coverage is not None else ''
+            now=dt.datetime.now(dt.timezone.utc).timestamp()
+            spectrum_age=now-midpoint(snapshot) if snapshot else None
+            telemetry_age=now-timestamp(observation['dt']) if observation else None
+            lead=observation.get('device_projection_lead_s') if observation else None
+            age_text=f'Spectrum age: {spectrum_age:.1f} s' if spectrum_age is not None else 'No spectrum yet'
+            telemetry_text=f'telemetry age: {telemetry_age:.1f} s' if telemetry_age is not None else 'No telemetry yet'
+            lead_text=f'device clock projection: {lead:+.2f} s vs reception' if lead is not None else 'device time unverified'
+            progress=' • loading saved telemetry' if not caught_up else ''
+            self.health.setText(f'{age_text} • {telemetry_text} • supervisor restarts: {sup.get("restarts",0)} • {lead_text}{progress}\nDose uses host-reception observations; exact sample/filter latency is not calibrated.')
+            self.health.setStyleSheet(f'color: {GOLD if (spectrum_age and spectrum_age>30) or (telemetry_age and telemetry_age>5) else MUTED};')
             diagnostics = ''
             if state.get('status_cache_warning'):
                 diagnostics += '\nDisplay cache unavailable; reading saved journal. Recording continues.'
@@ -492,8 +533,12 @@ def main():
     window = Window(args.inspect_run)
     window.show()
     if args.screenshot:
+        capture_deadline=__import__('time').monotonic()+20
         def grab():
             window.refresh()
+            if window.telemetry_reader and window.telemetry_reader.last_id<window.telemetry_reader.latest_batch_id and __import__('time').monotonic()<capture_deadline:
+                QtCore.QTimer.singleShot(300,grab)
+                return
             window.charts.draw()
             if not window.grab().save(str(args.screenshot)):
                 raise RuntimeError('Screenshot save failed')

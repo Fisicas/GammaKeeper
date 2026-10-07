@@ -12,6 +12,7 @@ import uuid
 import numpy as np
 from analysis import reconstruct, midpoint, VERSION, DOSE_R_TO_USV, timestamp
 from storage import immutable_json
+from telemetry_analysis import read_observations,ObservationIndex
 
 
 def readonly(path):
@@ -34,6 +35,8 @@ def export_run(run, target=None, with_npz=True):
     check = db.execute('PRAGMA quick_check').fetchone()[0]
     if check != 'ok':
         raise ValueError(f'SQLite integrity check failed: {check}')
+    observations=ObservationIndex(read_observations(db))
+    observed_total=0.;observed_seconds=0.;elapsed_seconds=0.
     fields = ['seq', 'start_utc', 'end_utc', 'epoch', 'quality', 'nominal_time_bin',
               'device_duration_s', 'wall_duration_s', 'total_counts', 'spectral_count_rate_cps',
               'poisson_sigma_cps', 'device_estimator_mean_cps', 'dose_rate_mean_uSv_h',
@@ -44,7 +47,7 @@ def export_run(run, target=None, with_npz=True):
               'clock_offset_s', 'clock_estimated_uncertainty_s', 'device_estimator_sample_utc',
               'device_estimator_age_s', 'count_rate_err_percent_latest',
               'dose_rate_err_percent_latest', 'device_flags_latest', 'read_time_halfwidth_s',
-              'raw_file', 'raw_sha256']
+              'telemetry_time_basis','original_snapshot_telemetry_coverage','raw_file', 'raw_sha256']
     previous = None
     epoch = 0
     chunk = []
@@ -95,7 +98,12 @@ def export_run(run, target=None, with_npz=True):
                     raise ValueError('Missing/reordered raw snapshot')
                 d = reconstruct(previous, s, config['interval_s'], epoch)
                 epoch = d['epoch']
-                tb = s.get('telemetry_bin', {})
+                original_tb=s.get('telemetry_bin',{})
+                tb=observations.bin(midpoint(previous),midpoint(s)) if previous else {}
+                if previous:
+                    observed_total+=tb.get('observed_integrated_dose_uSv',0.)
+                    observed_seconds+=tb.get('observed_duration_s',0.)
+                    elapsed_seconds+=max(0.,midpoint(s)-midpoint(previous))
                 rare, rt = s.get('accumulated_dose') or {}, s.get('realtime') or {}
                 is_normal = d['quality'] == ['normal'] and not s.get('final_partial_interval')
                 aggregate = d['counts_delta'] is not None and not is_normal
@@ -107,8 +115,8 @@ def export_run(run, target=None, with_npz=True):
                     device_estimator_mean_cps=tb.get('device_count_rate_cps'), dose_rate_mean_uSv_h=tb.get('dose_rate_uSv_h'),
                     telemetry_coverage_fraction=tb.get('coverage_fraction'), integrated_dose_uSv=tb.get('integrated_dose_uSv'),
                     observed_integrated_dose_uSv=tb.get('observed_integrated_dose_uSv'),
-                    cumulative_observed_integrated_dose_uSv=s.get('derived_observed_dose_uSv'),
-                    cumulative_dose_time_coverage=s.get('derived_observed_dose_coverage'),
+                    cumulative_observed_integrated_dose_uSv=observed_total,
+                    cumulative_dose_time_coverage=observed_seconds/elapsed_seconds if elapsed_seconds else 0.,
                     device_accumulated_dose_uSv=rare.get('dose', 0) * DOSE_R_TO_USV if rare else '',
                     device_experiment_dose_uSv=s.get('device_experiment_dose_uSv'), dose_reset_seen=s.get('dose_reset_seen'),
                     device_dose_sample_utc=rare.get('dt', ''), device_dose_age_s=midpoint(s) - timestamp(rare['dt']) if rare else '',
@@ -118,7 +126,9 @@ def export_run(run, target=None, with_npz=True):
                     clock_estimated_uncertainty_s=(s.get('clock') or {}).get('estimated_uncertainty_s'),
                     device_estimator_sample_utc=rt.get('dt', ''), device_estimator_age_s=midpoint(s) - timestamp(rt['dt']) if rt else '',
                     count_rate_err_percent_latest=rt.get('count_rate_err'), dose_rate_err_percent_latest=rt.get('dose_rate_err'),
-                    device_flags_latest=rt.get('flags'), read_time_halfwidth_s=s['read_time_halfwidth_s'], raw_file=name, raw_sha256=digest))
+                    device_flags_latest=rt.get('flags'), read_time_halfwidth_s=s['read_time_halfwidth_s'],
+                    telemetry_time_basis=tb.get('timestamp_basis'),original_snapshot_telemetry_coverage=original_tb.get('coverage_fraction'),
+                    raw_file=name, raw_sha256=digest))
                 if is_normal:
                     normal += 1
                     normal_counts += d['total_counts']
@@ -163,7 +173,7 @@ def export_run(run, target=None, with_npz=True):
                       count_rule='C(t2)-C(t1), divided by actual device elapsed seconds; first snapshot is baseline',
                       uncertainty='sqrt(N)/device duration is counting-only Poisson sigma; no calibration/clock/systematic uncertainty included',
                       dose_rule='Native telemetry.csv dose_rate is R/h and dose is R; time_bins.csv uses instrument convention 10000 uSv/R',
-                      telemetry_rule='Time-weighted device estimators; <=3s zero-order hold; no extrapolation across long gaps',
+                      telemetry_rule='Recomputed from raw journal: latest real-time estimator per received batch, host reception UTC, <=3s zero-order hold. Original device timestamps retained; exact sample/filter latency unverified.',
                       npz_rule='Integer channel differences, -1 sentinel for invalid/baseline; consult valid, nominal_time_bin, quality, epoch; no resampling',
                       processing='No smoothing, background subtraction, normalization or calibration changes; UTC axes and ascending channel index')
         immutable_json(target / 'EXPORT_COMPLETE.json', report)

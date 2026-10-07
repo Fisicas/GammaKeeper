@@ -1,4 +1,4 @@
-# RadiaLog 0.2.0
+# RadiaLog 0.3.0
 
 Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
 
@@ -7,11 +7,20 @@ Native Windows GUI and an independent experiment recorder for the connected Radi
 
 The overnight v0.1 run exited at 01:21:49 EDT when Windows denied replacement of `status.json`. The USB retry loop ended with the recorder process. This release fixes that failure path and adds an independent supervisor for automatic recorder restart/resume. The detailed evidence and limitations are in `../investigation_20261007_v01/failure_report_v02.md`. The old software and failed run are preserved.
 
-The GUI now reads the SQLite WAL journal and never opens the replaceable JSON cache. Compatibility-cache updates are isolated, bounded and nonfatal. The supervisor remains running after the window closes, restarts unexpected recorder exits, and monitors durable journal progress with a monotonic watchdog. Persistent raw-data/integrity/storage failures stop with an explicit diagnostic rather than retrying over damaged data.
+The GUI reads the SQLite WAL journal and never opens the replaceable JSON cache. Compatibility-cache updates are isolated, bounded and nonfatal. The supervisor remains running after the window closes, restarts unexpected recorder exits, and monitors durable journal progress with a monotonic watchdog. Persistent raw-data/integrity/storage failures stop with an explicit diagnostic rather than retrying over damaged data.
 
 The device declares group 4 as a six-byte dose-counter record; the earlier library expected sixteen-byte user data. Configuration-aware decoding fixes that exact recorded payload, retains valid prefixes on unknown/malformed frames, and preserves all raw bytes. Historical status records are kept in telemetry but do not replace newer live status or create false dose-reset detections. USB framing handles zero-length packets/split headers; blocking IPC cannot escape the parent's deadline. Short raw-file commit retries tolerate transient locks without overwriting raw data.
 
 The release regression suite passes **38 tests**. Two real-device fault pilots reproduced a locked cache, USB reopening and forced recorder termination; both resumed automatically, conserved counts and retained calibration. GUI integration covers start, window closure/reopening, stop and export. A full overnight/24-hour soak remains a separate qualification; its request/result files are under `validation`. Original 655 overnight spectra remain hash-identical.
+
+
+## October 7 live-review correction
+
+The active v0.2 soak was left running. Its raw data are valid, but its one-second future-timestamp filter eventually excludes real-time telemetry as the projected device clock drifts ahead of host UTC. This can freeze the latest dose estimate and report false coverage losses. v0.3 stops using that projection as a reason to discard valid estimator observations.
+
+Derived live dose uses **host reception UTC** as an explicit observation coordinate, retaining original device timestamps separately. Exact physical sample/filter latency is uncalibrated. The exporter independently recomputes dose bins from raw telemetry, and preserves the original snapshot coverage in a separate column. The monitor reprocesses old v0.2 runs without editing their raw files. Spectrum differences, calibration and channel order are unchanged.
+
+The interface adds data ages, supervisor restart count, clock-projection lead, bounded incremental telemetry catch-up, and plot zoom/pan/save controls. New runs use the revised backend; the already-running v0.2 collector is not hot-patched. Use v0.3 for corrected monitoring and export of that run. See `../current_review_20261007_v01/review_and_improvement_plan_v01.md` for verified status and next priorities.
 
 ## Start
 
