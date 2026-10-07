@@ -1,0 +1,176 @@
+"""Durable append-only scientific records and immutable spectrum files."""
+import ctypes
+import datetime as dt
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import uuid
+
+from analysis import reconstruct, midpoint, VERSION
+
+
+def canonical(value):
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8')
+
+
+def immutable_json(path, value):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        raise FileExistsError(f'Refusing to overwrite {path}')
+    payload = canonical(value)
+    temporary = path.with_name(path.name + '.' + uuid.uuid4().hex + '.partial')
+    with temporary.open('xb') as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    # os.rename on Windows refuses an existing destination and is atomic on this volume.
+    os.rename(temporary, path)
+    return hashlib.sha256(payload).hexdigest()
+
+
+class DeviceMutex:
+    def __init__(self, serial):
+        from ctypes import wintypes as w
+        self.api = ctypes.WinDLL('kernel32', use_last_error=True)
+        self.api.CreateMutexW.argtypes = [ctypes.c_void_p, w.BOOL, w.LPCWSTR]
+        self.api.CreateMutexW.restype = w.HANDLE
+        self.api.ReleaseMutex.argtypes = [w.HANDLE]
+        self.api.CloseHandle.argtypes = [w.HANDLE]
+        self.handle = self.api.CreateMutexW(None, True, 'Local\\RadiaLog_' + serial.replace('\\', '_'))
+        err = ctypes.get_last_error()
+        if not self.handle:
+            raise ctypes.WinError(err)
+        if err == 183:
+            self.api.CloseHandle(self.handle)
+            self.handle = None
+            raise RuntimeError('Another RadiaLog recorder already owns this serial number')
+
+    def close(self):
+        if self.handle:
+            self.api.ReleaseMutex(self.handle)
+            self.api.CloseHandle(self.handle)
+            self.handle = None
+
+
+class RunStore:
+    def __init__(self, path, config=None):
+        self.path = Path(path).resolve()
+        if config is not None:
+            self.path.mkdir(parents=True, exist_ok=False)
+            immutable_json(self.path / 'manifest.json', config)
+        self.config = json.loads((self.path / 'manifest.json').read_text(encoding='utf-8'))
+        # Also prevent two writers to this run, including demo vs physical device.
+        import msvcrt
+        self.lock = None
+        try:
+            self.lock = (self.path / '.writer.lock').open('a+b')
+            self.lock.seek(0)
+            if self.lock.read(1) == b'':
+                self.lock.write(b'0')
+                self.lock.flush()
+            self.lock.seek(0)
+            msvcrt.locking(self.lock.fileno(), msvcrt.LK_NBLCK, 1)
+        except OSError:
+            if self.lock:
+                self.lock.close()
+                self.lock = None
+            raise RuntimeError('This run is open in another recorder')
+        try:
+            self.db = sqlite3.connect(self.path / 'run.sqlite', timeout=5)
+            self.db.execute('PRAGMA journal_mode=WAL')
+            self.db.execute('PRAGMA synchronous=FULL')
+            self.db.execute('PRAGMA busy_timeout=5000')
+            self.db.executescript('''
+              CREATE TABLE IF NOT EXISTS snapshots(seq INTEGER PRIMARY KEY, file TEXT UNIQUE NOT NULL,
+                sha256 TEXT NOT NULL, utc REAL NOT NULL, epoch INTEGER NOT NULL, derived TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS telemetry(id INTEGER PRIMARY KEY, utc REAL NOT NULL, payload TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, utc TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS state(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+              CREATE INDEX IF NOT EXISTS telemetry_utc ON telemetry(utc);
+            ''')
+            self.previous = None
+            self.epoch = 0
+            self.next_seq = 0
+            self.recover()
+        except BaseException:
+            self.close()
+            raise
+
+    def check_space(self):
+        # Stop safely before exhausting the disk. Never delete old runs.
+        if shutil.disk_usage(self.path).free < 256 * 1024**2:
+            raise OSError('Less than 256 MiB free: recording stopped to protect saved data')
+
+    def recover(self):
+        rows = {seq: (name, digest) for seq, name, digest in self.db.execute('SELECT seq,file,sha256 FROM snapshots')}
+        seen = set()
+        # Sequence is authoritative; UTC can step backwards across a date boundary.
+        for file in sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem)):
+            payload = file.read_bytes()
+            value = json.loads(payload)
+            seq = value['seq']
+            if seq != int(file.stem):
+                raise ValueError(f'Snapshot filename/sequence mismatch: {file}')
+            if seq != self.next_seq:
+                raise ValueError(f'Snapshot sequence broken at {file}; refusing to hide a missing file')
+            digest = hashlib.sha256(payload).hexdigest()
+            name = file.relative_to(self.path).as_posix()
+            if seq in rows and rows[seq] != (name, digest):
+                raise ValueError(f'Raw snapshot integrity mismatch: {file}')
+            derived = reconstruct(self.previous, value, self.config['interval_s'], self.epoch)
+            if seq not in rows:
+                # Crash between atomic raw-file commit and index commit: recover from raw.
+                self.db.execute('INSERT INTO snapshots VALUES(?,?,?,?,?,?)',
+                                (seq, name, digest, midpoint(value), derived['epoch'], canonical(derived).decode()))
+            self.previous, self.epoch = value, derived['epoch']
+            self.next_seq += 1
+            seen.add(seq)
+        if set(rows) - seen:
+            raise ValueError('Index references missing raw files; recording will not continue')
+        self.db.commit()
+        partials = list(self.path.rglob('*.partial'))
+        if partials:
+            self.event('recovery_partial_files', dict(files=[p.relative_to(self.path).as_posix() for p in partials]))
+
+    def append_snapshot(self, snapshot):
+        self.check_space()
+        snapshot = dict(snapshot, seq=self.next_seq, schema=1, software_version=VERSION)
+        date = snapshot['utc_after'][:10]
+        file = self.path / 'spectra' / date / f'{self.next_seq:09d}.json'
+        derived = reconstruct(self.previous, snapshot, self.config['interval_s'], self.epoch)
+        digest = immutable_json(file, snapshot)
+        with self.db:
+            self.db.execute('INSERT INTO snapshots VALUES(?,?,?,?,?,?)',
+                            (self.next_seq, file.relative_to(self.path).as_posix(), digest,
+                             midpoint(snapshot), derived['epoch'], canonical(derived).decode()))
+        self.previous, self.epoch = snapshot, derived['epoch']
+        self.next_seq += 1
+        return snapshot, derived
+
+    def append_telemetry(self, batch):
+        self.check_space()
+        with self.db:
+            self.db.execute('INSERT INTO telemetry(utc,payload) VALUES(?,?)',
+                            (dt.datetime.fromisoformat(batch['utc_after']).timestamp(), canonical(batch).decode()))
+
+    def event(self, kind, payload):
+        with self.db:
+            self.db.execute('INSERT INTO events(utc,kind,payload) VALUES(?,?,?)',
+                            (dt.datetime.now(dt.timezone.utc).isoformat(), kind, canonical(payload).decode()))
+
+    def set_state(self, key, value):
+        with self.db:
+            self.db.execute('INSERT OR REPLACE INTO state VALUES(?,?)', (key, canonical(value).decode()))
+
+    def close(self):
+        if getattr(self, 'db', None):
+            self.db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+            self.db.close()
+            self.db = None
+        if getattr(self, 'lock', None):
+            self.lock.close()
+            self.lock = None

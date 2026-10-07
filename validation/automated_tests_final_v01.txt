@@ -1,0 +1,25 @@
+test_hung_worker_deadline_and_cleanup (test_core.BoundedIOAndTime.test_hung_worker_deadline_and_cleanup) ... ok
+test_measurement_and_calibration_writes_are_blocked (test_core.BoundedIOAndTime.test_measurement_and_calibration_writes_are_blocked) ... ok
+test_sntp_offset_and_invalid_origin (test_core.BoundedIOAndTime.test_sntp_offset_and_invalid_origin) ... ok
+test_utc_reference_uses_monotonic_clock (test_core.BoundedIOAndTime.test_utc_reference_uses_monotonic_clock) ... ok
+test_atomic_raw_commit_recovers_missing_index (test_core.Durability.test_atomic_raw_commit_recovers_missing_index) ... ok
+test_integrity_change_blocks_resume (test_core.Durability.test_integrity_change_blocks_resume) ... ok
+test_missing_raw_file_blocks_resume (test_core.Durability.test_missing_raw_file_blocks_resume) ... ok
+test_original_file_never_overwritten (test_core.Durability.test_original_file_never_overwritten) ... ok
+test_second_writer_blocked (test_core.Durability.test_second_writer_blocked) ... ok
+test_utc_day_rollover_and_export_counts (test_core.Durability.test_utc_day_rollover_and_export_counts) ... ok
+test_actual_duration_not_nominal_interval (test_core.ScientificRules.test_actual_duration_not_nominal_interval) ... ok
+test_calibration_change_creates_boundary (test_core.ScientificRules.test_calibration_change_creates_boundary) ... ok
+test_clock_step_does_not_change_device_count_rate (test_core.ScientificRules.test_clock_step_does_not_change_device_count_rate) ... ok
+test_existing_counts_are_baseline_not_first_bin (test_core.ScientificRules.test_existing_counts_are_baseline_not_first_bin) ... ok
+test_exponential_schedule_has_cap (test_core.ScientificRules.test_exponential_schedule_has_cap) ... ok
+test_reconnect_preserves_aggregate_but_flags_missing_bins (test_core.ScientificRules.test_reconnect_preserves_aggregate_but_flags_missing_bins) ... ok
+test_reset_event_even_if_counts_exceed_old_counts (test_core.ScientificRules.test_reset_event_even_if_counts_exceed_old_counts) ... ok
+test_seven_days_no_rolling_limit_and_count_conservation (test_core.ScientificRules.test_seven_days_no_rolling_limit_and_count_conservation) ... ok
+test_telemetry_gap_is_not_interpolated (test_core.ScientificRules.test_telemetry_gap_is_not_interpolated) ... ok
+test_unsigned_underflow_is_reset_not_clipped (test_core.ScientificRules.test_unsigned_underflow_is_reset_not_clipped) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 1.976s
+
+OK

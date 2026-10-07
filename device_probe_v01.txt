@@ -1,0 +1,455 @@
+{
+  "serial": "RC-103-006489",
+  "firmware": [
+    [
+      4,
+      0,
+      "Feb  6 2023 15:49:14"
+    ],
+    [
+      4,
+      14,
+      "Jul  7 2025 11:20:30"
+    ]
+  ],
+  "transport": "Phyton overlapped bulk I/O",
+  "spectrum_format": 1,
+  "configuration": "[DeviceParams]\nCR_AlarmsNum=2\nCR_AlarmMin_cps=1e-1\nCR_AlarmMax_cps=50e3\nDR_AlarmsNum=2\nDR_AlarmMin_R_h=1e-6\nDR_AlarmMax_R_h=1e-1\nDS_AlarmsNum=2\nDS_AlarmMin_R=1e-6\nDS_AlarmMax_R=1e3\nMinFrmPeriod_ms=500\nVSFR_DISP_OFF_TIME=5 s|5 \u0441;10 s|10 \u0441;15 s|15 \u0441;30 s|30 \u0441;2 min|2 \u043c\u0438\u043d;5 min|5 \u043c\u0438\u043d\nDispBacklight=0-9\nLanguage=English\nDBLag_ms=180000\nFrameTimeStep_us=10000\nEnergyCompensation=1\nSpecFormatVersion=1\nSP2DR_Table=CsI_10x10x10\nTextASCII_MaxSize=0\nBattChargeMonitor=0\n[DataStructure]\n[[GRP_RealTimeData]]\nId=0\nFlgMsk=0x000063DB\n[[[CHN_CountRate]]]\nId=3\nSensor=c10_CsI_C60035\nUnit=\" cps| \u0438\u043c\u043f/\u0441\"\nDType=1\nRType=1\nMaxVal=50e3\n[[[CHN_DoseRate]]]\nId=4\nSensor=c10_CsI_C60035\nUnit=\" R/h| \u0420/\u0447\"\nScaledUnit=1\nDType=1\nRType=1\nMaxVal=1e-1\n[[[CHN_CountRateErr]]]\nId=16\nSensor=c10_CsI_C60035\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=50\nExpr=1\nP1=0.1\n[[[CHN_DoseRateErr]]]\nId=5\nSensor=c10_CsI_C60035\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=50\nExpr=1\nP1=0.1\n[[[CHN_Flags]]]\nId=0\nDType=4\nRType=8\n[[[CHN_RealTimeFlags]]]\nId=17\nDType=2\nRType=8\n[[GRP_RawData]]\nId=1\n[[[CHN_CountRate]]]\nId=3\nSensor=c10_CsI_C60035\nUnit=\" cps| \u0438\u043c\u043f/\u0441\"\nDType=1\nRType=1\nMaxVal=50e3\n[[[CHN_DoseRate]]]\nId=4\nSensor=c10_CsI_C60035\nUnit=\" R/h| \u0420/\u0447\"\nScaledUnit=1\nDType=1\nRType=1\nMaxVal=1e-1\n[[GRP_DoseRateDB]]\nId=2\nFlgMsk=0x00009000\n[[[CHN_Count]]]\nId=2\nSensor=c10_CsI_C60035\nDType=8\nRType=8\n[[[CHN_CountRate]]]\nId=3\nSensor=c10_CsI_C60035\nUnit=\" cps| \u0438\u043c\u043f/\u0441\"\nDType=1\nRType=1\nMaxVal=50e3\n[[[CHN_DoseRate]]]\nId=4\nSensor=c10_CsI_C60035\nUnit=\" R/h| \u0420/\u0447\"\nScaledUnit=1\nDType=1\nRType=1\nMaxVal=1e-1\n[[[CHN_DoseRateErr]]]\nId=5\nSensor=c10_CsI_C60035\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=50\nExpr=1\nP1=0.1\n[[[CHN_Flags]]]\nId=0\nDType=4\nRType=8\n[[GRP_RareData]]\nId=3\nFlgMsk=0x00009000\n[[[CHN_Duration]]]\nId=6\nDType=8\nRType=8\nUnit=\" s| \u0441\"\n[[[CHN_Dose]]]\nId=7\nSensor=c10_CsI_C60035\nUnit=\" R| \u0420\"\nScaledUnit=1\nDType=1\nRType=1\nMinVal=1e-6\nMaxVal=1e3\n[[[CHN_Temperature]]]\nId=8\nSensor=AS6212-AWLT\nUnit=\u00b0C\nDType=5\nRType=1\nMinVal=-20\nMaxVal=40\nExpr=1\nP1=0.01\nP2=-20\n[[[CHN_ChargeLevel]]]\nId=9\nSensor=MCU_ADC\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=100\nExpr=1\nP1=0.01\n[[[CHN_Flags]]]\nId=0\nDType=4\nRType=8\n[[GRP_DoseCounter]]\nId=4\nFlgMsk=0x00009000\n[[[CHN_DoseCounter]]]\nId=22\nSensor=c10_CsI_C60035\nUnit=\" uR| \u043c\u043a\u0420\"\nScaledUnit=1\nDType=8\nRType=8\n[[[CHN_Flags]]]\nId=0\nDType=4\nRType=8\n[[GRP_Event]]\nId=7\nFlgMsk=0x00009000\n[[[CHN_Event]]]\nId=14\nDType=2\nRType=2\n[[[CHN_EventChnMsk]]]\nId=15\nDType=2\nRType=8\nExpr=1\nP1=8\nP2=7\n[[[CHN_Flags]]]\nId=0\nDType=4\nRType=8\n[[[CHN_CountRate]]]\nId=3\nSensor=c10_CsI_C60035\nUnit=\" cps| \u0438\u043c\u043f/\u0441\"\nDType=1\nRType=1\nMaxVal=50e3\n[[[CHN_CountRateErr]]]\nId=16\nSensor=c10_CsI_C60035\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=50\nExpr=1\nP1=0.1\n[[[CHN_DoseRate]]]\nId=4\nSensor=c10_CsI_C60035\nUnit=\" R/h| \u0420/\u0447\"\nScaledUnit=1\nDType=1\nRType=1\nMaxVal=1e-1\n[[[CHN_DoseRateErr]]]\nId=5\nSensor=c10_CsI_C60035\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=50\nExpr=1\nP1=0.1\n[[[CHN_Duration]]]\nId=6\nDType=8\nRType=8\nUnit=\" s| \u0441\"\n[[[CHN_Dose]]]\nId=7\nSensor=c10_CsI_C60035\nUnit=\" R| \u0420\"\nScaledUnit=1\nDType=1\nRType=1\nMinVal=1e-6\nMaxVal=1e3\n[[[CHN_Temperature]]]\nId=8\nSensor=AS6212-AWLT\nUnit=\u00b0C\nDType=5\nRType=1\nMinVal=-20\nMaxVal=40\nExpr=1\nP1=0.01\nP2=-20\n[[[CHN_ChargeLevel]]]\nId=9\nSensor=MCU_ADC\nUnit=%\nDType=4\nRType=1\nMinVal=0\nMaxVal=100\nExpr=1\nP1=0.01\n",
+  "exchange_clock_anchor": {
+    "utc_start": "2026-10-07T03:00:02.262964+00:00",
+    "utc_end": "2026-10-07T03:00:02.263965+00:00",
+    "monotonic_start": 25063.109,
+    "monotonic_end": 25063.109,
+    "base_utc": "2026-10-07T03:02:10.263965+00:00",
+    "writes": [
+      "SET_EXCHANGE",
+      "SET_TIME (host local civil time)",
+      "DEVICE_TIME=0 (exchange timebase)"
+    ]
+  },
+  "pre_anchor_buffer_hex": "eb0000d944010000007d40a9a4c6363e00e900402000ec0101f25d01007b00320000000000004017b7d1340000c04052491d360000804017b7d13500008040faed6b3500000000000000000000804052499d350000004127a009360000804017b7d1350000c0407cf2303600008040b9fc07370000c040ac8b5b37000000406f1203350000804052499d350000804089d2de350000004034803735000000000000000000008040bc7493370000004017b7d1340000000000000000000000403480373500002041ed0d3e360000004052491d350000804017b751350000404148e1fa38000000000000000000008040ca54c1360000004117b7d1350000804017b7513500008040c364aa350000004017b7d134000080406f12833500000040c364aa3500000041ddb504370000c04017b7d1350000c040faedeb350000004017b7d13400000000000000000000c040b37b7236000080403480b7350000c04052499d3500000000000000000000c040ed0dbe36000000000000000000002041508d97370000000000000000000040419fcd2a3800008040faed6b3500000000000000000000004199bb163600008040e02d90350000004017b7d1340000804024977f360000004017b7d13400000000000000000000c0406f120336000040418fc2f5360000c040c364aa35000000406f120335000000000000000000008040a301bc3800000000000000000000804077be1f3800008040348037350000004017b7d13400002041c9e5bf380000004017b75135000000406c09f935000000406f120335000080403480b73500000040348037350000804017b7d135000000406f1203350000004127a009360000004152499d3600008040e02d90350000204111c73a370000000000000000000000412506813800000000000000000000804052499d350000404127a089360000c040faedeb3500000040348037350000004017b7d1340000004127a009360000c04017b7d1350000804017b7513500008040c364aa350000004017b7d1340000004168916d3700000041c976be380000804017b751350000c0407cf2b0360000004189d2de35000000419c3322370000004052499d3500008040e02d903500002041d04458360000c04099bb163600000000000000000000004017b7d13400000040348037350000004052491d35000000406f128335000000417cf230360000c04082e2473700000000000000000000804099bb1636000000406f12033500002041f4fdd4360000004017b7d13400008040c364aa35000000417cf23036000000000000000000000040e02d903500008040c3642a36000000412e90a0360000004017b7d134000000403480373500000040e02d90350000004017b7d13400008040a69b44360000004017b7d134ed0101f875010002003200000000000000000000000000004134803736",
+  "pre_anchor_timestamp_mapping": "unknown; prior client anchor not available"
+}
+SFR_DESCRIPTION [VSFR_DEVICE_CTRL]
+Addr=0x00000500
+Virtual=1
+Size=1
+[VSFR_DEVICE_LANG]
+Addr=0x00000502
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_DEVICE_ON]
+Addr=0x00000503
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_DEVICE_TIME]
+Addr=0x00000504
+Virtual=1
+DisplayFormat=1
+Size=4
+[VSFR_BLE_TX_PWR]
+Addr=0x00000700
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_DISP_CTRL]
+Addr=0x00000510
+Virtual=1
+Size=1
+[VSFR_DISP_BRT]
+Addr=0x00000511
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_DISP_CONTR]
+Addr=0x00000512
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_DISP_OFF_TIME]
+Addr=0x00000513
+Virtual=1
+DisplayFormat=1
+Size=4
+[VSFR_DISP_ON]
+Addr=0x00000514
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_DISP_DIR]
+Addr=0x00000515
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_DISP_BACKLT_ON]
+Addr=0x00000516
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_SOUND_CTRL]
+Addr=0x00000520
+Virtual=1
+Size=2
+[VSFR_SOUND_VOL]
+Addr=0x00000521
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_SOUND_ON]
+Addr=0x00000522
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_VIBRO_CTRL]
+Addr=0x00000530
+Virtual=1
+Size=1
+[VSFR_VIBRO_ON]
+Addr=0x00000531
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_ALARM_MODE]
+Addr=0x000005E0
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_MS_RUN]
+Addr=0x00000603
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_PLAY_SIGNAL]
+Addr=0x000005E1
+Virtual=1
+DisplayFormat=1
+Size=1
+[VSFR_CHARGER_STATE]
+Addr=0x0000C200
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=1
+[RC_VSFR_DR_LEV1_uR_h]
+Addr=0x00008000
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DR_LEV2_uR_h]
+Addr=0x00008001
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DS_LEV1_100uR]
+Addr=0x00008002
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DS_LEV2_100uR]
+Addr=0x00008003
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DS_LEV1_uR]
+Addr=0x00008014
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DS_LEV2_uR]
+Addr=0x00008015
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DS_UNITS]
+Addr=0x00008004
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[RC_VSFR_USE_nSv_h]
+Addr=0x0000800C
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[RC_VSFR_CR_UNITS]
+Addr=0x00008013
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[RC_VSFR_CPS_FILTER]
+Addr=0x00008005
+Virtual=1
+DisplayFormat=1
+Size=1
+[RC_VSFR_CR_LEV1_cp10s]
+Addr=0x00008008
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_CR_LEV2_cp10s]
+Addr=0x00008009
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_TEMP_UNITS]
+Addr=0x00008016
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[RC_VSFR_DOSE_RESET]
+Addr=0x00008007
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[RC_VSFR_CHN_TO_keV_A0]
+Addr=0x00008010
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_CHN_TO_keV_A1]
+Addr=0x00008011
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_CHN_TO_keV_A2]
+Addr=0x00008012
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_CPS]
+Addr=0x00008020
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DR_uR_h]
+Addr=0x00008021
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_DS_uR]
+Addr=0x00008022
+Virtual=1
+DisplayFormat=1
+Size=4
+[RC_VSFR_TEMP_degC]
+Addr=0x00008024
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_RAW_TEMP_degC]
+Addr=0x00008033
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_TEMP_UP_degC]
+Addr=0x00008034
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_TEMP_DN_degC]
+Addr=0x00008035
+Virtual=1
+Type=float
+Size=4
+[RC_VSFR_ACC_X]
+Addr=0x00008025
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=2
+[RC_VSFR_ACC_Y]
+Addr=0x00008026
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=2
+[RC_VSFR_ACC_Z]
+Addr=0x00008027
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=2
+[RC_VSFR_OPT]
+Addr=0x00008028
+Virtual=1
+DisplayFormat=1
+Size=2
+[RC_VSFR_VBIAS_mV]
+Addr=0x0000C000
+Virtual=1
+DisplayFormat=1
+Size=2
+[RC_VSFR_COMP_LEV]
+Addr=0x0000C001
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=2
+[RC_VSFR_CALIB_MODE]
+Addr=0x0000C002
+Virtual=1
+DisplayFormat=1
+Size=1
+Min=0
+Max=1
+[VSFR_SYS_MCU_ID0]
+Addr=0xFFFF0000
+Virtual=1
+Size=4
+[VSFR_SYS_MCU_ID1]
+Addr=0xFFFF0001
+Virtual=1
+Size=4
+[VSFR_SYS_MCU_ID2]
+Addr=0xFFFF0002
+Virtual=1
+Size=4
+[VSFR_SYS_DEVICE_ID]
+Addr=0xFFFF0005
+Virtual=1
+Size=4
+[VSFR_SYS_SIGNATURE]
+Addr=0xFFFF0006
+Virtual=1
+Size=4
+[VSFR_SYS_RX_SIZE]
+Addr=0xFFFF0007
+Virtual=1
+DisplayFormat=1
+Size=2
+[VSFR_SYS_TX_SIZE]
+Addr=0xFFFF0008
+Virtual=1
+DisplayFormat=1
+Size=2
+[VSFR_SYS_BOOT_VERSION]
+Addr=0xFFFF0009
+Virtual=1
+Size=4
+[VSFR_SYS_TARGET_VERSION]
+Addr=0xFFFF000A
+Virtual=1
+Size=4
+[VSFR_SYS_STATUS]
+Addr=0xFFFF000B
+Virtual=1
+Size=4
+[VSFR_SYS_MCU_VREF]
+Addr=0xFFFF000C
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=4
+[VSFR_SYS_MCU_TEMP]
+Addr=0xFFFF000D
+Virtual=1
+DisplayFormat=1
+Signed=1
+Size=4
+[RC_VSFR_DPOT_RDAC]
+Addr=0x0000C004
+Virtual=1
+DisplayFormat=1
+Size=1
+[RC_VSFR_DPOT_RDAC_EEPROM]
+Addr=0x0000C005
+Virtual=1
+DisplayFormat=1
+Size=1
+[RC_VSFR_DPOT_TOLER]
+Addr=0x0000C006
+Virtual=1
+DisplayFormat=1
+Size=1
+ 
+{"duration_s": 254035.0, "channels": 1024, "sum": 1080035, "calibration_keV": [5.151420593261719, 2.431018114089966, 0.0003746942966245115]}
+{
+  "raw_hex": "ee01015cffffff030032000000000000406f12833500000000000000000000004117b75136ef01023b9afeff080080250000a501000055558c404f1e9636820100308601000000008240efa4b8366601003097010000abaa8740b63ae6365d010030950100000000874088f49b367c01003097010000abaa87404beac436840100309601000055558740762a93367c01003060010000abaa6a408a448e36a30100306201000000006c4068228c3651010030f0000328d7ffff8e393000aa7e253cbd1110274020f100023bc6ffff7b010000abaa7c401748d03693010030f20003fafffffff6393000aa7e253cbe1110274020",
+  "records": [
+    {
+      "type": "RareData",
+      "dt": "2026-10-07T03:00:25.703965+00:00",
+      "duration": 3160462,
+      "dose": 0.010100999847054482,
+      "temperature": 25.41,
+      "charge_level": 100.0,
+      "flags": 8256
+    },
+    {
+      "type": "DoseRateDB",
+      "dt": "2026-10-07T02:59:42.373965+00:00",
+      "count": 379,
+      "count_rate": 3.9479167461395264,
+      "dose_rate": 6.207275419001235e-06,
+      "dose_rate_err": 40.3,
+      "flags": 12288
+    },
+    {
+      "type": "RareData",
+      "dt": "2026-10-07T03:02:10.203965+00:00",
+      "duration": 3160566,
+      "dose": 0.010100999847054482,
+      "temperature": 25.42,
+      "charge_level": 100.0,
+      "flags": 8256
+    }
+  ],
+  "decode_warning": null
+}
+{"duration_s": 254037.0, "channels": 1024, "sum": 1080040, "calibration_keV": [5.151420593261719, 2.431018114089966, 0.0003746942966245115]}
+{
+  "raw_hex": "f30000a1ceffff00007c40b840c6363e00e900402000f40101f2ffffff040032000000000000406f120335000000000000000000000041e3a51b380000000000000000",
+  "records": [
+    {
+      "type": "RealTimeData",
+      "dt": "2026-10-07T03:00:03.873965+00:00",
+      "count_rate": 3.9375,
+      "count_rate_err": 6.2,
+      "dose_rate": 5.908394086873159e-06,
+      "dose_rate_err": 23.3,
+      "flags": 8256,
+      "real_time_flags": 0
+    }
+  ],
+  "decode_warning": null
+}
+{"duration_s": 254039.0, "channels": 1024, "sum": 1080051, "calibration_keV": [5.151420593261719, 2.431018114089966, 0.0003746942966245115]}
+{
+  "raw_hex": "f5000069cfffff00407d40ba6bc5363e00ea00402000f60101ba000000040032000000000020410ad7233600000000000000000000c0407cf230360000c040faedeb35",
+  "records": [
+    {
+      "type": "RealTimeData",
+      "dt": "2026-10-07T03:00:05.873965+00:00",
+      "count_rate": 3.95703125,
+      "count_rate_err": 6.2,
+      "dose_rate": 5.8835985328187235e-06,
+      "dose_rate_err": 23.4,
+      "flags": 8256,
+      "real_time_flags": 0
+    }
+  ],
+  "decode_warning": null
+}

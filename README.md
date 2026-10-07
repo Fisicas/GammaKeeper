@@ -1,0 +1,75 @@
+# RadiaLog 0.1.0
+
+Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This is a tested first release; a real seven-day soak test is still required before experimental qualification.
+
+## Start
+
+Double-click `Open_RadiaLog.cmd` in `C:\Users\nelso\Desktop\Radiacode Data`, or `Launch_RadiaLog.cmd` in this folder. The launcher uses the existing science Python; dependencies added for this app are confined to `dependencies`. The shared environment and USB driver were not changed.
+
+1. Close the manufacturer app and other device clients. The USB handle is exclusive.
+2. Enter the sample/condition label, confirm serial `RC-103-006489`, interval **10 s**, duration **7 days**, and save folder.
+3. Click **Start new recording**. Check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
+4. The recorder continues if the GUI closes. Reopen the GUI and use **Open saved run** to monitor it. Use **Stop recording** to end it. Stopping attempts a final short snapshot, explicitly marked in the data.
+5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. **Resume selected run** verifies every raw snapshot and continues the same run after a recorder crash or manual stop, until the original planned end. A Windows reboot requires reopening and resuming; no system startup task was installed.
+
+Maintain power and prevent deliberate sleep/reboot during the experiment. The recorder requests inhibition of automatic system sleep while active; success is recorded. A power loss or disconnected device creates a real acquisition gap.
+
+## Data and scientific meaning
+
+- `manifest.json`: immutable configuration, software/library versions, units and processing rules.
+- `spectra/YYYY-MM-DD/#########.json`: immutable cumulative spectra, original 1,024 integer channels, device elapsed time, polynomial calibration, original binary payload, UTC read bounds, original host timestamps, connection identity and status samples. There is no rolling retention limit or 24-hour overwrite.
+- `run.sqlite`: append-only telemetry batches including complete raw binary payloads, all decoded flags/error percentages/events, spectrum index with SHA-256, and connection/retry/clock audit history. SQLite uses WAL and `synchronous=FULL`. Mutable state and index are separate from immutable raw spectra. Back up the whole run folder; while active, also retain `run.sqlite-wal` and `run.sqlite-shm`, or use the app's consistent export.
+- `connections`: immutable device configuration, firmware and exchange-clock initialization provenance. Pre-anchor buffered data is retained with its prior time mapping explicitly unknown.
+- `status.json`: replaceable GUI cache, not the authoritative scientific record.
+
+The first spectrum is a **baseline**, even if the device already holds millions of counts. Interval counts are `C(t2) - C(t1)` channel by channel. Spectrum-derived cps is the summed difference divided by the **actual device elapsed-time increment**, not blindly by 10. Nominal 10-second requests can yield other durations; the device duration is quantized to whole seconds. The displayed device count-rate estimator has a different averaging history and is saved separately.
+
+Calibration is `E(ch) = a0 + a1*ch + a2*ch²` in keV. Channel order is preserved and energy increases to the right in the GUI. Time increases downward in the spectrogram. Preview uses the most recent 240 intervals and original channels; raw retention is unlimited. Logarithmic color is display only. There is **no smoothing, normalization, background subtraction, energy resampling, or change to device calibration**.
+
+The device configuration verified raw dose-rate units **R/h** and dose units **R**. Display/export µSv uses the instrument convention `1 R -> 0.01 Sv`, i.e. raw R values times 10,000. This is the instrument's conversion, not a universal physical equivalence. No constant conversion from count rate to dose is introduced.
+
+Dose-rate bins use time-weighted device estimates with zero-order hold capped at 3 seconds; longer gaps are left missing. `integrated_dose_uSv` is provided only when a bin has >=99.9% telemetry time coverage. `observed_integrated_dose_uSv` and its cumulative counterpart integrate only the observed periods and include coverage fractions. The GUI's **Integrated dose • observed** card shows this derived quantity. The native accumulated-dose counter is saved separately, with its timestamp, age, baseline and reset indicator. Buffered counter updates are sparse at background levels; repeated counter values are not fresh measurements. Initial status records with future protocol timestamps retain the original timestamp and use explicitly labeled reception time for the status observation.
+
+`poisson_sigma_cps = sqrt(N)/duration` is a counting-only approximation, not a confidence interval or a total uncertainty budget. Device count/dose error percentages and flags remain separately available in raw telemetry. Clock, calibration, dead time and detector systematics are not folded into this sigma.
+
+## Time and reconnection
+
+Scheduling uses monotonic deadlines rather than sleeping 10 seconds after a read. A separate USB worker has bounded operation deadlines; the recorder can terminate a stalled worker and reopen the transport. Acquisition and durable storage do not depend on GUI redraws.
+
+Retries occur at **1, 2, 4, 8, 16, 32, 60, 60… seconds after each failed attempt**. These are waiting intervals; opening/timeout time is additional. Backoff resets only after 60 seconds of connection stability and at least three saved spectra. Every failure/retry is recorded. No spectrum, dose, alarm or calibration reset commands are permitted by the restricted client. Only exchange setup, device civil-time synchronization and exchange timestamp initialization are allowed writes; these are logged.
+
+After reconnection, matching serial/calibration, increasing duration and nondecreasing counts permit a **flagged aggregate difference** across the gap. Continuity is inferred; a reset followed by enough new accumulation during a long outage cannot always be ruled out. Aggregate counts are retained but never presented as fabricated 10-second spectra. Resets, power events, counter decreases and calibration/channel changes establish a new baseline/epoch. GUI gaps remain blank. `valid` and `nominal_time_bin` in exports have different meanings.
+
+SNTP queries to `time.windows.com` and `time.cloudflare.com` measure the host offset at start and hourly. They do not change the Windows clock. UTC read bounds and buffered telemetry use a monotonic UTC reference anchored to the saved measurement; original host UTC is retained. Server origin/mode/stratum checks, round-trip delay and root dispersion are saved. Hourly corrections and clock reference shifts are audited. The reported uncertainty is an estimate for the synchronization measurement; device-time quantization, subsequent oscillator drift and spectral latch timing remain separate. If no server is available, the app records an explicitly unverified host-clock reference rather than dropping measurement data. The Windows Time service was stopped during development, which is why independent queries were added.
+
+## Offline exports
+
+Exports copy the SQLite index consistently, verify raw SHA-256 hashes, and independently reconstruct spectrum differences.
+
+- `time_bins.csv`: UTC midpoint boundaries, actual durations, counts/cps, Poisson sigma, quality/epoch, dose-rate means and integration coverage, native counter age, original host timestamps and clock metadata.
+- `telemetry.csv`: all decoded telemetry records. **Its `dose_rate` and `dose` columns remain in raw R/h and R**; see export metadata.
+- `spectra_#####.npz`: chunks of at most 1,000 spectra, signed 64-bit channel differences, channel indices, per-row calibration, duration, epoch, quality and validity. `-1` denotes a baseline/invalid row; consult `valid`. Recovered aggregates have `valid=True` and `nominal_time_bin=False`. Load with `allow_pickle=False`.
+- `events.jsonl`, `source_index.sqlite`, `EXPORT_COMPLETE.json`: audit history, raw telemetry backup, provenance and completion check. An incomplete export has no completion marker.
+
+Do not concatenate cumulative spectra directly as if they were independent time bins. Use the differences, baseline handling, duration and quality flags above. A week requires about 60,480 nominal intervals, with actual count depending on startup, final partial bin and gaps. Reserve several GB and check actual run growth; the recorder stops if free space falls below 256 MiB and never deletes prior data.
+
+## Development and validation
+
+```powershell
+& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s '.\tests' -v
+& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\gui.py'
+& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\recorder.py' --run '.\runs\example_unique_run' --seconds 604800 --interval 10
+& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\export_run.py' '.\runs\example_unique_run'
+```
+
+Run these commands from this application folder. Simulation requires `--demo` and is prominently labeled. Live pilots are in `validation`; original spectra elsewhere in the workspace were preserved. The latest numbered `validation/validation_report_v*.json` records automated/integration/pilot checks and source hashes. Earlier reports remain preserved.
+
+Twenty-two automated checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
+
+Before the experiment: perform an unattended 24–48 hour soak, physically unplug/replug USB once, verify an app stop/resume and a Windows restart/resume on a disposable run, and audit exported counts and gap flags. Then complete a representative week if the experiment requires that qualification. Do not use experimental raw data as a fault-injection target.
+
+## Sources and licenses
+
+The application uses the MIT-licensed [cdump/radiacode](https://github.com/cdump/radiacode) 0.4.0 protocol and decoders (reviewed at commit `2b217916f49f5eedddf8f0d9116fcfd3c6b8832e`). Its upstream license is preserved in `THIRD_PARTY_LICENSES/radiacode-LICENSE.txt`; the PyPI wheel did not include a separate license file. The restricted client adapts its command framing while replacing assertion-only checks with explicit exceptions. The Windows transport is new code using standard SetupAPI and overlapped ReadFile/WriteFile through the existing Phyton driver; no private IOCTLs or driver replacement are used.
+
+The recording/reconstruction approach was informed by [ckuethe/radiacode-tools](https://github.com/ckuethe/radiacode-tools) (MIT, reviewed commit `41af71b3f17af01677dfd151855e72d144581d97`); its Unix signal handling, abort-on-USB-error logic and first-bin baseline behavior were not copied. PySide6 supplies Qt, NumPy supplies arrays, and Matplotlib supplies plots. No BecqMoni GPL code was copied. See `THIRD_PARTY.md` and dependency license files. This is independent community software, not a manufacturer product.
