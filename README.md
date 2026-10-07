@@ -1,6 +1,14 @@
-# RadiaLog 0.3.0
+# RadiaLog 0.3.1
 
 Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
+
+## Saved-run settings correction
+
+Opening or resuming a saved run restores its label, serial number, spectrum/count interval, original duration, recording mode and save folder from the immutable manifest. These controls are read-only while a run is selected. The summary above the plots shows the original start, planned end and time until that end, with explicit local UTC offsets; original UTC values are available in its tooltip. A continuous run is labeled as continuous. Resume retains the original end time and never restarts the duration.
+
+After stopping or opening a stopped run, choose **Set up new recording** to use those settings as an editable template for a separate recording. This clears the selected run from the display without changing its files. Fractional intervals and short durations can be displayed without rounding them to integers or to zero days. Invalid manifests show an explicit settings warning instead of presenting new-run defaults as saved values.
+
+This correction leaves acquisition and reconnection behavior unchanged. It passes 46 regression tests and synthetic GUI close/reopen, settings restoration, stop and export checks. A rendered preview against the current device run is in `../gui_settings_fix_20261007_v01/current_run_preview_v01.png`. Original v0.3.0 code and run data are preserved.
 
 
 ## October 7 reliability update

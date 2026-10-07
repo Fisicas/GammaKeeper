@@ -44,7 +44,13 @@ def poll():
             assert process.poll() is None, 'Closing GUI stopped recorder'
             second_window = Window(run)
             second_window.show()
+            assert second_window.label.text() == 'GUI integration test — synthetic input'
+            assert second_window.interval.value() == 1
+            assert second_window.days.value() == 0
+            assert second_window.demo.isChecked()
+            assert not second_window.label.isEnabled()
             report['recording_survived_gui_close'] = True
+            report['saved_settings_restored_on_reopen'] = True
             phase = 1
         elif phase == 1 and elapsed >= 11:
             second_window.refresh()

@@ -25,6 +25,7 @@ from saved_status import load_status
 from runtime import python_command
 from winfiles import process_alive
 from telemetry_analysis import LiveJournalTelemetry
+from run_settings import load_run_settings, run_summary
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 ROOT = Path(__file__).resolve().parent
@@ -128,6 +129,11 @@ class Charts(FigureCanvasQTAgg):
         self.draw_idle()
 
 
+class SettingsSpinBox(Q.QDoubleSpinBox):
+    def textFromValue(self, value):
+        return f'{value:.12g}'
+
+
 class Window(Q.QMainWindow):
     def __init__(self, inspect_run=None):
         super().__init__()
@@ -144,6 +150,8 @@ class Window(Q.QMainWindow):
         self.status_stale = False
         self.telemetry_reader=None
         self.telemetry_run=None
+        self.settings_run = None
+        self.run_settings = None
         self.setStyleSheet(f'''
           QMainWindow, QWidget {{ background: {BG}; color: {TEXT}; font-family: 'Segoe UI'; font-size: 10pt; }}
           QFrame#panel {{ background: {PANEL}; border: 1px solid #26384a; border-radius: 10px; }}
@@ -182,17 +190,19 @@ class Window(Q.QMainWindow):
         panel.setFixedWidth(300)
         settings = Q.QVBoxLayout(panel)
         settings.setContentsMargins(16, 16, 16, 16)
-        settings.addWidget(Q.QLabel('NEW RECORDING'))
+        self.settings_heading = Q.QLabel('NEW RECORDING')
+        settings.addWidget(self.settings_heading)
         self.label = Q.QLineEdit()
         self.label.setPlaceholderText('Run label / sample / conditions')
         self.serial = Q.QLineEdit('RC-103-006489')
-        self.interval = Q.QSpinBox()
+        self.interval = SettingsSpinBox()
+        self.interval.setDecimals(9)
         self.interval.setRange(1, 600)
         self.interval.setValue(10)
         self.interval.setSuffix(' s')
-        self.days = Q.QDoubleSpinBox()
+        self.days = SettingsSpinBox()
         self.days.setRange(0, 365)
-        self.days.setDecimals(3)
+        self.days.setDecimals(9)
         self.days.setValue(7)
         self.days.setSuffix(' days')
         self.folder = Q.QLineEdit(str(ROOT / 'runs'))
@@ -205,6 +215,7 @@ class Window(Q.QMainWindow):
             settings.addWidget(widget)
         choose = Q.QPushButton('Choose folder…')
         choose.clicked.connect(self.choose_folder)
+        self.choose_button = choose
         settings.addWidget(choose)
         settings.addWidget(self.demo)
         self.start_button = Q.QPushButton('Start new recording')
@@ -221,7 +232,14 @@ class Window(Q.QMainWindow):
         settings.addWidget(open_button)
         self.resume_button = Q.QPushButton('Resume selected run')
         self.resume_button.clicked.connect(self.resume_run)
+        self.resume_button.setEnabled(False)
         settings.addWidget(self.resume_button)
+        self.setup_button = Q.QPushButton('Set up new recording')
+        self.setup_button.clicked.connect(self.prepare_new)
+        self.setup_button.setEnabled(False)
+        settings.addWidget(self.setup_button)
+        self.setup_fields = (self.label, self.serial, self.interval, self.days,
+                             self.folder, self.demo, self.choose_button)
         self.export_button = Q.QPushButton('Export CSV + spectra…')
         self.export_button.clicked.connect(self.export)
         settings.addWidget(self.export_button)
@@ -251,6 +269,11 @@ class Window(Q.QMainWindow):
             self.metrics.append(value)
             cards.addWidget(frame)
         right.addLayout(cards)
+        self.run_summary = Q.QLabel('Configure a new recording or open a saved run.')
+        self.run_summary.setWordWrap(True)
+        self.run_summary.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        self.run_summary.setObjectName('muted')
+        right.addWidget(self.run_summary)
         self.charts = Charts()
         self.chart_toolbar=NavigationToolbar2QT(self.charts,self)
         right.addWidget(self.chart_toolbar)
@@ -289,6 +312,71 @@ class Window(Q.QMainWindow):
         if path:
             self.folder.setText(path)
 
+    def restore_run_settings(self, force=False):
+        if not self.run:
+            return
+        selected = str(self.run.resolve())
+        if force or self.settings_run != selected:
+            # Validate everything before populating any fields. A bad manifest
+            # must never leave the selected run represented by new-run defaults.
+            self.settings_run = None
+            self.run_settings = None
+            for widget in self.setup_fields:
+                widget.setEnabled(False)
+            self.settings_heading.setText('SELECTED RUN')
+            self.start_button.setEnabled(False)
+            self.run_summary.setText('Saved run settings unavailable; checking manifest…')
+            self.run_settings = load_run_settings(self.run)
+            saved = self.run_settings
+            self.label.setText(saved['label'])
+            self.serial.setText(saved['serial'])
+            self.interval.setValue(saved['interval_s'])
+            self.days.setMaximum(max(365., saved['duration_s'] / 86400))
+            self.days.setValue(saved['duration_s'] / 86400)
+            self.folder.setText(str(self.run.resolve().parent))
+            self.demo.setChecked(saved['mode'] == 'demo')
+            self.settings_run = selected
+            self.run_summary.setToolTip(
+                f"Saved start UTC: {saved['created_utc']}\n"
+                f"Saved planned end UTC: {saved.get('planned_end_utc') or 'none'}\n"
+                'Resume keeps this original schedule; it does not restart the duration.\n'
+                'Displayed dates include the local UTC offset.')
+        self.run_summary.setText(run_summary(self.run_settings))
+
+    def prepare_new(self):
+        """Leave a stopped saved run and use its values as a new-run template."""
+        if self.active():
+            self.fail('Stop the selected recording before setting up a new recording')
+            return
+        self.run = None
+        self.recorder = None
+        self.last_status = {}
+        self.last_seq = None
+        self.settings_run = None
+        self.run_settings = None
+        self.telemetry_run = None
+        self.telemetry_reader = None
+        self.settings_heading.setText('NEW RECORDING')
+        for widget in self.setup_fields:
+            widget.setEnabled(True)
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.resume_button.setEnabled(False)
+        self.setup_button.setEnabled(False)
+        self.connection.setText('Ready')
+        self.run_summary.setText('Configure a new recording. Values copied from the previously selected run.')
+        self.run_summary.setToolTip('')
+        for metric in self.metrics:
+            metric.setText('—')
+        if self.charts.colorbar:
+            self.charts.colorbar.remove()
+            self.charts.colorbar = None
+        for axis in (self.charts.spg, self.charts.count, self.charts.dose):
+            axis.clear()
+        self.charts.empty()
+        self.health.setText('Waiting for a new recording')
+        self.detail.setText('Starting a new recording creates a separate run folder.')
+
     def launch(self, args):
         log_path = ROOT / 'logs'
         log_path.mkdir(exist_ok=True)
@@ -309,6 +397,8 @@ class Window(Q.QMainWindow):
 
     def start_new(self):
         try:
+            if self.settings_run:
+                raise RuntimeError('Choose Set up new recording to edit settings and create a separate run')
             if self.active():
                 raise RuntimeError('Stop the current recording before starting another')
             mode = 'demo' if self.demo.isChecked() else 'device'
@@ -373,6 +463,7 @@ class Window(Q.QMainWindow):
                 raise ValueError('Open a saved run first')
             if self.active():
                 raise RuntimeError('This recording is already running')
+            self.restore_run_settings(force=True)
             self.launch(['--run', str(self.run), '--resume'])
         except Exception as error:
             self.fail(error)
@@ -413,11 +504,13 @@ class Window(Q.QMainWindow):
                 self.detail.setText(str(self.last_launch_log))
             return
         try:
+            self.restore_run_settings()
+            self.setup_button.setEnabled(not self.active())
             state = load_status(self.run)
             if not state:
                 if self.recorder and self.recorder.poll() is not None:
                     self.connection.setText('START FAILED — see diagnostics log')
-                    self.start_button.setEnabled(True)
+                    self.start_button.setEnabled(False)
                     self.resume_button.setEnabled(True)
                 return
             age = dt.datetime.now(dt.timezone.utc).timestamp() - timestamp(state['utc'])
@@ -436,9 +529,10 @@ class Window(Q.QMainWindow):
             self.connection.setText(prefix + name)
             warning_color = '#ff7b86' if ('ERROR' in name or 'ATTENTION' in name or 'EXITED' in name or 'STALE' in name) else GOLD if ('RECONNECT' in name or 'RESTART' in name) else TEAL
             self.connection.setStyleSheet(f'color: {warning_color}; font-weight: 600;')
-            self.start_button.setEnabled(not active)
+            self.start_button.setEnabled(False)
             self.stop_button.setEnabled(active)
             self.resume_button.setEnabled(not active)
+            self.setup_button.setEnabled(not active)
             self.metrics[3].setText(f"{state.get('snapshots', 0):,}")
             db=readonly(self.run/'run.sqlite')
             try:
@@ -507,7 +601,11 @@ class Window(Q.QMainWindow):
             cm = state.get('clock_measurement') or {}
             timing = f"SNTP {cm.get('server')} • offset {cm['offset_s']:+.3f} s • estimated ±{cm['estimated_uncertainty_s']:.3f} s" if cm.get('verified') else 'UTC accuracy unverified • host clock fallback'
             self.footer.setText('Raw counts preserved • dose uses the device R→Sv convention • ' + timing)
-        except (OSError, ValueError, sqlite3.Error, KeyError) as error:
+        except (OSError, ValueError, sqlite3.Error, KeyError, TypeError) as error:
+            if self.run_settings is None:
+                self.run_summary.setText(f'Saved run settings unavailable: {error}')
+                self.resume_button.setEnabled(False)
+                self.setup_button.setEnabled(not self.active())
             self.detail.setText(f'Waiting for saved state: {error}')
 
     def closeEvent(self, event):

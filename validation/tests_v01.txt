@@ -20,6 +20,10 @@ test_reset_event_even_if_counts_exceed_old_counts (test_core.ScientificRules.tes
 test_seven_days_no_rolling_limit_and_count_conservation (test_core.ScientificRules.test_seven_days_no_rolling_limit_and_count_conservation) ... ok
 test_telemetry_gap_is_not_interpolated (test_core.ScientificRules.test_telemetry_gap_is_not_interpolated) ... ok
 test_unsigned_underflow_is_reset_not_clipped (test_core.ScientificRules.test_unsigned_underflow_is_reset_not_clipped) ... ok
+test_invalid_manifest_does_not_present_defaults_as_saved_values (test_gui_run_settings.SavedRunSettings.test_invalid_manifest_does_not_present_defaults_as_saved_values) ... ok
+test_reopening_restores_real_run_and_preserves_manifest (test_gui_run_settings.SavedRunSettings.test_reopening_restores_real_run_and_preserves_manifest) ... ok
+test_resume_retains_original_end_instead_of_restarting_duration (test_gui_run_settings.SavedRunSettings.test_resume_retains_original_end_instead_of_restarting_duration) ... ok
+test_switching_to_continuous_run_then_new_setup (test_gui_run_settings.SavedRunSettings.test_switching_to_continuous_run_then_new_setup) ... ok
 test_cache_lock_is_nonfatal_and_recovers (test_reliability.Reliability.test_cache_lock_is_nonfatal_and_recovers) ... ok
 test_corrupt_raw_data_suppresses_automatic_restart (test_reliability.Reliability.test_corrupt_raw_data_suppresses_automatic_restart) ... ok
 test_empty_and_unknown_payload_preserve_valid_prefix (test_reliability.Reliability.test_empty_and_unknown_payload_preserve_valid_prefix) ... ok
@@ -42,6 +46,6 @@ test_incremental_reader_matches_complete_bin_integral (test_telemetry_observatio
 test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.TelemetryObservationTests.test_reception_bins_do_not_impute_through_outage) ... ok
 
 ----------------------------------------------------------------------
-Ran 42 tests in 29.264s
+Ran 46 tests in 30.075s
 
 OK
