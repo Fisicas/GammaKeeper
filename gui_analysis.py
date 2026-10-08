@@ -19,6 +19,7 @@ from preview import read_preview
 from runtime import python_command
 from run_policy import resume_allowed
 from system_time import boot_identity
+from spectrum_view import latest_interval
 
 
 class PreviewSignals(QtCore.QObject):
@@ -48,16 +49,31 @@ class SpectrumCanvas(FigureCanvasQTAgg):
         super().__init__(self.figure)
         self.ax=self.figure.add_subplot(111)
         self.panel,self.text=panel,text
+        self.last_counts=None
+        self.last_roi_counts=None
+        self.empty('Waiting for a recorded interval. The first spectrum is a baseline.')
+
+    def style(self):
+        self.ax.set_facecolor(self.panel)
+        self.ax.tick_params(colors=self.text)
+        for spine in self.ax.spines.values():spine.set_color(self.text)
+        self.ax.xaxis.label.set_color(self.text);self.ax.yaxis.label.set_color(self.text)
+
+    def empty(self,message):
+        self.ax.clear();self.style();self.last_counts=None;self.last_roi_counts=None
+        self.ax.text(.5,.5,message,ha='center',va='center',color=self.text,transform=self.ax.transAxes,wrap=True)
+        self.ax.set_xlabel('Energy (keV) • original channel calibration')
+        self.ax.set_ylabel('Recorded interval counts / channel')
+        self.draw_idle()
 
     def show_interval(self,row,roi=None):
         utc,epoch,d,s=row
-        self.ax.clear();self.ax.set_facecolor(self.panel)
-        self.ax.tick_params(colors=self.text)
-        for spine in self.ax.spines.values():spine.set_color(self.text)
+        self.ax.clear();self.style();self.last_counts=None;self.last_roi_counts=None
         counts=d.get('counts_delta')
         if counts is None:
             self.ax.text(.5,.5,'No independent spectrum for this boundary',ha='center',color=self.text,transform=self.ax.transAxes)
         else:
+            self.last_counts=list(counts)
             channels=np.arange(len(counts));a0,a1,a2=s['spectrum']['calibration_keV']
             energy=a0+a1*channels+a2*channels**2
             self.ax.step(energy[:-1],counts[:-1],where='mid',color='#43d8bf',linewidth=1.)
@@ -65,6 +81,7 @@ class SpectrumCanvas(FigureCanvasQTAgg):
             if roi:
                 mask=(energy>=roi[0])&(energy<=roi[1]);mask[-1]=mask[-1] and roi[2]
                 selected=int(np.asarray(counts)[mask].sum())
+                self.last_roi_counts=selected
                 self.ax.axvspan(roi[0],roi[1],color='#f5bc66',alpha=.15)
                 self.ax.text(.02,.96,f'ROI: {selected:,} counts',va='top',transform=self.ax.transAxes,color=self.text)
             self.ax.legend(facecolor=self.panel,labelcolor=self.text,fontsize=8)
@@ -122,9 +139,27 @@ class AnalysisUI:
         layout.addWidget(self.chart_toolbar);layout.addWidget(self.charts,1)
         self.tabs.addTab(page,'Time series')
         spectrum_page=Q.QWidget();spectrum_layout=Q.QVBoxLayout(spectrum_page)
+        spectrum_controls=Q.QHBoxLayout()
+        self.spectrum_mode=Q.QComboBox();self.spectrum_mode.addItems(['Latest recorded interval','Selected heatmap interval / group'])
+        self.spectrum_refresh=Q.QPushButton('Refresh spectrum')
+        spectrum_controls.addWidget(Q.QLabel('Spectrum source'));spectrum_controls.addWidget(self.spectrum_mode,1)
+        spectrum_controls.addWidget(self.spectrum_refresh)
+        spectrum_layout.addLayout(spectrum_controls)
+        spectrum_roi=Q.QHBoxLayout()
+        self.spectrum_roi_enabled=Q.QCheckBox('ROI');self.spectrum_roi_enabled.setChecked(self.roi_enabled.isChecked())
+        self.spectrum_roi_from=Q.QDoubleSpinBox();self.spectrum_roi_to=Q.QDoubleSpinBox()
+        for control in (self.spectrum_roi_from,self.spectrum_roi_to):control.setRange(0,10000);control.setDecimals(1);control.setSuffix(' keV')
+        self.spectrum_roi_from.setValue(self.roi_from.value());self.spectrum_roi_to.setValue(self.roi_to.value())
+        self.spectrum_roi_terminal=Q.QCheckBox('Include terminal channel')
+        for widget in (self.spectrum_roi_enabled,self.spectrum_roi_from,self.spectrum_roi_to,self.spectrum_roi_terminal):spectrum_roi.addWidget(widget)
+        spectrum_roi.addStretch();spectrum_layout.addLayout(spectrum_roi)
+        self.spectrum_note=Q.QLabel('Latest interval updates while this tab is open. Click a heatmap interval to keep that selection.')
+        self.spectrum_note.setWordWrap(True);self.spectrum_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        spectrum_layout.addWidget(self.spectrum_note)
         self.spectrum_canvas=SpectrumCanvas(bg,panel,text)
         spectrum_layout.addWidget(NavigationToolbar2QT(self.spectrum_canvas,self));spectrum_layout.addWidget(self.spectrum_canvas)
         self.tabs.addTab(spectrum_page,'Spectrum / ROI')
+        self._spectrum_key=None
         self.summary_view=Q.QPlainTextEdit();self.summary_view.setReadOnly(True)
         self.tabs.addTab(self.summary_view,'Run summary')
         event_page=Q.QWidget();event_layout=Q.QVBoxLayout(event_page)
@@ -147,6 +182,14 @@ class AnalysisUI:
             signal.connect(self.redraw_analysis)
         self.roi_enabled.toggled.connect(self.redraw_analysis);self.roi_terminal.toggled.connect(self.redraw_analysis)
         self.follow_live.toggled.connect(lambda checked:self.request_preview(True) if checked else None)
+        self.tabs.currentChanged.connect(self.spectrum_tab_changed)
+        self.spectrum_mode.currentIndexChanged.connect(lambda:self.refresh_spectrum(True))
+        self.spectrum_refresh.clicked.connect(lambda:self.refresh_spectrum(True))
+        # Both tabs edit the same ROI; the controls remain usable in either view.
+        for original,mirror in ((self.roi_from,self.spectrum_roi_from),(self.roi_to,self.spectrum_roi_to)):
+            original.valueChanged.connect(mirror.setValue);mirror.valueChanged.connect(original.setValue)
+        for original,mirror in ((self.roi_enabled,self.spectrum_roi_enabled),(self.roi_terminal,self.spectrum_roi_terminal)):
+            original.toggled.connect(mirror.setChecked);mirror.toggled.connect(original.setChecked)
         self.view_from.setToolTip('Select saved intervals whose end timestamps lie in this UTC window; counts are not redistributed.')
         self.view_until.setToolTip(self.view_from.toolTip())
 
@@ -207,6 +250,7 @@ class AnalysisUI:
         if self.follow_live.isChecked() or self._preview_forced:self.redraw_analysis()
 
     def redraw_analysis(self,*args):
+        self.refresh_spectrum(True)
         if not self.analysis_rows:return
         snapshot=self.last_status.get('last_snapshot') or self.analysis_rows[-1][3]
         self.charts.color_percentile=self.color_percentile.value()
@@ -214,15 +258,52 @@ class AnalysisUI:
         self.charts.show_dates=self.view_mode.currentIndex()!=0
         self.charts.roi=(self.roi_from.value(),self.roi_to.value(),self.roi_terminal.isChecked()) if self.roi_enabled.isChecked() and self.roi_to.value()>self.roi_from.value() else None
         self.charts.show_rows(self.analysis_rows,snapshot,self.last_status.get('mode','device'))
-        if self.selected_analysis_row:self.spectrum_canvas.show_interval(self.selected_analysis_row,self.charts.roi)
 
     def select_interval(self,event):
         if event.inaxes!=self.charts.spg or event.ydata is None or not self.analysis_rows or self.chart_toolbar.mode:return
         ends=np.array([mdates.date2num(dt.datetime.fromtimestamp(row[0],dt.timezone.utc)) for row in self.analysis_rows])
         index=min(len(ends)-1,int(np.searchsorted(ends,event.ydata)))
         self.selected_analysis_row=self.analysis_rows[index]
-        self.spectrum_canvas.show_interval(self.selected_analysis_row,getattr(self.charts,'roi',None))
+        self.spectrum_mode.setCurrentIndex(1)
+        self.refresh_spectrum(True)
         self.tabs.setCurrentIndex(1)
+
+    def spectrum_tab_changed(self,index):
+        if index==1:self.refresh_spectrum(True)
+
+    def refresh_spectrum(self,force=False):
+        if not hasattr(self,'spectrum_canvas') or self._closing:return
+        if self.tabs.currentIndex()!=1 and not force:return
+        if not self.run or not (self.run/'run.sqlite').exists():
+            self.spectrum_canvas.empty('Open a recording or start one to view its interval spectra.')
+            self.spectrum_note.setText('No recording selected.');return
+        roi=(self.roi_from.value(),self.roi_to.value(),self.roi_terminal.isChecked()) if self.roi_enabled.isChecked() else None
+        if roi and roi[1]<=roi[0]:
+            self.spectrum_note.setText('ROI upper energy must exceed lower energy.');return
+        try:
+            if self.spectrum_mode.currentIndex()==0:
+                row=latest_interval(self.run,self.view_epoch.currentData())
+                label='Latest recorded interval'
+            else:
+                row=self.selected_analysis_row;label='Selected heatmap interval / group'
+            if row is None:
+                self.spectrum_canvas.empty('Waiting for a recorded interval.' if self.spectrum_mode.currentIndex()==0 else 'Select an interval on the time-series heatmap, or choose Latest recorded interval.')
+                self.spectrum_note.setText(label+' • no interval available yet');return
+            key=(str(self.run.resolve()),self.spectrum_mode.currentIndex(),row[0],row[1],repr(roi),self.view_epoch.currentData())
+            if key==self._spectrum_key and not force:return
+            self.spectrum_canvas.show_interval(row,roi);self._spectrum_key=key
+            d=row[2];counts=d.get('counts_delta')
+            total=sum(counts) if counts is not None else None
+            text=f'{label} • epoch {row[1]} • '+', '.join(d['quality'])
+            if total is not None:text+=f" • {total:,} counts • device duration {d['device_duration_s']:g} s"
+            else:text+=' • baseline only; waiting for the next spectrum difference'
+            if roi:
+                selected=self.spectrum_canvas.last_roi_counts
+                text+=f' • ROI {selected:,} counts' if selected is not None else ''
+            self.spectrum_note.setText(text)
+        except (OSError,ValueError,KeyError,TypeError,sqlite3.Error) as error:
+            self.spectrum_canvas.empty('Spectrum unavailable; see the message above.')
+            self.spectrum_note.setText(f'Spectrum unavailable: {error}')
 
     def navigation_finished(self,event):
         if self.chart_toolbar.mode:self.follow_live.setChecked(False)
@@ -273,6 +354,7 @@ class AnalysisUI:
         self.run_job('backup_run.py',target,str(target))
 
     def refresh_analysis_status(self,state,active,coverage):
+        self.refresh_spectrum()
         for job in list(self.background_jobs):
             if job['process'].poll() is not None:
                 self.message(f"{job['script']}: {'complete' if job['process'].returncode==0 else 'failed; inspect log '+str(job['log'])}: {job['target']}")

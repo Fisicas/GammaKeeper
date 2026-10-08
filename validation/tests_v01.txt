@@ -42,20 +42,28 @@ test_historical_counter_is_not_a_dose_reset (test_reliability.Reliability.test_h
 test_recording_continues_under_real_windows_status_lock (test_reliability.Reliability.test_recording_continues_under_real_windows_status_lock) ... ok
 test_repeated_empty_usb_packets_fail_with_bounded_reads (test_reliability.Reliability.test_repeated_empty_usb_packets_fail_with_bounded_reads) ... ok
 test_reproduce_overnight_status_replace_error (test_reliability.Reliability.test_reproduce_overnight_status_replace_error) ... ok
-test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... {"utc": "2026-10-08T14:38:31.599691+00:00", "pid": 31736, "kind": "device_request_failed", "command": "spectrum", "elapsed_s": 0.2594577000127174, "timeout_s": 0.25, "error": "Device worker exceeded 0.25s deadline", "command_queue_depth": 0}
+test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... {"utc": "2026-10-08T16:46:59.774327+00:00", "pid": 16472, "kind": "device_request_failed", "command": "spectrum", "elapsed_s": 0.2637599000008777, "timeout_s": 0.25, "error": "Device worker exceeded 0.25s deadline", "command_queue_depth": 0}
 ok
 test_supervisor_restarts_killed_recorder_and_stop_is_final (test_reliability.Reliability.test_supervisor_restarts_killed_recorder_and_stop_is_final) ... ok
 test_transient_raw_commit_lock_retries_without_overwrite (test_reliability.Reliability.test_transient_raw_commit_lock_retries_without_overwrite) ... ok
 test_unknown_group4_schema_is_not_guessed (test_reliability.Reliability.test_unknown_group4_schema_is_not_guessed) ... ok
 test_watchdog_uses_monotonic_progress_not_wall_time (test_reliability.Reliability.test_watchdog_uses_monotonic_progress_not_wall_time) ... ok
 test_zero_length_and_split_usb_headers (test_reliability.Reliability.test_zero_length_and_split_usb_headers) ... ok
+test_baseline_only_has_a_styled_explanation_and_no_invented_delta (test_spectrum_tab.SpectrumTab.test_baseline_only_has_a_styled_explanation_and_no_invented_delta) ... ok
+test_latest_interval_advances_without_a_heatmap_click (test_spectrum_tab.SpectrumTab.test_latest_interval_advances_without_a_heatmap_click) ... C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v041\gui.py:120: PendingDeprecationWarning: The set_bad function will be deprecated in a future version. Use cmap.with_extremes(bad=...) or Colormap(bad=...) instead.
+  cmap.set_bad(PANEL)
+ok
+test_opening_tab_directly_draws_latest_difference_not_existing_counts (test_spectrum_tab.SpectrumTab.test_opening_tab_directly_draws_latest_difference_not_existing_counts) ... ok
+test_roi_controls_on_spectrum_tab_are_shared_and_change_counts (test_spectrum_tab.SpectrumTab.test_roi_controls_on_spectrum_tab_are_shared_and_change_counts) ... ok
+test_selected_interval_is_retained_while_latest_advances (test_spectrum_tab.SpectrumTab.test_selected_interval_is_retained_while_latest_advances) ... ok
+test_source_reset_clears_previous_spectrum (test_spectrum_tab.SpectrumTab.test_source_reset_clears_previous_spectrum) ... ok
 test_export_rebuilds_bad_old_dose_bins_without_changing_raws (test_telemetry_observations.TelemetryObservationTests.test_export_rebuilds_bad_old_dose_bins_without_changing_raws) ... ok
 test_future_projection_is_preserved_and_not_discarded (test_telemetry_observations.TelemetryObservationTests.test_future_projection_is_preserved_and_not_discarded) ... ok
 test_incremental_reader_matches_complete_bin_integral (test_telemetry_observations.TelemetryObservationTests.test_incremental_reader_matches_complete_bin_integral) ... ok
 test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.TelemetryObservationTests.test_reception_bins_do_not_impute_through_outage) ... ok
 test_completion_export_checks_every_channel_and_preserves_source (test_upgrade_v04.CompletionAndOwnership.test_completion_export_checks_every_channel_and_preserves_source) ... ok
-test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-08T14:38:38.356013+00:00", "pid": 31736, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v04\\validation\\upgrade_temp\\tmpdzwve0cf\\run"}
-{"utc": "2026-10-08T14:38:38.362023+00:00", "pid": 31736, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v04\\validation\\upgrade_temp\\tmpdzwve0cf\\run"}
+test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-08T16:47:11.137289+00:00", "pid": 16472, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v041\\validation\\upgrade_temp\\tmpz3wrfsot\\run"}
+{"utc": "2026-10-08T16:47:11.143288+00:00", "pid": 16472, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v041\\validation\\upgrade_temp\\tmpz3wrfsot\\run"}
 ok
 test_failed_completion_never_changes_acquisition_status (test_upgrade_v04.CompletionAndOwnership.test_failed_completion_never_changes_acquisition_status) ... ok
 test_supervisor_reporting_does_not_write_or_lock_acquisition_database (test_upgrade_v04.CompletionAndOwnership.test_supervisor_reporting_does_not_write_or_lock_acquisition_database) ... ok
@@ -64,10 +72,11 @@ test_advancing_telemetry_or_events_cannot_mask_stalled_spectra (test_upgrade_v04
 test_bad_reference_jump_is_rejected_without_stopping_capture (test_upgrade_v04.TimeAndStreams.test_bad_reference_jump_is_rejected_without_stopping_capture) ... ok
 test_network_failure_preserves_anchor_and_exposes_holdover (test_upgrade_v04.TimeAndStreams.test_network_failure_preserves_anchor_and_exposes_holdover) ... ok
 test_reconnect_backoff_and_long_spectrum_interval_are_respected (test_upgrade_v04.TimeAndStreams.test_reconnect_backoff_and_long_spectrum_interval_are_respected) ... ok
+test_restart_during_network_outage_preserves_same_boot_reference (test_upgrade_v04.TimeAndStreams.test_restart_during_network_outage_preserves_same_boot_reference) ... ok
 test_servers_must_agree_and_single_source_is_visible (test_upgrade_v04.TimeAndStreams.test_servers_must_agree_and_single_source_is_visible) ... ok
 test_wall_step_and_negative_correction_cannot_reverse_recorded_utc (test_upgrade_v04.TimeAndStreams.test_wall_step_and_negative_correction_cannot_reverse_recorded_utc) ... ok
 
 ----------------------------------------------------------------------
-Ran 65 tests in 32.784s
+Ran 72 tests in 36.842s
 
 OK

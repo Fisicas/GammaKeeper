@@ -362,6 +362,9 @@ class Window(AnalysisUI,Q.QMainWindow):
             return
         selected = str(self.run.resolve())
         if force or self.settings_run != selected:
+            self.selected_analysis_row=None
+            self._spectrum_key=None
+            self.spectrum_canvas.empty('Loading recorded spectra…')
             # Validate everything before populating any fields. A bad manifest
             # must never leave the selected run represented by new-run defaults.
             self.settings_run = None
@@ -400,6 +403,8 @@ class Window(AnalysisUI,Q.QMainWindow):
             return
         self.run = None
         self.preview_cancel.set();self.analysis_rows=[];self.preview_key=None;self.preview_summary={}
+        self.selected_analysis_row=None;self._spectrum_key=None
+        self.spectrum_canvas.empty('Start a new recording or open a saved run to view interval spectra.')
         self.recorder = None
         self.last_status = {}
         self.last_seq = None

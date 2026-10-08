@@ -1,6 +1,14 @@
-# RadiaLog 0.4.0
+# RadiaLog 0.4.1
 
 Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
+
+## Spectrum / ROI tab correction
+
+Opening **Spectrum / ROI** now automatically shows the **latest recorded interval** and updates it as new spectra arrive. Previously, this tab stayed blank until an interval was clicked on the time-series heatmap. The empty/baseline states now have a styled explanation. Counts are successive cumulative-spectrum differences, so pre-recording counts are excluded; no smoothing or spectral resampling is applied.
+
+The tab has its own ROI controls, synchronized with the time-series controls, and a spectrum-source selector. **Selected heatmap interval / group** preserves a deliberate selection while recording continues. Baselines, missing selections, invalid ROI bounds and integrity errors are explained instead of leaving a blank white plot. Changing recordings clears the previous spectrum. The active recorder can continue while this viewer is reopened.
+
+The v0.4.1 release passes 72 regression tests, including six tests that actually open the tab, advance recorded data, change ROI controls, retain a historical selection, handle baselines and clear old selections. The live-data visual check is in `validation/spectrum_tab_live_v01.png`. Prior versions and original data remain preserved; acquisition behavior is unchanged.
 
 ## October 8 reliability and analysis release
 
