@@ -1,6 +1,16 @@
-# RadiaLog 0.4.1
+# RadiaLog 0.4.2
 
 Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
+
+## Accumulated recording and collection spectra
+
+**Spectrum / ROI** now defaults to **Accumulated recording**: it sums the experiment's recorded interval differences, excluding pre-recording cumulative counts, and grows as new spectra arrive. The selector also offers **Latest recorded interval**, **Selected heatmap interval / group**, and **Accumulated collection range (UTC)**.
+
+To inspect a collection range, select that mode, set **UTC from** and **to**, uncheck **Until latest saved spectrum** for a fixed end, and click **Apply range**. With the checkbox checked, accumulation begins at the chosen start and continues through newly saved spectra. ROI controls apply to the displayed accumulated spectrum; counts remain integer original-channel counts.
+
+Selection includes only complete recorded intervals inside the requested UTC bounds. The plot shows the actual included start/end and exposure, and the message reports excluded straddling intervals. Counts are not divided among unknown sub-interval photon times. Recovered gap aggregates are retained when fully included and explicitly flagged. Reset baselines contribute no new counts. Epochs with different calibration/channel grids cannot be silently combined; select one epoch instead. No smoothing, baseline subtraction, normalization, energy resampling or spectral reset is applied.
+
+Accumulation runs in a background worker and processes subsequent records incrementally, preserving responsiveness and bounded result memory. The active recorder need not be stopped or restarted to use this viewer. Tests and live-journal renders in `validation` verify both recording totals and requested ranges against saved endpoint differences.
 
 ## Spectrum / ROI tab correction
 

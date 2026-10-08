@@ -39,6 +39,7 @@ class SpectrumTab(unittest.TestCase):
 
     def open(self,run):
         window=Window(run);window.timer.stop();self.windows.append(window)
+        window.spectrum_mode.setCurrentIndex(0)
         return window
 
     def test_opening_tab_directly_draws_latest_difference_not_existing_counts(self):

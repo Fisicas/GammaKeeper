@@ -19,7 +19,7 @@ from preview import read_preview
 from runtime import python_command
 from run_policy import resume_allowed
 from system_time import boot_identity
-from spectrum_view import latest_interval
+from spectrum_view import latest_interval,AccumulatedSpectrum
 
 
 class PreviewSignals(QtCore.QObject):
@@ -41,6 +41,21 @@ class PreviewTask(QtCore.QRunnable):
         except Exception as error:
             message=dict(key=self.key,result=None,error=f'{type(error).__name__}: {error}')
         self.signals.done.emit(message)
+
+
+class AccumulationTask(QtCore.QRunnable):
+    def __init__(self,engine,key,cancel):
+        super().__init__();self.engine=engine;self.key=key;self.cancel=cancel;self.signals=PreviewSignals()
+
+    def run(self):
+        try:
+            while not self.engine.update(cancelled=self.cancel.is_set):
+                if self.cancel.is_set():
+                    self.signals.done.emit(dict(key=self.key,cancelled=True));return
+                self.signals.progress.emit(f'Accumulating verified intervals through spectrum {self.engine.last_seq:,} / {self.engine.head:,}')
+            self.signals.done.emit(dict(key=self.key,row=self.engine.result(),head=self.engine.head,error=None))
+        except Exception as error:
+            self.signals.done.emit(dict(key=self.key,row=None,head=self.engine.head,error=f'{type(error).__name__}: {error}'))
 
 
 class SpectrumCanvas(FigureCanvasQTAgg):
@@ -88,7 +103,12 @@ class SpectrumCanvas(FigureCanvasQTAgg):
         self.ax.set_xlabel('Energy (keV) • original channel calibration',color=self.text)
         self.ax.set_ylabel('Recorded interval counts / channel',color=self.text)
         end=dt.datetime.fromtimestamp(utc,dt.timezone.utc).isoformat(timespec='seconds')
-        self.ax.set_title(f'{end} • epoch {epoch} • '+', '.join(d['quality']),color=self.text,fontsize=10)
+        collection=s.get('collection')
+        if collection:
+            start=dt.datetime.fromtimestamp(collection['actual_start_utc'],dt.timezone.utc).isoformat(timespec='seconds')
+            self.ax.set_ylabel('Accumulated recording counts / channel',color=self.text)
+            self.ax.set_title(f'{start} → {end}\n{collection["included_intervals"]:,} recorded intervals • epochs {collection["epochs"]}',color=self.text,fontsize=10)
+        else:self.ax.set_title(f'{end} • epoch {epoch} • '+', '.join(d['quality']),color=self.text,fontsize=10)
         self.draw_idle()
 
 
@@ -110,6 +130,9 @@ class AnalysisUI:
         self.preview_key=None;self.analysis_rows=[];self.preview_summary={};self._closing=False
         self.background_jobs=[];self._last_events=0;self._last_disk=0
         self.selected_analysis_row=None
+        self.accumulation_pool=QtCore.QThreadPool(self);self.accumulation_pool.setMaxThreadCount(1)
+        self.accumulation_cancel=threading.Event();self.accumulation_busy=False
+        self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None;self.accumulation_head=-1;self.accumulation_error=None
         self.tabs=Q.QTabWidget();page=Q.QWidget();layout=Q.QVBoxLayout(page);layout.setContentsMargins(0,0,0,0)
         controls=Q.QHBoxLayout()
         self.view_mode=Q.QComboBox();self.view_mode.addItems(['Recent intervals','Whole run','Selected UTC window'])
@@ -140,11 +163,27 @@ class AnalysisUI:
         self.tabs.addTab(page,'Time series')
         spectrum_page=Q.QWidget();spectrum_layout=Q.QVBoxLayout(spectrum_page)
         spectrum_controls=Q.QHBoxLayout()
-        self.spectrum_mode=Q.QComboBox();self.spectrum_mode.addItems(['Latest recorded interval','Selected heatmap interval / group'])
+        self.spectrum_mode=Q.QComboBox();self.spectrum_mode.addItems(['Latest recorded interval','Selected heatmap interval / group','Accumulated recording','Accumulated collection range (UTC)'])
+        self.spectrum_mode.setCurrentIndex(2)
         self.spectrum_refresh=Q.QPushButton('Refresh spectrum')
         spectrum_controls.addWidget(Q.QLabel('Spectrum source'));spectrum_controls.addWidget(self.spectrum_mode,1)
         spectrum_controls.addWidget(self.spectrum_refresh)
         spectrum_layout.addLayout(spectrum_controls)
+        collection_controls=Q.QHBoxLayout()
+        self.collection_from=Q.QDateTimeEdit();self.collection_until=Q.QDateTimeEdit()
+        for edit in (self.collection_from,self.collection_until):
+            edit.setDisplayFormat('yyyy-MM-dd HH:mm:ss.zzz');edit.setCalendarPopup(True);edit.setTimeZone(QtCore.QTimeZone(0))
+        self.collection_latest=Q.QCheckBox('Until latest saved spectrum');self.collection_latest.setChecked(True)
+        self.collection_epoch=Q.QComboBox();self.collection_epoch.addItem('All compatible epochs',None)
+        self.collection_apply=Q.QPushButton('Apply range')
+        self.collection_apply.clicked.connect(lambda:self.refresh_spectrum(True))
+        for widget in (Q.QLabel('UTC from'),self.collection_from,Q.QLabel('to'),self.collection_until,self.collection_latest,self.collection_epoch):collection_controls.addWidget(widget)
+        collection_controls.addWidget(self.collection_apply)
+        spectrum_layout.addLayout(collection_controls)
+        self.collection_until.setEnabled(False)
+        self.collection_from.setToolTip('Only complete saved intervals within the requested UTC bounds are summed. Click Apply range after editing.')
+        self.collection_until.setToolTip(self.collection_from.toolTip())
+        self.collection_latest.toggled.connect(lambda checked:self.collection_until.setEnabled(not checked))
         spectrum_roi=Q.QHBoxLayout()
         self.spectrum_roi_enabled=Q.QCheckBox('ROI');self.spectrum_roi_enabled.setChecked(self.roi_enabled.isChecked())
         self.spectrum_roi_from=Q.QDoubleSpinBox();self.spectrum_roi_to=Q.QDoubleSpinBox()
@@ -153,7 +192,7 @@ class AnalysisUI:
         self.spectrum_roi_terminal=Q.QCheckBox('Include terminal channel')
         for widget in (self.spectrum_roi_enabled,self.spectrum_roi_from,self.spectrum_roi_to,self.spectrum_roi_terminal):spectrum_roi.addWidget(widget)
         spectrum_roi.addStretch();spectrum_layout.addLayout(spectrum_roi)
-        self.spectrum_note=Q.QLabel('Latest interval updates while this tab is open. Click a heatmap interval to keep that selection.')
+        self.spectrum_note=Q.QLabel('Accumulated recording grows as data arrive. Choose a collection range and click Apply range to sum complete intervals in that range.')
         self.spectrum_note.setWordWrap(True);self.spectrum_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
         spectrum_layout.addWidget(self.spectrum_note)
         self.spectrum_canvas=SpectrumCanvas(bg,panel,text)
@@ -185,6 +224,8 @@ class AnalysisUI:
         self.tabs.currentChanged.connect(self.spectrum_tab_changed)
         self.spectrum_mode.currentIndexChanged.connect(lambda:self.refresh_spectrum(True))
         self.spectrum_refresh.clicked.connect(lambda:self.refresh_spectrum(True))
+        self.collection_epoch.currentIndexChanged.connect(lambda:self.refresh_spectrum(True))
+        self.collection_latest.toggled.connect(lambda:self.refresh_spectrum(True))
         # Both tabs edit the same ROI; the controls remain usable in either view.
         for original,mirror in ((self.roi_from,self.spectrum_roi_from),(self.roi_to,self.spectrum_roi_to)):
             original.valueChanged.connect(mirror.setValue);mirror.valueChanged.connect(original.setValue)
@@ -281,15 +322,47 @@ class AnalysisUI:
         if roi and roi[1]<=roi[0]:
             self.spectrum_note.setText('ROI upper energy must exceed lower energy.');return
         try:
+            db=readonly(self.run/'run.sqlite')
+            try:epochs=[row[0] for row in db.execute('SELECT DISTINCT epoch FROM snapshots ORDER BY epoch')]
+            finally:db.close()
+            if self.collection_epoch.count()!=len(epochs)+1:
+                current=self.collection_epoch.currentData();self.collection_epoch.blockSignals(True)
+                self.collection_epoch.clear();self.collection_epoch.addItem('All compatible epochs',None)
+                for epoch in epochs:self.collection_epoch.addItem(f'Epoch {epoch}',epoch)
+                self.collection_epoch.setCurrentIndex(max(0,self.collection_epoch.findData(current)));self.collection_epoch.blockSignals(False)
             if self.spectrum_mode.currentIndex()==0:
-                row=latest_interval(self.run,self.view_epoch.currentData())
+                row=latest_interval(self.run,self.collection_epoch.currentData())
                 label='Latest recorded interval'
-            else:
+            elif self.spectrum_mode.currentIndex()==1:
                 row=self.selected_analysis_row;label='Selected heatmap interval / group'
+            else:
+                start=self.collection_from.dateTime().toMSecsSinceEpoch()/1000 if self.spectrum_mode.currentIndex()==3 else None
+                end=self.collection_until.dateTime().toMSecsSinceEpoch()/1000 if self.spectrum_mode.currentIndex()==3 and not self.collection_latest.isChecked() else None
+                if end is not None and start>=end:raise ValueError('Collection start must precede its end')
+                key=(str(self.run.resolve()),self.spectrum_mode.currentIndex(),start,end,self.collection_epoch.currentData())
+                if self.accumulation_key!=key:
+                    self.accumulation_cancel.set();self.accumulation_key=key;self.accumulation_engine=None
+                    self.accumulation_row=None;self.accumulation_head=-1;self.accumulation_error=None
+                    self.spectrum_canvas.empty('Accumulating complete recorded intervals…')
+                head=(self.last_status.get('last_snapshot') or {}).get('seq',-1)
+                if not self.accumulation_busy and (self.accumulation_head<head or force):
+                    if self.accumulation_engine is None:
+                        self.accumulation_engine=AccumulatedSpectrum(self.run,start,end,self.collection_epoch.currentData())
+                    self.accumulation_cancel=threading.Event();self.accumulation_busy=True
+                    task=AccumulationTask(self.accumulation_engine,key,self.accumulation_cancel);self._accumulation_task=task
+                    task.signals.progress.connect(self.spectrum_note.setText);task.signals.done.connect(self.accumulation_done)
+                    self.accumulation_pool.start(task)
+                if self.accumulation_error:raise ValueError(self.accumulation_error)
+                row=self.accumulation_row
+                label='Accumulated recording' if self.spectrum_mode.currentIndex()==2 else 'Accumulated collection range'
+                if row is None:
+                    self.spectrum_note.setText(label+' • loading complete intervals' if self.accumulation_busy else label+' • no complete recorded intervals inside this range')
+                    if not self.accumulation_busy:self.spectrum_canvas.empty('No complete recorded intervals in this collection range. Expand the bounds or choose another epoch.')
+                    return
             if row is None:
                 self.spectrum_canvas.empty('Waiting for a recorded interval.' if self.spectrum_mode.currentIndex()==0 else 'Select an interval on the time-series heatmap, or choose Latest recorded interval.')
                 self.spectrum_note.setText(label+' • no interval available yet');return
-            key=(str(self.run.resolve()),self.spectrum_mode.currentIndex(),row[0],row[1],repr(roi),self.view_epoch.currentData())
+            key=(str(self.run.resolve()),self.spectrum_mode.currentIndex(),row[0],repr(row[1]),repr(roi),self.collection_epoch.currentData())
             if key==self._spectrum_key and not force:return
             self.spectrum_canvas.show_interval(row,roi);self._spectrum_key=key
             d=row[2];counts=d.get('counts_delta')
@@ -300,10 +373,25 @@ class AnalysisUI:
             if roi:
                 selected=self.spectrum_canvas.last_roi_counts
                 text+=f' • ROI {selected:,} counts' if selected is not None else ''
+            collection=row[3].get('collection')
+            if collection:
+                text+=f" • {collection['included_intervals']:,} complete intervals • {collection['excluded_boundary_intervals']} straddling intervals excluded"
+                cautions={key:value for key,value in collection['quality_counts'].items() if key not in ('normal','final_short_interval')}
+                if cautions:text+=' • flags '+json.dumps(cautions)
+                text+=' • no splitting or resampling'
             self.spectrum_note.setText(text)
         except (OSError,ValueError,KeyError,TypeError,sqlite3.Error) as error:
             self.spectrum_canvas.empty('Spectrum unavailable; see the message above.')
             self.spectrum_note.setText(f'Spectrum unavailable: {error}')
+
+    def accumulation_done(self,message):
+        self.accumulation_busy=False
+        if self._closing:return
+        if message['key']!=self.accumulation_key:
+            self.refresh_spectrum(True);return
+        if message.get('cancelled'):return
+        self.accumulation_row=message['row'];self.accumulation_head=message['head'];self.accumulation_error=message['error']
+        self.refresh_spectrum(False)
 
     def navigation_finished(self,event):
         if self.chart_toolbar.mode:self.follow_live.setChecked(False)

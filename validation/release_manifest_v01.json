@@ -1,39 +1,65 @@
 {
-  "version": "0.4.1",
-  "published_utc": "2026-10-08T16:50:34.436393+00:00",
-  "tests": 72,
-  "root_cause": "Spectrum canvas populated only by heatmap selection; tab activation had no population handler and default axes were unstyled",
-  "original_v04_sources_unchanged": true,
+  "version": "0.4.2",
+  "published_utc": "2026-10-08T18:11:12.870189+00:00",
+  "tests": 80,
+  "original_v041_sources_preserved": true,
   "active_recorder_restarted": false,
-  "source_run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
   "acquisition_changes": false,
-  "changed_source_files": [
-    "gui_analysis.py",
-    "gui.py",
-    "spectrum_view.py",
-    "analysis.py",
-    "README.md",
-    "tests/test_spectrum_tab.py"
-  ],
+  "default_spectrum": "Accumulated recording",
+  "collection_rule": "Complete recorded intervals only; straddling boundaries excluded and actual included boundaries displayed",
   "visual_check": {
     "source_run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
-    "displayed_without_heatmap_selection": true,
-    "counts": 42,
-    "roi_counts": 1,
-    "selected_source": "Latest recorded interval",
-    "note": "Latest recorded interval \u2022 epoch 0 \u2022 normal \u2022 42 counts \u2022 device duration 10 s \u2022 ROI 1 counts",
-    "source_state": "recording",
-    "source_snapshots": 107,
-    "image": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v041\\validation\\spectrum_tab_live_v01.png",
-    "kind": "Owned-widget rendering against live saved data; not existing native-window capture"
+    "whole_recording": {
+      "included_intervals": 512,
+      "device_duration_s": 5121.0,
+      "actual_start_utc": 1791476923.505369,
+      "actual_end_utc": 1791482043.59077,
+      "requested_start_utc": null,
+      "requested_end_utc": null,
+      "excluded_boundary_intervals": 0,
+      "baseline_boundaries": 1,
+      "quality_counts": {
+        "normal": 512
+      },
+      "epochs": [
+        0
+      ],
+      "through_seq": 512,
+      "source_head": 512,
+      "total_counts": 21904,
+      "selection_rule": "Complete recorded intervals only; no splitting, smoothing, resampling or pre-recording counts"
+    },
+    "selected_range": {
+      "included_intervals": 170,
+      "device_duration_s": 1701.0,
+      "actual_start_utc": 1791478633.5202537,
+      "actual_end_utc": 1791480333.55099,
+      "requested_start_utc": 1791478633.52,
+      "requested_end_utc": 1791480343.565,
+      "excluded_boundary_intervals": 2,
+      "baseline_boundaries": 0,
+      "quality_counts": {
+        "normal": 170
+      },
+      "epochs": [
+        0
+      ],
+      "through_seq": 513,
+      "source_head": 513,
+      "total_counts": 7216,
+      "selection_rule": "Complete recorded intervals only; no splitting, smoothing, resampling or pre-recording counts"
+    },
+    "whole_counts_match_endpoint_differences": true,
+    "range_counts_match_endpoint_differences": true,
+    "whole_image": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v042\\validation\\accumulated_recording_v01.png",
+    "range_image": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v042\\validation\\accumulated_range_v01.png",
+    "kind": "Owned-widget render against saved live-run data; existing native window not captured"
   },
-  "gui_integration": {
-    "mode": "SIMULATED",
-    "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v041\\validation\\gui_smoke_runs\\20261008_124712_468771_SIMULATED",
-    "recording_survived_gui_close": true,
-    "saved_settings_restored_on_reopen": true,
-    "stop_button_saved_cleanly": true,
-    "export_button_completed": true,
-    "snapshots": 12
+  "source_hashes": {
+    "analysis.py": "ec22a5d3bf602d789917ba34226323cd394e41bdc0eb26c7749d2d4e98fb6c0b",
+    "spectrum_view.py": "e3a4bd94c27b7b7d64f90223dc40665a1e1dbd188f8e4478eeccc765ece7a92e",
+    "gui_analysis.py": "b62bd3a21d0adb47579cd39721d291efd5c3dc66f1de678ba2ad9908370f50a3",
+    "gui.py": "d8c9fddf34ef48a42b62cec099894ffd74c847cce02ce42451b977e7c4f74ec2",
+    "README.md": "6f83644f3207d7d7ff96cb9627d36dcda90de9d44ddc23190cef1b3368734aae"
   }
 }

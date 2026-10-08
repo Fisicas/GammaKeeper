@@ -362,6 +362,7 @@ class Window(AnalysisUI,Q.QMainWindow):
             return
         selected = str(self.run.resolve())
         if force or self.settings_run != selected:
+            self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
             self.selected_analysis_row=None
             self._spectrum_key=None
             self.spectrum_canvas.empty('Loading recorded spectra…')
@@ -388,6 +389,8 @@ class Window(AnalysisUI,Q.QMainWindow):
             end=timestamp(saved['planned_end_utc']) if saved.get('planned_end_utc') else dt.datetime.now(dt.timezone.utc).timestamp()
             self.view_from.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(int(begin),QtCore.QTimeZone(0)))
             self.view_until.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(int(end),QtCore.QTimeZone(0)))
+            self.collection_from.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(begin*1000),QtCore.QTimeZone(0)))
+            self.collection_until.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(end*1000),QtCore.QTimeZone(0)))
             self.run_summary.setToolTip(
                 f"Saved start UTC: {saved['created_utc']}\n"
                 f"Saved planned end UTC: {saved.get('planned_end_utc') or 'none'}\n"
@@ -404,6 +407,7 @@ class Window(AnalysisUI,Q.QMainWindow):
         self.run = None
         self.preview_cancel.set();self.analysis_rows=[];self.preview_key=None;self.preview_summary={}
         self.selected_analysis_row=None;self._spectrum_key=None
+        self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
         self.spectrum_canvas.empty('Start a new recording or open a saved run to view interval spectra.')
         self.recorder = None
         self.last_status = {}
@@ -681,6 +685,7 @@ class Window(AnalysisUI,Q.QMainWindow):
         # does not issue Stop or delete files. A later window can Open saved run.
         self._closing=True
         self.preview_cancel.set()
+        self.accumulation_cancel.set()
         gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,
                                       setup=dict(label=self.label.text(),serial=self.serial.text(),
                                                  interval_s=self.interval.value(),days=self.days.value(),

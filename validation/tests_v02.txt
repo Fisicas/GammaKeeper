@@ -1,0 +1,90 @@
+test_calibration_changes_are_not_silently_combined (test_accumulated_spectrum.CollectedSpectrum.test_calibration_changes_are_not_silently_combined) ... ok
+test_exact_range_boundaries_include_both_selected_intervals (test_accumulated_spectrum.CollectedSpectrum.test_exact_range_boundaries_include_both_selected_intervals) ... ok
+test_gui_accumulated_modes_and_roi_show_recording_and_range (test_accumulated_spectrum.CollectedSpectrum.test_gui_accumulated_modes_and_roi_show_recording_and_range) ... C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v042\gui.py:120: PendingDeprecationWarning: The set_bad function will be deprecated in a future version. Use cmap.with_extremes(bad=...) or Colormap(bad=...) instead.
+  cmap.set_bad(PANEL)
+ok
+test_no_complete_intervals_and_invalid_range_are_explicit (test_accumulated_spectrum.CollectedSpectrum.test_no_complete_intervals_and_invalid_range_are_explicit) ... ok
+test_recording_total_excludes_existing_counts_and_updates_incrementally (test_accumulated_spectrum.CollectedSpectrum.test_recording_total_excludes_existing_counts_and_updates_incrementally) ... ok
+test_recovered_gap_counts_are_retained_and_flagged (test_accumulated_spectrum.CollectedSpectrum.test_recovered_gap_counts_are_retained_and_flagged) ... ok
+test_requested_range_only_sums_complete_intervals_and_reports_edges (test_accumulated_spectrum.CollectedSpectrum.test_requested_range_only_sums_complete_intervals_and_reports_edges) ... ok
+test_reset_boundaries_are_not_counted_as_new_photons (test_accumulated_spectrum.CollectedSpectrum.test_reset_boundaries_are_not_counted_as_new_photons) ... ok
+test_backup_refuses_foreign_destination (test_analysis_backup_v04.DerivedViewsAndBackups.test_backup_refuses_foreign_destination) ... ok
+test_cached_completed_preview_preserves_data_and_validation_date (test_analysis_backup_v04.DerivedViewsAndBackups.test_cached_completed_preview_preserves_data_and_validation_date) ... ok
+test_display_aggregation_conserves_all_channels_and_durations (test_analysis_backup_v04.DerivedViewsAndBackups.test_display_aggregation_conserves_all_channels_and_durations) ... ok
+test_endpoint_clamp_and_checkpoint_match_reception_integral (test_analysis_backup_v04.DerivedViewsAndBackups.test_endpoint_clamp_and_checkpoint_match_reception_integral) ... ok
+test_interrupted_backup_resumes_frozen_horizon_and_never_overwrites (test_analysis_backup_v04.DerivedViewsAndBackups.test_interrupted_backup_resumes_frozen_horizon_and_never_overwrites) ... ok
+test_preview_rejects_modified_raw_input (test_analysis_backup_v04.DerivedViewsAndBackups.test_preview_rejects_modified_raw_input) ... ok
+test_sealing_detects_changed_raw_telemetry_payload (test_analysis_backup_v04.DerivedViewsAndBackups.test_sealing_detects_changed_raw_telemetry_payload) ... ok
+test_hung_worker_deadline_and_cleanup (test_core.BoundedIOAndTime.test_hung_worker_deadline_and_cleanup) ... ok
+test_measurement_and_calibration_writes_are_blocked (test_core.BoundedIOAndTime.test_measurement_and_calibration_writes_are_blocked) ... ok
+test_sntp_offset_and_invalid_origin (test_core.BoundedIOAndTime.test_sntp_offset_and_invalid_origin) ... ok
+test_utc_reference_uses_monotonic_clock (test_core.BoundedIOAndTime.test_utc_reference_uses_monotonic_clock) ... ok
+test_atomic_raw_commit_recovers_missing_index (test_core.Durability.test_atomic_raw_commit_recovers_missing_index) ... ok
+test_integrity_change_blocks_resume (test_core.Durability.test_integrity_change_blocks_resume) ... ok
+test_missing_raw_file_blocks_resume (test_core.Durability.test_missing_raw_file_blocks_resume) ... ok
+test_original_file_never_overwritten (test_core.Durability.test_original_file_never_overwritten) ... ok
+test_recovery_uses_sequence_when_utc_moves_back_across_midnight (test_core.Durability.test_recovery_uses_sequence_when_utc_moves_back_across_midnight) ... ok
+test_second_writer_blocked (test_core.Durability.test_second_writer_blocked) ... ok
+test_utc_day_rollover_and_export_counts (test_core.Durability.test_utc_day_rollover_and_export_counts) ... ok
+test_actual_duration_not_nominal_interval (test_core.ScientificRules.test_actual_duration_not_nominal_interval) ... ok
+test_calibration_change_creates_boundary (test_core.ScientificRules.test_calibration_change_creates_boundary) ... ok
+test_clock_step_does_not_change_device_count_rate (test_core.ScientificRules.test_clock_step_does_not_change_device_count_rate) ... ok
+test_duplicate_telemetry_timestamp_does_not_double_weight (test_core.ScientificRules.test_duplicate_telemetry_timestamp_does_not_double_weight) ... ok
+test_existing_counts_are_baseline_not_first_bin (test_core.ScientificRules.test_existing_counts_are_baseline_not_first_bin) ... ok
+test_exponential_schedule_has_cap (test_core.ScientificRules.test_exponential_schedule_has_cap) ... ok
+test_reconnect_preserves_aggregate_but_flags_missing_bins (test_core.ScientificRules.test_reconnect_preserves_aggregate_but_flags_missing_bins) ... ok
+test_reset_event_even_if_counts_exceed_old_counts (test_core.ScientificRules.test_reset_event_even_if_counts_exceed_old_counts) ... ok
+test_seven_days_no_rolling_limit_and_count_conservation (test_core.ScientificRules.test_seven_days_no_rolling_limit_and_count_conservation) ... ok
+test_telemetry_gap_is_not_interpolated (test_core.ScientificRules.test_telemetry_gap_is_not_interpolated) ... ok
+test_unsigned_underflow_is_reset_not_clipped (test_core.ScientificRules.test_unsigned_underflow_is_reset_not_clipped) ... ok
+test_expired_run_is_disabled_and_never_launched (test_gui_run_settings.SavedRunSettings.test_expired_run_is_disabled_and_never_launched) ... ok
+test_invalid_manifest_does_not_present_defaults_as_saved_values (test_gui_run_settings.SavedRunSettings.test_invalid_manifest_does_not_present_defaults_as_saved_values) ... ok
+test_reopening_restores_real_run_and_preserves_manifest (test_gui_run_settings.SavedRunSettings.test_reopening_restores_real_run_and_preserves_manifest) ... ok
+test_resume_retains_original_end_instead_of_restarting_duration (test_gui_run_settings.SavedRunSettings.test_resume_retains_original_end_instead_of_restarting_duration) ... ok
+test_switching_to_continuous_run_then_new_setup (test_gui_run_settings.SavedRunSettings.test_switching_to_continuous_run_then_new_setup) ... ok
+test_cache_lock_is_nonfatal_and_recovers (test_reliability.Reliability.test_cache_lock_is_nonfatal_and_recovers) ... ok
+test_corrupt_raw_data_suppresses_automatic_restart (test_reliability.Reliability.test_corrupt_raw_data_suppresses_automatic_restart) ... ok
+test_empty_and_unknown_payload_preserve_valid_prefix (test_reliability.Reliability.test_empty_and_unknown_payload_preserve_valid_prefix) ... ok
+test_exact_overnight_decoder_fixture (test_reliability.Reliability.test_exact_overnight_decoder_fixture) ... ok
+test_gui_never_previews_modified_raw_snapshot (test_reliability.Reliability.test_gui_never_previews_modified_raw_snapshot) ... ok
+test_gui_reads_journal_even_with_corrupt_status_cache (test_reliability.Reliability.test_gui_reads_journal_even_with_corrupt_status_cache) ... ok
+test_historical_counter_is_not_a_dose_reset (test_reliability.Reliability.test_historical_counter_is_not_a_dose_reset) ... ok
+test_recording_continues_under_real_windows_status_lock (test_reliability.Reliability.test_recording_continues_under_real_windows_status_lock) ... ok
+test_repeated_empty_usb_packets_fail_with_bounded_reads (test_reliability.Reliability.test_repeated_empty_usb_packets_fail_with_bounded_reads) ... ok
+test_reproduce_overnight_status_replace_error (test_reliability.Reliability.test_reproduce_overnight_status_replace_error) ... ok
+test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... {"utc": "2026-10-08T18:08:56.532082+00:00", "pid": 29208, "kind": "device_request_failed", "command": "spectrum", "elapsed_s": 0.25462559997686185, "timeout_s": 0.25, "error": "Device worker exceeded 0.25s deadline", "command_queue_depth": 0}
+ok
+test_supervisor_restarts_killed_recorder_and_stop_is_final (test_reliability.Reliability.test_supervisor_restarts_killed_recorder_and_stop_is_final) ... ok
+test_transient_raw_commit_lock_retries_without_overwrite (test_reliability.Reliability.test_transient_raw_commit_lock_retries_without_overwrite) ... ok
+test_unknown_group4_schema_is_not_guessed (test_reliability.Reliability.test_unknown_group4_schema_is_not_guessed) ... ok
+test_watchdog_uses_monotonic_progress_not_wall_time (test_reliability.Reliability.test_watchdog_uses_monotonic_progress_not_wall_time) ... ok
+test_zero_length_and_split_usb_headers (test_reliability.Reliability.test_zero_length_and_split_usb_headers) ... ok
+test_baseline_only_has_a_styled_explanation_and_no_invented_delta (test_spectrum_tab.SpectrumTab.test_baseline_only_has_a_styled_explanation_and_no_invented_delta) ... ok
+test_latest_interval_advances_without_a_heatmap_click (test_spectrum_tab.SpectrumTab.test_latest_interval_advances_without_a_heatmap_click) ... ok
+test_opening_tab_directly_draws_latest_difference_not_existing_counts (test_spectrum_tab.SpectrumTab.test_opening_tab_directly_draws_latest_difference_not_existing_counts) ... ok
+test_roi_controls_on_spectrum_tab_are_shared_and_change_counts (test_spectrum_tab.SpectrumTab.test_roi_controls_on_spectrum_tab_are_shared_and_change_counts) ... ok
+test_selected_interval_is_retained_while_latest_advances (test_spectrum_tab.SpectrumTab.test_selected_interval_is_retained_while_latest_advances) ... ok
+test_source_reset_clears_previous_spectrum (test_spectrum_tab.SpectrumTab.test_source_reset_clears_previous_spectrum) ... ok
+test_export_rebuilds_bad_old_dose_bins_without_changing_raws (test_telemetry_observations.TelemetryObservationTests.test_export_rebuilds_bad_old_dose_bins_without_changing_raws) ... ok
+test_future_projection_is_preserved_and_not_discarded (test_telemetry_observations.TelemetryObservationTests.test_future_projection_is_preserved_and_not_discarded) ... ok
+test_incremental_reader_matches_complete_bin_integral (test_telemetry_observations.TelemetryObservationTests.test_incremental_reader_matches_complete_bin_integral) ... ok
+test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.TelemetryObservationTests.test_reception_bins_do_not_impute_through_outage) ... ok
+test_completion_export_checks_every_channel_and_preserves_source (test_upgrade_v04.CompletionAndOwnership.test_completion_export_checks_every_channel_and_preserves_source) ... ok
+test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-08T18:09:08.738578+00:00", "pid": 29208, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v042\\validation\\upgrade_temp\\tmpq7p_gtbp\\run"}
+{"utc": "2026-10-08T18:09:08.744738+00:00", "pid": 29208, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v042\\validation\\upgrade_temp\\tmpq7p_gtbp\\run"}
+ok
+test_failed_completion_never_changes_acquisition_status (test_upgrade_v04.CompletionAndOwnership.test_failed_completion_never_changes_acquisition_status) ... ok
+test_supervisor_reporting_does_not_write_or_lock_acquisition_database (test_upgrade_v04.CompletionAndOwnership.test_supervisor_reporting_does_not_write_or_lock_acquisition_database) ... ok
+test_advancing_spectra_cannot_mask_stalled_telemetry (test_upgrade_v04.TimeAndStreams.test_advancing_spectra_cannot_mask_stalled_telemetry) ... ok
+test_advancing_telemetry_or_events_cannot_mask_stalled_spectra (test_upgrade_v04.TimeAndStreams.test_advancing_telemetry_or_events_cannot_mask_stalled_spectra) ... ok
+test_bad_reference_jump_is_rejected_without_stopping_capture (test_upgrade_v04.TimeAndStreams.test_bad_reference_jump_is_rejected_without_stopping_capture) ... ok
+test_network_failure_preserves_anchor_and_exposes_holdover (test_upgrade_v04.TimeAndStreams.test_network_failure_preserves_anchor_and_exposes_holdover) ... ok
+test_reconnect_backoff_and_long_spectrum_interval_are_respected (test_upgrade_v04.TimeAndStreams.test_reconnect_backoff_and_long_spectrum_interval_are_respected) ... ok
+test_restart_during_network_outage_preserves_same_boot_reference (test_upgrade_v04.TimeAndStreams.test_restart_during_network_outage_preserves_same_boot_reference) ... ok
+test_servers_must_agree_and_single_source_is_visible (test_upgrade_v04.TimeAndStreams.test_servers_must_agree_and_single_source_is_visible) ... ok
+test_wall_step_and_negative_correction_cannot_reverse_recorded_utc (test_upgrade_v04.TimeAndStreams.test_wall_step_and_negative_correction_cannot_reverse_recorded_utc) ... ok
+
+----------------------------------------------------------------------
+Ran 80 tests in 39.787s
+
+OK
