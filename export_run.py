@@ -27,6 +27,7 @@ def export_run(run, target=None, with_npz=True):
     target = Path(target).resolve() if target else run / name
     target.mkdir(parents=True, exist_ok=False)
     config = json.loads((run / 'manifest.json').read_text(encoding='utf-8'))
+    immutable_json(target / 'source_manifest.json', config)
     # Consistent point-in-time copy even when recording is still active.
     source = readonly(run / 'run.sqlite')
     db = sqlite3.connect(target / 'source_index.sqlite')
@@ -47,7 +48,9 @@ def export_run(run, target=None, with_npz=True):
               'clock_offset_s', 'clock_estimated_uncertainty_s', 'device_estimator_sample_utc',
               'device_estimator_age_s', 'count_rate_err_percent_latest',
               'dose_rate_err_percent_latest', 'device_flags_latest', 'read_time_halfwidth_s',
-              'telemetry_time_basis','original_snapshot_telemetry_coverage','raw_file', 'raw_sha256']
+              'telemetry_time_basis','original_snapshot_telemetry_coverage','telemetry_bin_finalized',
+              'clock_quality','clock_reference_age_s','clock_slew_remaining_s','clock_uncertainty_note',
+              'device_projection_lead_s','device_time_quantization_s','raw_file', 'raw_sha256']
     previous = None
     epoch = 0
     chunk = []
@@ -128,6 +131,12 @@ def export_run(run, target=None, with_npz=True):
                     count_rate_err_percent_latest=rt.get('count_rate_err'), dose_rate_err_percent_latest=rt.get('dose_rate_err'),
                     device_flags_latest=rt.get('flags'), read_time_halfwidth_s=s['read_time_halfwidth_s'],
                     telemetry_time_basis=tb.get('timestamp_basis'),original_snapshot_telemetry_coverage=original_tb.get('coverage_fraction'),
+                    telemetry_bin_finalized=tb.get('finalized'),clock_quality=(s.get('clock') or {}).get('quality'),
+                    clock_reference_age_s=(s.get('clock') or {}).get('reference_age_s'),
+                    clock_slew_remaining_s=(s.get('clock') or {}).get('slew_remaining_s'),
+                    clock_uncertainty_note=(s.get('clock') or {}).get('uncertainty_note'),
+                    device_projection_lead_s=rt.get('device_projection_lead_s'),
+                    device_time_quantization_s=s.get('device_time_quantization_s'),
                     raw_file=name, raw_sha256=digest))
                 if is_normal:
                     normal += 1

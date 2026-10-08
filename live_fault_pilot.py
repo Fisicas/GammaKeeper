@@ -18,7 +18,7 @@ run=ROOT/'validation'/f'live_fault_pilot_v{revision:02d}'
 log=(ROOT/'validation'/f'live_fault_pilot_v{revision:02d}.log').open('xb')
 process=subprocess.Popen([python_command(),'-X','utf8',str(ROOT/'supervisor.py'),'--run',str(run),
                           '--serial','RC-103-006489','--seconds','180','--interval','10',
-                          '--test-reconnect-at','40','--label','v0.2 live validation: cache lock, USB reopen, killed recorder'],
+                          '--test-reconnect-at','40','--label','v0.4 live validation: cache lock, USB reopen, killed recorder'],
                          cwd=ROOT,stdout=log,stderr=log,creationflags=subprocess.CREATE_NO_WINDOW)
 started=time.monotonic()
 held=None

@@ -5,6 +5,7 @@ import threading
 import time
 from device import io_worker
 from runtime import PYTHONW
+from diagnostics import diagnostic
 
 
 class DeviceFailure(Exception):
@@ -81,7 +82,18 @@ class WorkerClient:
             self._commands.put_nowait(command)
         except queue.Full as error:
             raise DeviceFailure('Device command queue is blocked') from error
-        value = self.receive(timeout)
+        started = time.perf_counter()
+        try:
+            value = self.receive(timeout)
+        except DeviceFailure as error:
+            diagnostic('device_request_failed', command=command.get('kind') if isinstance(command,dict) else command,
+                       elapsed_s=time.perf_counter()-started, timeout_s=timeout,
+                       error=str(error), command_queue_depth=self._commands.qsize())
+            raise
+        self.last_latency_s = time.perf_counter()-started
+        if self.last_latency_s > .5:
+            diagnostic('device_request_slow',command=command.get('kind') if isinstance(command,dict) else command,
+                       elapsed_s=self.last_latency_s)
         expected = command.get('kind') if isinstance(command,dict) else command
         if value.get('kind') != expected:
             raise DeviceFailure(f'Unexpected reply {value.get("kind")}; expected {expected}')

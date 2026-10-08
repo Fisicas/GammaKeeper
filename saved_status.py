@@ -4,6 +4,7 @@ import json
 import hashlib
 from pathlib import Path
 from export_run import readonly
+from supervisor_store import read_health
 
 
 def load_status(run):
@@ -22,6 +23,10 @@ def load_status(run):
             recorder = db.execute("SELECT value FROM state WHERE key='recorder'").fetchone()
             supervisor = db.execute("SELECT value FROM state WHERE key='supervisor'").fetchone()
             supervisor = json.loads(supervisor[0]) if supervisor else None
+            try:
+                supervisor = read_health(run) or supervisor
+            except (OSError, sqlite3.Error, ValueError):
+                pass  # Legacy journal state remains usable if health reporting is locked.
             if not journal and (supervisor or recorder):
                 manifest = json.loads((run/'manifest.json').read_text())
                 rc = json.loads(recorder[0]) if recorder else {}
@@ -44,6 +49,9 @@ def load_status(run):
             state = journal if journal and (not cached or journal.get('utc','') >= cached.get('utc','')
                                           or journal['state'] in ('error','stopped','completed')) else cached
             if state:
+                summary = db.execute("SELECT value FROM state WHERE key='acquisition_summary'").fetchone()
+                if summary:
+                    state['acquisition_summary'] = json.loads(summary[0])
                 latest = db.execute('SELECT file,derived,sha256 FROM snapshots ORDER BY seq DESC LIMIT 1').fetchone()
                 if latest:
                     try:

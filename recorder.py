@@ -16,14 +16,17 @@ import traceback
 import uuid
 
 from analysis import VERSION, midpoint, timestamp, retry_delay, weighted_telemetry, DOSE_R_TO_USV
-from device import io_worker, utc_now
-from storage import RunStore, DeviceMutex, immutable_json, canonical
+from device import io_worker, utc_now,UTCClock
+from system_time import boot_identity
+from storage import RunStore, DeviceMutex, immutable_json, canonical,RecoveryCancelled
 from status_cache import StatusPublisher
 from worker_client import WorkerClient, DeviceFailure
 from runtime import python_command
 import sqlite3
 from status_observations import select_rare
 from telemetry_analysis import observation_from_batch
+from run_policy import require_resume, validate_schedule
+from diagnostics import diagnostic
 
 
 class DemoClient:
@@ -104,6 +107,12 @@ def versions():
 
 
 def record(path, config=None, test_reconnect_at=None, stop_request=None):
+    if config is None:
+        try:
+            require_resume(path)
+        except (OSError, ValueError, KeyError) as error:
+            diagnostic('resume_refused', error=str(error), run=str(path))
+            return 2
     store = None
     client = None
     mutex = None
@@ -120,7 +129,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
     gap = False
     successful_spectra = 0
     generation = 0
-    results = queue.Queue()
+    results = queue.Queue(maxsize=2)
     start = time.monotonic()
     next_audit = start
     next_status = start
@@ -136,6 +145,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
     publisher = None
     last_ui_persist = -float('inf')
     last_ui_state = None
+    clock_failures = 0
     exit_code = 0
     def publish(value, force=False):
         nonlocal last_ui_persist,last_ui_state
@@ -151,15 +161,44 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                 store.set_state('ui_status',compact)
                 last_ui_persist,last_ui_state = time.monotonic(),value.get('state')
             except (sqlite3.Error,OSError) as error:
-                print(f'Optional UI state persistence failed: {error}',file=sys.stderr,flush=True)
+                diagnostic('optional_ui_persistence_failed', error=str(error), operation='ui_status',
+                           winerror=getattr(error,'winerror',None))
             finally:
                 try:
                     store.db.execute('PRAGMA busy_timeout=5000')
                 except sqlite3.Error:
                     pass
+    def capture_spectrum(final=False):
+        nonlocal dose_integral, dose_observed_s, dose_elapsed_s, gap, successful_spectra, failure_index, next_spectrum
+        msg = client.request('spectrum', timeout=5 if final else 12)
+        snapshot = make_snapshot(msg, serial, boot, connection_id, generation, gap, last_rt, last_rare,
+                                 final=final, dose_baseline=dose_baseline, dose_reset_seen=dose_reset_seen)
+        if store.previous:
+            snapshot['telemetry_bin'] = weighted_telemetry(records, midpoint(store.previous), midpoint(snapshot))
+            snapshot['telemetry_bin']['timestamp_basis'] = 'host_reception_utc'
+            tb = snapshot['telemetry_bin']
+            dose_integral += tb.get('observed_integrated_dose_uSv', 0.)
+            dose_observed_s += tb.get('observed_duration_s', 0.)
+            dose_elapsed_s += max(0., midpoint(snapshot) - midpoint(store.previous))
+        snapshot.update(derived_observed_dose_uSv=dose_integral,
+                        derived_observed_dose_coverage=dose_observed_s/dose_elapsed_s if dose_elapsed_s else 0.,
+                        derived_observed_dose_elapsed_s=dose_elapsed_s)
+        saved, derived = store.append_snapshot(snapshot)
+        state.update(state='recording', last_snapshot=saved, last_interval=derived,
+                     snapshots=store.next_seq, message=', '.join(derived['quality']))
+        gap = False
+        if not final:
+            successful_spectra += 1
+            if time.monotonic()-connected_since >= 60 and successful_spectra >= 3:
+                failure_index = 0
+            next_spectrum += config['interval_s']
+            if next_spectrum < time.monotonic():
+                store.event('spectrum_deadline_missed', dict(lateness_s=time.monotonic()-next_spectrum))
+                next_spectrum += (int((time.monotonic()-next_spectrum)/config['interval_s'])+1)*config['interval_s']
+
     try:
         mutex = DeviceMutex(serial)
-        store = RunStore(path, config)
+        store = RunStore(path, config, cancel=lambda: bool(stop_request and Path(stop_request).exists()))
         owns_status = True
         publisher = StatusPublisher(path)
         config = store.config
@@ -188,12 +227,21 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                 dose_elapsed_s = old['derived_observed_dose_elapsed_s']
         publish( dict(state, utc=utc_now(), message='Checking UTC reference'))
         if mode == 'device':
-            clock = clock_measurement()
+            initial=config.get('initial_clock_measurement') or {}
+            clock=(initial if initial.get('reference_monotonic_s') is not None and
+                   0<=time.perf_counter()-initial['reference_monotonic_s']<120 else clock_measurement())
+            if not clock.get('verified') and store.previous and store.previous.get('clock'):
+                clock=dict(clock,previous_clock=store.previous['clock'])
             store.event('clock_measurement', clock)
             state['clock_measurement'] = clock
-        next_audit = time.monotonic() + 3600
+        next_audit = time.monotonic() + 900
         if config.get('planned_end_utc'):
-            remaining = timestamp(config['planned_end_utc']) - time.time()
+            same_boot=config.get('created_boot_id') is not None and config['created_boot_id']==boot_identity()
+            if config.get('deadline_monotonic_s') is not None and same_boot:
+                remaining=config['deadline_monotonic_s']-time.monotonic()
+            else:
+                now_utc=UTCClock(clock).seconds() if config.get('schedule_time_basis')=='sntp_reference' else time.time()
+                remaining = timestamp(config['planned_end_utc']) - now_utc
             if remaining <= 0:
                 raise RuntimeError('Planned run end has passed; open/export this run or start a new run')
             stop_deadline = time.monotonic() + remaining
@@ -215,27 +263,13 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                 # A short final interval is explicit, never expanded into a nominal 10s bin.
                 if client and store.previous and now - (store.previous['monotonic_after'] if store.previous['boot_id'] == boot else start) > .5:
                     try:
-                        msg = client.request('spectrum', timeout=5)
-                        snapshot = make_snapshot(msg, serial, boot, connection_id, generation, gap,
-                                                 last_rt, last_rare, final=True, dose_baseline=dose_baseline,
-                                                 dose_reset_seen=dose_reset_seen)
-                        snapshot['telemetry_bin'] = weighted_telemetry(records, midpoint(store.previous), midpoint(snapshot))
-                        snapshot['telemetry_bin']['timestamp_basis']='host_reception_utc'
-                        tb = snapshot['telemetry_bin']
-                        dose_integral += tb.get('observed_integrated_dose_uSv', 0.)
-                        dose_observed_s += tb.get('observed_duration_s', 0.)
-                        dose_elapsed_s += max(0., midpoint(snapshot) - midpoint(store.previous))
-                        snapshot.update(derived_observed_dose_uSv=dose_integral,
-                                        derived_observed_dose_coverage=dose_observed_s / dose_elapsed_s if dose_elapsed_s else 0.,
-                                        derived_observed_dose_elapsed_s=dose_elapsed_s)
-                        saved, derived = store.append_snapshot(snapshot)
-                        state.update(last_snapshot=saved, last_interval=derived, snapshots=store.next_seq)
+                        capture_spectrum(final=True)
                     except DeviceFailure as error:
                         store.event('final_read_failed', dict(error=str(error)))
                 break
             if now >= next_audit:
                 threading.Thread(target=clock_audit, args=(results,), daemon=True).start()
-                next_audit = now + 3600
+                next_audit = now + 900
             while publisher and not publisher.warnings.empty():
                 warning = publisher.warnings.get_nowait()
                 kind = warning.pop('kind')
@@ -245,22 +279,24 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                 audit = results.get_nowait()
                 store.event('clock_audit', audit)
                 state['clock_audit'] = audit
-                if audit['sntp'].get('verified'):
-                    clock = audit['sntp']
-                    state['clock_measurement'] = clock
-                    if client:
-                        try:
-                            update = client.request(dict(kind='clock', measurement=clock))
-                            store.event('utc_reference_updated', update['result'])
-                        except DeviceFailure as error:
-                            client.close()
-                            client = None
-                            gap = True
-                            delay = retry_delay(failure_index)
-                            failure_index += 1
-                            retry_at = time.monotonic() + delay
-                            state.update(state='reconnecting', message=str(error), retries=state['retries'] + 1, retry_delay_s=delay)
-                            store.event('disconnected', dict(error=str(error), delay_s=delay))
+                clock = audit['sntp']
+                state['clock_measurement'] = clock
+                clock_failures = 0 if clock.get('verified') else clock_failures + 1
+                next_audit = time.monotonic() + (900 if not clock_failures else retry_delay(clock_failures-1,30,600))
+                state['clock_retry_delay_s'] = 0 if not clock_failures else next_audit-time.monotonic()
+                if client:
+                    try:
+                        update = client.request(dict(kind='clock', measurement=clock))
+                        store.event('utc_reference_updated', update['result'])
+                    except DeviceFailure as error:
+                        client.close()
+                        client = None
+                        gap = True
+                        delay = retry_delay(failure_index)
+                        failure_index += 1
+                        retry_at = time.monotonic() + delay
+                        state.update(state='reconnecting', message=str(error), retries=state['retries'] + 1, retry_delay_s=delay)
+                        store.event('disconnected', dict(error=str(error), delay_s=delay))
             if client is None and now >= retry_at:
                 state.update(state='connecting', message='Opening device', retry_delay_s=None)
                 publish( dict(state, utc=utc_now()))
@@ -285,6 +321,9 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                     store.event('connection_retry', dict(error=str(error), delay_s=delay, failure_index=failure_index))
             if client is not None:
                 try:
+                    # Give already-due spectrum reads priority over buffered telemetry.
+                    if time.monotonic() >= next_spectrum and store.previous is not None:
+                        capture_spectrum()
                     if test_reconnect_at is not None and not tested_reconnect and now - start >= test_reconnect_at:
                         tested_reconnect = True
                         raise DeviceFailure('TEST: deliberate transport close/reopen; cable remains connected')
@@ -341,30 +380,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                             store.event('telemetry_poll_late', dict(lateness_s=time.monotonic() - next_buffer))
                             next_buffer = time.monotonic() + 1
                     if time.monotonic() >= next_spectrum:
-                        msg = client.request('spectrum')
-                        snapshot = make_snapshot(msg, serial, boot, connection_id, generation, gap, last_rt, last_rare,
-                                                 dose_baseline=dose_baseline, dose_reset_seen=dose_reset_seen)
-                        if store.previous:
-                            snapshot['telemetry_bin'] = weighted_telemetry(records, midpoint(store.previous), midpoint(snapshot))
-                            snapshot['telemetry_bin']['timestamp_basis']='host_reception_utc'
-                            tb = snapshot['telemetry_bin']
-                            dose_integral += tb.get('observed_integrated_dose_uSv', 0.)
-                            dose_observed_s += tb.get('observed_duration_s', 0.)
-                            dose_elapsed_s += max(0., midpoint(snapshot) - midpoint(store.previous))
-                        snapshot.update(derived_observed_dose_uSv=dose_integral,
-                                        derived_observed_dose_coverage=dose_observed_s / dose_elapsed_s if dose_elapsed_s else 0.,
-                                        derived_observed_dose_elapsed_s=dose_elapsed_s)
-                        saved, derived = store.append_snapshot(snapshot)
-                        state.update(state='recording', last_snapshot=saved, last_interval=derived,
-                                     snapshots=store.next_seq, message=', '.join(derived['quality']))
-                        gap = False
-                        successful_spectra += 1
-                        if time.monotonic() - connected_since >= 60 and successful_spectra >= 3:
-                            failure_index = 0  # A successful open alone does not reset exponential backoff.
-                        next_spectrum += config['interval_s']
-                        if next_spectrum < time.monotonic():
-                            store.event('spectrum_deadline_missed', dict(lateness_s=time.monotonic() - next_spectrum))
-                            next_spectrum += (int((time.monotonic() - next_spectrum) / config['interval_s']) + 1) * config['interval_s']
+                        capture_spectrum()
                 except DeviceFailure as error:
                     client.close()
                     client = None
@@ -379,7 +395,13 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                 state['connected_elapsed_s'] = time.monotonic() - connected_since if client else None
                 publish( dict(state, utc=utc_now(), uptime_s=time.monotonic() - start))
                 next_status = time.monotonic() + 1
-            time.sleep(.05)
+            # Wait near a spectrum deadline without a fixed 50 ms quantization.
+            until_spectrum = next_spectrum-time.monotonic() if client else .05
+            time.sleep(min(.05, max(.001, until_spectrum)))
+    except RecoveryCancelled:
+        outcome='stopped'
+        exit_code=0
+        diagnostic('recovery_cancelled',run=str(path))
     except BaseException as error:
         outcome = 'error'
         # Automatic restart must never conceal invalid/missing raw data or a disk failure.
@@ -445,8 +467,14 @@ def make_snapshot(msg, serial, boot, connection, generation, gap, realtime, rare
 
 
 def make_config(serial, interval, seconds, mode, label):
-    now = dt.datetime.now(dt.timezone.utc)
+    validate_schedule(interval, seconds)
+    measurement=clock_measurement() if mode=='device' else dict(verified=False,offset_s=0.,note='Synthetic input; host clock')
+    now = UTCClock(measurement).now()
+    created_mono=time.monotonic()
     return dict(schema=1, software_version=VERSION, serial=serial, interval_s=interval, duration_s=seconds,
+                initial_clock_measurement=measurement,created_boot_id=boot_identity(),created_monotonic_s=created_mono,
+                deadline_monotonic_s=created_mono+seconds if seconds else None,
+                schedule_time_basis='sntp_reference' if measurement.get('verified') else 'host_unverified',
                 created_utc=now.isoformat(), planned_end_utc=(now + dt.timedelta(seconds=seconds)).isoformat() if seconds else None,
                 mode=mode, label=label, versions=versions(), retry_initial_s=1, retry_cap_s=60,
                 retry_reset='60s stable connection and at least 3 saved spectra',

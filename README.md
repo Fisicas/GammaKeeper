@@ -1,6 +1,18 @@
-# RadiaLog 0.3.1
+# RadiaLog 0.4.0
 
 Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
+
+## October 8 reliability and analysis release
+
+This release implements the overnight-review recommendations. The supervisor writes health to its own SQLite store, watches spectrum and telemetry streams independently, and recognizes progress during lengthy raw-file recovery. Expired/completed/backup runs are rejected before a writer is opened. Spectrum deadlines have priority over telemetry. New raw telemetry records have payload hashes, and live count summaries are committed atomically with spectra.
+
+UTC uses validated independent SNTP samples bound to Windows' shared monotonic performance counter. Updates slew continuously at at most 5 ms/s; network failure keeps the previous reference, including a same-boot recorder restart. Single-source mode, reference age, holdover, remaining correction and uncertainty are saved. The 100 ppm holdover-growth term is an explicit engineering assumption, not a certified oscillator bound. Normal checks occur every 15 minutes; failures retry with exponential spacing capped at 10 minutes. The program does not change the computer clock or Windows Time service. Device sample/filter latency and clock skew remain uncalibrated, and raw timestamps are never silently replaced.
+
+The time-series tab offers recent/full/custom UTC windows, epoch selection, UTC/local axes, color limits and ROI rates. Click a heatmap interval for its original-channel spectrum; terminal-channel interpretation is separate. Whole-run display groups sum recorded integer differences and divide by summed device duration. Gaps/mixed groups remain blank. The run-summary tab shows counts, rate, counting-only uncertainty, dose coverage, counter age, integrity results and free space. Events/logs are searchable. Manual navigation disables live-follow; reopening remembers the selected run or setup.
+
+Completed runs automatically launch a detached, low-priority validation/export job. Acquisition completion is preserved if optional export fails. **Create verified backup** copies a consistent journal horizon and verifies copied hashes. **Resume interrupted backup** continues that same horizon without overwriting changed files. Backup snapshots can be inspected but cannot be resumed as recordings. Optional derived caches/checkpoints accelerate reopened analysis; cache age/source-check time is labeled and full integrity validation remains separate.
+
+Use `Open_RadiaLog.cmd` for this release. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.4; GUI closure does not stop acquisition. Tests, GUI lifecycle/render evidence and a connected-device fault pilot are under `validation`; detailed changes and qualification limits are in `../upgrade_20261008_v01/release_notes_v01.md`. The historical sections below describe earlier releases and their checks.
 
 ## Saved-run settings correction
 

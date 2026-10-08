@@ -294,7 +294,7 @@ class Reliability(unittest.TestCase):
         self.assertEqual(result.returncode,2)
         db = sqlite3.connect(run/'run.sqlite')
         try:
-            state = json.loads(db.execute("SELECT value FROM state WHERE key='supervisor'").fetchone()[0])
+            state = load_status(run)['supervisor']
             self.assertEqual(state['status'],'attention_required')
             self.assertEqual(state['restarts'],0)
         finally:

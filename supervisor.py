@@ -13,23 +13,16 @@ import uuid
 from analysis import retry_delay
 from runtime import python_command
 from storage import DeviceMutex
+from supervisor_store import save_health
+from run_policy import require_resume
+from diagnostics import diagnostic
+from recovery_progress import read as read_recovery
 
 ROOT = Path(__file__).resolve().parent
 
 
 def save_supervisor_state(run, state):
-    # Only metadata; no raw rows or configuration are changed here.
-    try:
-        if not (run/'run.sqlite').exists():
-            return
-        db = sqlite3.connect(run/'run.sqlite',timeout=.2)
-        try:
-            with db:
-                db.execute('INSERT OR REPLACE INTO state VALUES(?,?)',('supervisor',json.dumps(state,allow_nan=False)))
-        finally:
-            db.close()
-    except (OSError,sqlite3.Error):
-        pass  # Cache/journal reporting cannot kill supervision.
+    save_health(run, state)
 
 
 def inspect_run(run):
@@ -65,10 +58,57 @@ class ProgressWatchdog:
         return now-self.last_progress>grace
 
 
+class StreamWatchdog:
+    """Independent monotonic stream ages; reconnect backoff is intentional."""
+    def __init__(self, interval, timeout=180, now=None):
+        self.started = time.monotonic() if now is None else now
+        self.last = dict(spectrum=self.started, telemetry=self.started)
+        self.tokens = dict(spectrum=None, telemetry=None)
+        self.thresholds = dict(spectrum=max(30., interval * 3 + 15), telemetry=30.)
+        self.overall = ProgressWatchdog(timeout, max(300, timeout))
+
+    def observe(self, progress, mode, now=None):
+        now = time.monotonic() if now is None else now
+        recovering=mode=='recovering'
+        if recovering:
+            # Real per-file verification progress is a valid startup heartbeat.
+            self.overall.startup_grace=max(300,self.overall.startup_grace)
+        stalled = self.overall.observe(progress, now)
+        if progress is not None:
+            for stream, value in (('spectrum', progress[2]), ('telemetry', progress[1])):
+                if value != self.tokens[stream]:
+                    self.tokens[stream] = value
+                    self.last[stream] = now
+        if mode != 'recording':
+            self.last = dict(spectrum=now, telemetry=now)
+            return 'journal' if stalled else None
+        for stream in ('spectrum', 'telemetry'):
+            if now - self.last[stream] > self.thresholds[stream]:
+                return stream
+        return 'journal' if stalled else None
+
+
+def read_mode(run):
+    try:
+        db = sqlite3.connect((run/'run.sqlite').as_uri()+'?mode=ro', uri=True, timeout=.1)
+        try:
+            row = db.execute("SELECT value FROM state WHERE key='ui_status'").fetchone()
+            return json.loads(row[0]).get('state') if row else None
+        finally:
+            db.close()
+    except (OSError, sqlite3.Error, ValueError):
+        return None
+
+
 def supervise(arguments, max_restarts=3, stall_timeout=180):
     run = Path(arguments[arguments.index('--run')+1]).resolve()
     serial = arguments[arguments.index('--serial')+1] if '--serial' in arguments else 'RC-103-006489'
     if '--resume' in arguments:
+        try:
+            require_resume(run)
+        except (OSError, ValueError, KeyError) as error:
+            diagnostic('resume_refused', error=str(error), run=str(run))
+            return 2
         serial = json.loads((run/'manifest.json').read_text())['serial']
     elif '--demo' in arguments:
         serial = 'SIMULATED'
@@ -89,6 +129,8 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
             if stop.exists():
                 break
             child_args = list(arguments) if first else ['--run',str(run),'--resume']
+            previous_recorder,previous_progress=inspect_run(run)
+            previous_boot=(previous_recorder or {}).get('boot_id')
             child_args += ['--stop-request',str(stop)]
             log = logs/(dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'_recorder.log')
             with log.open('xb') as output:
@@ -97,7 +139,10 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                                          creationflags=subprocess.CREATE_NO_WINDOW)
             state.update(status='running',child_pid=child.pid,child_log=str(log),utc=dt.datetime.now(dt.timezone.utc).isoformat())
             started = time.monotonic()
-            watchdog = ProgressWatchdog(stall_timeout,max(300,stall_timeout))
+            interval = (float(arguments[arguments.index('--interval')+1]) if '--interval' in arguments
+                        else json.loads((run/'manifest.json').read_text())['interval_s'] if (run/'manifest.json').exists() else 10.)
+            watchdog = StreamWatchdog(interval, stall_timeout)
+            recovery_grace=max(300., ((previous_progress or (None,None,0))[2] or 0)*.05)
             last_persist = -float('inf')
             while child.poll() is None:
                 now = time.monotonic()
@@ -105,10 +150,26 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                     state['utc'] = dt.datetime.now(dt.timezone.utc).isoformat()
                     save_supervisor_state(run,state)
                     last_persist = now
-                    _,progress = inspect_run(run)
-                    stalled = watchdog.observe(progress,now)
+                    recorder_state,progress = inspect_run(run)
+                    recovery=read_recovery(run)
+                    mode=read_mode(run)
+                    ready=recorder_state and recorder_state.get('boot_id')!=previous_boot and recorder_state.get('status')=='running'
+                    if not ready:
+                        mode='recovering'
+                        watchdog.overall.timeout=recovery_grace
+                    else:
+                        watchdog.overall.timeout=stall_timeout
+                    if recovery and recovery['phase']=='running' and 0<=now-recovery['monotonic_s']<10:
+                        mode='recovering'
+                        progress=tuple(progress or (None,None,None))+(recovery['verified'],)
+                        state['recovery_progress']=recovery
+                    elif 'recovery_progress' in state:
+                        state.pop('recovery_progress',None)
+                    stalled = watchdog.observe(progress,mode,now)
                     if stalled:
-                        state['watchdog_reason'] = 'No durable telemetry/event progress within watchdog deadline'
+                        state['watchdog_reason'] = f'{stalled} stream stopped advancing within its watchdog deadline'
+                        event = diagnostic('stream_stalled', stream=stalled, progress=progress)
+                        save_health(run,state,event)
                         # Kill only this supervisor's child tree. Windows venv
                         # redirectors can have another Python process below them.
                         terminate_tree(child.pid)
@@ -122,6 +183,18 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
             state.update(last_exit_code=rc,utc=dt.datetime.now(dt.timezone.utc).isoformat())
             if stop.exists() or rc==0:
                 state['status'] = 'stopped'
+                if rc == 0 and (run/'run.sqlite').exists():
+                    recorder_state, _ = inspect_run(run)
+                    if recorder_state and recorder_state.get('status') == 'completed':
+                        state['completion_validation'] = 'running'
+                        state['completion_target'] = str(run/('completion_'+dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ')))
+                        seal_log = logs/(dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'_completion.log')
+                        with seal_log.open('xb') as output:
+                            result = subprocess.Popen([python_command(),'-X','utf8',str(ROOT/'completion.py'),str(run),
+                                                       '--target',state['completion_target']],
+                                                      cwd=ROOT,stdout=output,stderr=output,
+                                                      creationflags=subprocess.CREATE_NO_WINDOW|subprocess.BELOW_NORMAL_PRIORITY_CLASS)
+                        state.update(completion_pid=result.pid, completion_log=str(seal_log))
                 break
             if rc==2:
                 state.update(status='attention_required',reason='Durable storage, integrity, or validation failure; automatic restart suppressed')

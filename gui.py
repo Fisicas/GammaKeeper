@@ -10,6 +10,7 @@ import sqlite3
 import subprocess
 import sys
 import uuid
+import hashlib
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets as Q
@@ -26,6 +27,10 @@ from runtime import python_command
 from winfiles import process_alive
 from telemetry_analysis import LiveJournalTelemetry
 from run_settings import load_run_settings, run_summary
+from run_policy import require_resume,resume_allowed
+from gui_analysis import AnalysisUI
+from matplotlib.ticker import FuncFormatter
+import gui_preferences
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 ROOT = Path(__file__).resolve().parent
@@ -42,6 +47,11 @@ class Charts(FigureCanvasQTAgg):
         self.count = self.figure.add_subplot(grid[1, 0])
         self.dose = self.figure.add_subplot(grid[1, 1])
         self.colorbar = None
+        self.display_label='Recent recorded intervals'
+        self.color_percentile=99.5
+        self.local_time=False
+        self.show_dates=False
+        self.roi=None
         self.empty()
 
     def style(self, ax):
@@ -73,7 +83,7 @@ class Charts(FigureCanvasQTAgg):
         edge_ch = np.arange(channels + 1) - .5
         a0, a1, a2 = spectrum['calibration_keV']
         energy = a0 + a1 * edge_ch + a2 * edge_ch**2
-        ends, starts, matrix, rates, dose_rates, filtered = [], [], [], [], [], []
+        ends, starts, matrix, rates, dose_rates, filtered, roi_rates = [], [], [], [], [], [], []
         for utc, epoch, d, s in rows:
             if d['device_duration_s'] is None or d['wall_duration_s'] is None or d['wall_duration_s'] <= 0:
                 continue
@@ -89,18 +99,23 @@ class Charts(FigureCanvasQTAgg):
             ends.append(end)
             matrix.append(values)
             rates.append(d['count_rate_cps'] if is_normal else np.nan)
+            if self.roi and delta is not None and is_normal:
+                centers=a0+a1*np.arange(channels)+a2*np.arange(channels)**2
+                mask=(centers>=self.roi[0])&(centers<=self.roi[1]);mask[-1]=mask[-1] and self.roi[2]
+                roi_rates.append(float(np.asarray(delta)[mask].sum())/d['device_duration_s'])
+            else:roi_rates.append(np.nan)
             tb = s.get('telemetry_bin', {})
             coverage = tb.get('coverage_fraction', 0)
             dose_rates.append(tb.get('dose_rate_uSv_h') if coverage >= .999 and is_normal else np.nan)
             filtered.append(tb.get('device_count_rate_cps') if coverage >= .999 and is_normal else np.nan)
         prefix = 'SIMULATED • ' if mode == 'demo' else ''
-        self.spg.set_title(prefix + 'Spectrogram • recent 240 intervals • gaps left blank', loc='left')
+        self.spg.set_title(prefix + 'Spectrogram • '+self.display_label+' • gaps left blank', loc='left')
         if ends and np.all(np.diff(energy) > 0):
             yedges = [starts[0]] + ends
             values = np.ma.masked_invalid(np.asarray(matrix))
             positive = values.compressed()
             positive = positive[positive > 0]
-            maximum = max(float(np.percentile(positive, 99.5)), .1) if len(positive) else 1.
+            maximum = max(float(np.percentile(positive, self.color_percentile)), .1) if len(positive) else 1.
             cmap = __import__('matplotlib').colormaps['magma'].copy()
             cmap.set_bad(PANEL)
             mesh = self.spg.pcolormesh(energy, yedges, np.ma.masked_less_equal(values, 0),
@@ -110,21 +125,30 @@ class Charts(FigureCanvasQTAgg):
             self.colorbar.ax.tick_params(colors=MUTED, labelsize=8)
             self.spg.invert_yaxis()
             self.spg.yaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S', tz=dt.timezone.utc))
+            if self.show_dates:self.spg.yaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M',tz=dt.timezone.utc))
             self.count.plot(ends, rates, color=TEAL, linewidth=1.4, label='Spectrum differences')
             self.count.plot(ends, filtered, color=MUTED, linewidth=1., linestyle='--', label='Device estimator')
+            if self.roi:self.count.plot(ends,roi_rates,color=GOLD,linewidth=1.,label='Selected ROI')
             self.dose.plot(ends, dose_rates, color=GOLD, linewidth=1.4)
             self.count.legend(facecolor=PANEL, edgecolor=PANEL, labelcolor=MUTED, fontsize=7, loc='upper left')
         else:
             self.spg.text(.5, .5, 'Baseline saved; waiting for a complete interval', transform=self.spg.transAxes, ha='center', color=MUTED)
         self.spg.set_xlabel('Energy (keV) • device polynomial; original channels')
         self.spg.set_ylabel('UTC • time increases downward')
+        if self.local_time:
+            self.spg.set_ylabel('Local time • UTC offset shown • time increases downward')
+            self.spg.yaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime('%H:%M:%S %z')))
         self.count.set_title('Counts over time', loc='left')
         self.count.set_ylabel('cps')
         self.dose.set_title('Device dose-rate mean over time', loc='left')
         self.dose.set_ylabel('µSv/h')
         for ax in [self.count, self.dose]:
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M', tz=dt.timezone.utc))
+            if self.show_dates:ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M',tz=dt.timezone.utc))
             ax.set_xlabel('UTC')
+            if self.local_time:
+                ax.xaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime('%H:%M %z')))
+                ax.set_xlabel('Local time • original timestamps are UTC')
             ax.grid(alpha=.12, color=MUTED)
         self.draw_idle()
 
@@ -134,11 +158,14 @@ class SettingsSpinBox(Q.QDoubleSpinBox):
         return f'{value:.12g}'
 
 
-class Window(Q.QMainWindow):
+class Window(AnalysisUI,Q.QMainWindow):
     def __init__(self, inspect_run=None):
         super().__init__()
+        preferences=gui_preferences.read(ROOT)
+        remembered=preferences.get('run')
+        if inspect_run is None and remembered and (Path(remembered)/'manifest.json').exists():inspect_run=remembered
         self.setWindowTitle(f'RadiaLog {VERSION} — experiment recorder')
-        self.resize(1350, 900)
+        self.resize(1500, 980)
         self.run = Path(inspect_run) if inspect_run else None
         self.recorder = None
         self.export_process = None
@@ -251,17 +278,21 @@ class Window(Q.QMainWindow):
         note.setObjectName('muted')
         note.setWordWrap(True)
         settings.addWidget(note)
-        content.addWidget(panel)
+        scroll=Q.QScrollArea();scroll.setWidgetResizable(True);scroll.setFixedWidth(320)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(panel);content.addWidget(scroll)
         right = Q.QVBoxLayout()
         content.addLayout(right, 1)
         cards = Q.QHBoxLayout()
         self.metrics = []
+        self.metric_captions=[]
         for text in ['Count rate • spectrum', 'Dose rate • latest', 'Dose • observed', 'Saved spectra']:
             frame = Q.QFrame()
             frame.setObjectName('panel')
             stack = Q.QVBoxLayout(frame)
             caption = Q.QLabel(text)
             caption.setObjectName('muted')
+            self.metric_captions.append(caption)
             value = Q.QLabel('—')
             value.setObjectName('metric')
             stack.addWidget(caption)
@@ -276,8 +307,14 @@ class Window(Q.QMainWindow):
         right.addWidget(self.run_summary)
         self.charts = Charts()
         self.chart_toolbar=NavigationToolbar2QT(self.charts,self)
-        right.addWidget(self.chart_toolbar)
-        right.addWidget(self.charts, 1)
+        self.init_analysis(right,ROOT,BG,PANEL,TEXT)
+        self.audit_button=Q.QPushButton('Validate completed run + export')
+        self.audit_button.clicked.connect(self.audit_selected)
+        settings.insertWidget(settings.count()-2,self.audit_button)
+        backup=Q.QPushButton('Create verified backup…');backup.clicked.connect(lambda:self.backup_selected(False))
+        settings.insertWidget(settings.count()-2,backup)
+        resume_backup=Q.QPushButton('Resume interrupted backup…');resume_backup.clicked.connect(lambda:self.backup_selected(True))
+        settings.insertWidget(settings.count()-2,resume_backup)
         self.health=Q.QLabel('Waiting for run health')
         self.health.setObjectName('muted')
         self.health.setWordWrap(True)
@@ -298,6 +335,14 @@ class Window(Q.QMainWindow):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(1000)
+        if not self.run:
+            values=preferences.get('setup') or {}
+            self.label.setText(values.get('label',''))
+            self.serial.setText(values.get('serial','RC-103-006489'))
+            self.interval.setValue(values.get('interval_s',10))
+            self.days.setValue(values.get('days',7))
+            self.folder.setText(values.get('folder',str(ROOT/'runs')))
+            self.demo.setChecked(values.get('demo',False))
         self.refresh()
 
     def message(self, text):
@@ -336,12 +381,17 @@ class Window(Q.QMainWindow):
             self.folder.setText(str(self.run.resolve().parent))
             self.demo.setChecked(saved['mode'] == 'demo')
             self.settings_run = selected
+            begin=timestamp(saved['created_utc'])
+            end=timestamp(saved['planned_end_utc']) if saved.get('planned_end_utc') else dt.datetime.now(dt.timezone.utc).timestamp()
+            self.view_from.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(int(begin),QtCore.QTimeZone(0)))
+            self.view_until.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(int(end),QtCore.QTimeZone(0)))
             self.run_summary.setToolTip(
                 f"Saved start UTC: {saved['created_utc']}\n"
                 f"Saved planned end UTC: {saved.get('planned_end_utc') or 'none'}\n"
                 'Resume keeps this original schedule; it does not restart the duration.\n'
                 'Displayed dates include the local UTC offset.')
-        self.run_summary.setText(run_summary(self.run_settings))
+        now=dt.datetime.fromtimestamp(self.current_timeline_seconds(),dt.timezone.utc)
+        self.run_summary.setText(run_summary(self.run_settings,now))
 
     def prepare_new(self):
         """Leave a stopped saved run and use its values as a new-run template."""
@@ -349,6 +399,7 @@ class Window(Q.QMainWindow):
             self.fail('Stop the selected recording before setting up a new recording')
             return
         self.run = None
+        self.preview_cancel.set();self.analysis_rows=[];self.preview_key=None;self.preview_summary={}
         self.recorder = None
         self.last_status = {}
         self.last_seq = None
@@ -393,6 +444,7 @@ class Window(Q.QMainWindow):
         self.last_status = {}
         self.last_seq = None
         self.message(f'Recorder started (PID {process.pid}); diagnostics: {log_file.name}')
+        self.connection.setText('PREPARING RECORDING • checking clock and settings')
         self.start_button.setEnabled(False)
 
     def start_new(self):
@@ -415,6 +467,7 @@ class Window(Q.QMainWindow):
             self.fail(error)
 
     def active(self):
+        if self.run and (self.run/'BACKUP_PLAN.json').exists():return False
         if self.recorder and self.recorder.poll() is None:
             return True
         sup = self.last_status.get('supervisor') or {}
@@ -464,6 +517,7 @@ class Window(Q.QMainWindow):
             if self.active():
                 raise RuntimeError('This recording is already running')
             self.restore_run_settings(force=True)
+            require_resume(self.run)
             self.launch(['--run', str(self.run), '--resume'])
         except Exception as error:
             self.fail(error)
@@ -517,6 +571,8 @@ class Window(Q.QMainWindow):
             self.status_stale = age > 25 and state['state'] in ('starting', 'connecting', 'recording', 'reconnecting')
             self.last_status = state
             active = self.active()
+            self.metric_captions[0].setText('Spectrum rate • latest interval' if active else 'Spectrum rate • final interval')
+            self.metric_captions[1].setText('Dose rate • latest estimator' if active else 'Dose rate • final estimator')
             prefix = 'SIMULATED • ' if state['mode'] == 'demo' else ''
             name = 'STATUS STALE — recorder may have stopped' if self.status_stale else state['state'].upper()
             sup = state.get('supervisor') or {}
@@ -526,21 +582,31 @@ class Window(Q.QMainWindow):
                 name = 'ATTENTION REQUIRED — recording stopped'
             elif state['state'] in ('recording','reconnecting','connecting') and not active:
                 name = 'RECORDER EXITED — resume available'
+            if (self.run/'BACKUP_PLAN.json').exists():name='BACKUP SNAPSHOT'
+            recovery=sup.get('recovery_progress')
+            if recovery and active:name=f"RECOVERING SAVED DATA • {recovery['verified']:,} verified"
             self.connection.setText(prefix + name)
             warning_color = '#ff7b86' if ('ERROR' in name or 'ATTENTION' in name or 'EXITED' in name or 'STALE' in name) else GOLD if ('RECONNECT' in name or 'RESTART' in name) else TEAL
             self.connection.setStyleSheet(f'color: {warning_color}; font-weight: 600;')
             self.start_button.setEnabled(False)
             self.stop_button.setEnabled(active)
-            self.resume_button.setEnabled(not active)
+            allowed,reason=resume_allowed(self.run)
+            self.resume_button.setEnabled(not active and allowed)
+            self.resume_button.setToolTip(reason or 'Continue the original saved schedule')
             self.setup_button.setEnabled(not active)
             self.metrics[3].setText(f"{state.get('snapshots', 0):,}")
             db=readonly(self.run/'run.sqlite')
             try:
                 first=db.execute('SELECT utc FROM snapshots ORDER BY seq LIMIT 1').fetchone()
-                if first and self.telemetry_run!=str(self.run):
-                    self.telemetry_reader=LiveJournalTelemetry(first[0],state.get('interval_s',10)*240)
-                    self.telemetry_run=str(self.run)
+                endpoint=midpoint(state['last_snapshot']) if state.get('last_snapshot') and state['state'] in ('completed','stopped') else None
+                analysis_key=str(self.run.resolve())+'|'+str(endpoint)
+                if first and self.telemetry_run!=analysis_key:
+                    self.telemetry_reader=LiveJournalTelemetry(first[0],state.get('interval_s',10)*240,end_utc=endpoint)
+                    cache_key=hashlib.sha256(((self.run/'manifest.json').read_text()+analysis_key).encode()).hexdigest()
+                    self.telemetry_reader.restore_checkpoint(db,ROOT/'cache'/'telemetry'/f'{cache_key}.sqlite')
+                    self.telemetry_run=analysis_key
                 caught_up=self.telemetry_reader.update(db) if self.telemetry_reader else False
+                if self.telemetry_reader:self.telemetry_reader.checkpoint(db)
                 observation=self.telemetry_reader.previous if self.telemetry_reader else None
                 coverage=self.telemetry_reader.coverage() if self.telemetry_reader else 0.
             finally:
@@ -560,25 +626,14 @@ class Window(Q.QMainWindow):
                 seq = snapshot['seq']
                 render_key=(str(self.run),seq,caught_up)
                 if self.last_seq != render_key:
-                    db = readonly(self.run / 'run.sqlite')
-                    try:
-                        entries = list(db.execute('SELECT utc,epoch,derived,file FROM snapshots ORDER BY seq DESC LIMIT 241'))
-                    finally:
-                        db.close()
-                    rows = [(utc, epoch, json.loads(derived), json.loads((self.run / file).read_text(encoding='utf-8')))
-                            for utc, epoch, derived, file in reversed(entries)]
-                    if self.telemetry_reader:
-                        obs_index=self.telemetry_reader.index()
-                        for utc,epoch,d,s in rows:
-                            if d.get('wall_duration_s') is not None:
-                                s['telemetry_bin']=obs_index.bin(utc-d['wall_duration_s'],utc)
-                    self.charts.show_rows(rows, snapshot, state['mode'])
-                    self.last_seq = render_key
-                    self.message(f'Saved spectrum {seq}; ' + ', '.join(interval.get('quality', [])))
+                    self.request_preview()
+                    if not self.last_seq or self.last_seq[1]!=seq:
+                        self.message(f'Saved spectrum {seq}; ' + ', '.join(interval.get('quality', [])))
+                    self.last_seq=render_key
             retry = f" • retry in {state.get('retry_delay_s')} s" if state['state'] == 'reconnecting' else ''
             saved_snapshot = state.get('last_snapshot') or {}
-            coverage_text = f' • dose time coverage: {coverage:.2%}' if coverage is not None else ''
-            now=dt.datetime.now(dt.timezone.utc).timestamp()
+            coverage_text = f' • dose time coverage: {coverage:.4%}' if caught_up else ' • loading dose coverage estimate'
+            now=self.current_timeline_seconds()
             spectrum_age=now-midpoint(snapshot) if snapshot else None
             telemetry_age=now-timestamp(observation['dt']) if observation else None
             lead=observation.get('device_projection_lead_s') if observation else None
@@ -587,7 +642,10 @@ class Window(Q.QMainWindow):
             lead_text=f'device clock projection: {lead:+.2f} s vs reception' if lead is not None else 'device time unverified'
             progress=' • loading saved telemetry' if not caught_up else ''
             self.health.setText(f'{age_text} • {telemetry_text} • supervisor restarts: {sup.get("restarts",0)} • {lead_text}{progress}\nDose uses host-reception observations; exact sample/filter latency is not calibrated.')
-            self.health.setStyleSheet(f'color: {GOLD if (spectrum_age and spectrum_age>30) or (telemetry_age and telemetry_age>5) else MUTED};')
+            self.health.setStyleSheet(f'color: {GOLD if active and ((spectrum_age and spectrum_age>max(30,state.get("interval_s",10)*3)) or (telemetry_age and telemetry_age>5)) else MUTED};')
+            if not active and state['state'] in ('completed','stopped'):
+                self.health.setText(f"Saved final spectrum: {(snapshot or {}).get('utc_after','unknown')} • supervisor restarts: {sup.get('restarts',0)} • {lead_text}\nCompleted data are static; dose uses received estimators with uncalibrated sample/filter latency.")
+            self.refresh_analysis_status(state,active,coverage if caught_up else None)
             diagnostics = ''
             if state.get('status_cache_warning'):
                 diagnostics += '\nDisplay cache unavailable; reading saved journal. Recording continues.'
@@ -598,9 +656,14 @@ class Window(Q.QMainWindow):
             if sup.get('reason'):
                 diagnostics += '\n'+sup['reason']
             self.detail.setText(f"{self.run}\n{state.get('message', '')}{retry} • retries: {state.get('retries', 0)}{coverage_text}{diagnostics}")
-            cm = state.get('clock_measurement') or {}
+            cm = (snapshot or {}).get('clock') or state.get('clock_measurement') or {}
             timing = f"SNTP {cm.get('server')} • offset {cm['offset_s']:+.3f} s • estimated ±{cm['estimated_uncertainty_s']:.3f} s" if cm.get('verified') else 'UTC accuracy unverified • host clock fallback'
-            self.footer.setText('Raw counts preserved • dose uses the device R→Sv convention • ' + timing)
+            quality=cm.get('quality','legacy referenced' if cm.get('verified') else 'unverified')
+            reference_age=cm.get('reference_age_s')
+            detail=f" • reference age {reference_age:.0f} s" if reference_age is not None else ''
+            if cm.get('quality')=='holdover':timing='Monotonic UTC holdover; fresh network reference unavailable'
+            self.footer.setText(('Clock at last read' if not active else 'Clock')+f': {quality}{detail} • '+timing+' • sample/filter latency remains uncalibrated')
+            self.footer.setToolTip(cm.get('uncertainty_note','SNTP error estimate is not a certified timing guarantee'))
         except (OSError, ValueError, sqlite3.Error, KeyError, TypeError) as error:
             if self.run_settings is None:
                 self.run_summary.setText(f'Saved run settings unavailable: {error}')
@@ -611,6 +674,12 @@ class Window(Q.QMainWindow):
     def closeEvent(self, event):
         # Recorder has its own process and saved control/status files; window closure
         # does not issue Stop or delete files. A later window can Open saved run.
+        self._closing=True
+        self.preview_cancel.set()
+        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,
+                                      setup=dict(label=self.label.text(),serial=self.serial.text(),
+                                                 interval_s=self.interval.value(),days=self.days.value(),
+                                                 folder=self.folder.text(),demo=self.demo.isChecked())))
         event.accept()
 
 
@@ -634,7 +703,7 @@ def main():
         capture_deadline=__import__('time').monotonic()+20
         def grab():
             window.refresh()
-            if window.telemetry_reader and window.telemetry_reader.last_id<window.telemetry_reader.latest_batch_id and __import__('time').monotonic()<capture_deadline:
+            if (window.preview_busy or (window.telemetry_reader and window.telemetry_reader.last_id<window.telemetry_reader.latest_batch_id)) and __import__('time').monotonic()<capture_deadline:
                 QtCore.QTimer.singleShot(300,grab)
                 return
             window.charts.draw()

@@ -1,5 +1,6 @@
 """Regression checks for saved-run identity, schedule and GUI reopening."""
 import os
+os.environ['RADIALOG_TEST_MODE']='1'
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 import sys
 from pathlib import Path
@@ -32,6 +33,8 @@ class SavedRunSettings(unittest.TestCase):
                           interval_s=5., duration_s=51840.,
                           created_utc='2026-10-07T20:57:26.945286+00:00',
                           planned_end_utc='2026-10-08T11:21:26.945286+00:00')
+        created=dt.datetime.now(dt.timezone.utc)-dt.timedelta(minutes=10)
+        self.saved.update(created_utc=created.isoformat(),planned_end_utc=(created+dt.timedelta(seconds=51840)).isoformat())
 
     def tearDown(self):
         for window in self.windows:
@@ -75,9 +78,10 @@ class SavedRunSettings(unittest.TestCase):
             window.resume_run()
         launch.assert_called_once_with(['--run', str(run), '--resume'])
         self.assertEqual(window.run_settings['planned_end_utc'], self.saved['planned_end_utc'])
-        summary = run_summary(self.saved, dt.datetime.fromisoformat('2026-10-08T11:00:26.945286+00:00'))
+        end=dt.datetime.fromisoformat(self.saved['planned_end_utc'])
+        summary = run_summary(self.saved,end-dt.timedelta(minutes=21))
         self.assertIn('Time to planned end: 21 min', summary)
-        self.assertIn('Scheduled end reached', run_summary(self.saved, dt.datetime.fromisoformat('2026-10-09T00:00:00+00:00')))
+        self.assertIn('Scheduled end reached', run_summary(self.saved,end+dt.timedelta(seconds=1)))
 
     def test_switching_to_continuous_run_then_new_setup(self):
         window = self.window(self.make_run('first', self.saved))
@@ -106,6 +110,14 @@ class SavedRunSettings(unittest.TestCase):
         self.assertFalse(window.start_button.isEnabled())
         self.assertFalse(window.interval.isEnabled())
         self.assertTrue(window.setup_button.isEnabled())
+
+    def test_expired_run_is_disabled_and_never_launched(self):
+        saved=dict(self.saved,planned_end_utc='2026-01-01T00:00:00+00:00')
+        run=self.make_run('expired',saved)
+        window=self.window(run)
+        with patch.object(window,'fail') as fail,patch.object(window,'launch') as launch:
+            window.resume_run()
+        launch.assert_not_called();fail.assert_called_once()
 
 
 if __name__ == '__main__':

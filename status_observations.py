@@ -6,7 +6,7 @@ def select_rare(previous, incoming, received_utc):
     observation=dict(incoming)
     if timestamp(incoming['dt'])>timestamp(received_utc)+1:
         observation.update(original_device_dt=incoming['dt'],dt=received_utc,
-                           timestamp_quality='reception time; device timestamp future during initialization')
+                           timestamp_quality='reception time; projected device timestamp ahead; exact sample time unverified')
     if previous:
         # Both the sample time and independent accumulation duration are older.
         # This exact pattern occurred when the device returned overnight history

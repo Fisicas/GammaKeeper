@@ -4,6 +4,7 @@ import datetime as dt
 import socket
 import struct
 import time
+import math
 
 NTP_EPOCH = 2208988800
 
@@ -31,8 +32,13 @@ def parse_reply(reply, request_stamp, t1, t4):
         raise ValueError('Invalid/excessive NTP round-trip delay')
     offset = ((t2 - t1) + (t3 - t4)) / 2
     dispersion = struct.unpack('!I', reply[8:12])[0] / 65536
+    root_delay = struct.unpack('!i', reply[4:8])[0] / 65536
+    if dispersion > 10 or abs(root_delay) > 10 or not math.isfinite(offset):
+        raise ValueError('Excessive NTP server dispersion/root delay')
     return dict(offset_s=offset, round_trip_s=max(0., delay), root_dispersion_s=dispersion,
-                estimated_uncertainty_s=max(0., delay) / 2 + dispersion, stratum=reply[1])
+                root_delay_s=root_delay,
+                estimated_uncertainty_s=max(0., delay) / 2 + dispersion + max(0., root_delay) / 2,
+                stratum=reply[1])
 
 
 def query(server):
@@ -52,11 +58,32 @@ def query(server):
             sock.send(packet)
             reply = sock.recv(512)
             t4 = time.time()
-            if abs((t4 - t1) - (time.perf_counter() - m1)) > .05:
+            m4 = time.perf_counter()
+            if abs((t4 - t1) - (m4 - m1)) > .05:
                 raise ValueError('Host clock changed during NTP exchange')
-            samples.append(parse_reply(reply, stamp, t1, t4))
+            sample = parse_reply(reply, stamp, t1, t4)
+            sample.update(reference_unix_s=t4+sample['offset_s'], reference_monotonic_s=m4)
+            samples.append(sample)
     best = min(samples, key=lambda x: x['round_trip_s'])
     return dict(best, server=server, samples=samples, checked_host_utc=dt.datetime.now(dt.timezone.utc).isoformat())
+
+
+def select_measurements(values, errors=None):
+    errors = errors or []
+    if values:
+        best = min(values, key=lambda x: x['estimated_uncertainty_s'])
+        disagreement = max(x['offset_s'] for x in values) - min(x['offset_s'] for x in values)
+        tolerance = max(.1, sum(x['estimated_uncertainty_s'] for x in values))
+        if disagreement > tolerance or best['estimated_uncertainty_s'] > .25:
+            return dict(offset_s=0., verified=False, errors=errors, samples=values,
+                        note='UTC reference rejected: server disagreement or excessive uncertainty; retain monotonic holdover')
+        result = dict(best, verified=True, errors=errors, server_measurements=values,
+                      source_count=len(values), server_spread_s=disagreement,
+                      note='SNTP reference bound to system monotonic time. Error estimate includes RTT/2, root dispersion/delay and source spread; not a certified timing guarantee.')
+        result['estimated_uncertainty_s'] = max(best['estimated_uncertainty_s'], disagreement)
+        return result
+    return dict(offset_s=0., verified=False, errors=errors, estimated_uncertainty_s=None,
+                note='NTP unavailable: preserve previous monotonic reference or explicit unverified host-clock anchor')
 
 
 def check_clock():
@@ -68,16 +95,7 @@ def check_clock():
                 values.append(future.result())
             except Exception as error:
                 errors.append(dict(server=futures[future], error=f'{type(error).__name__}: {error}'))
-    if values:
-        best = min(values, key=lambda x: x['estimated_uncertainty_s'])
-        disagreement = max(x['offset_s'] for x in values) - min(x['offset_s'] for x in values)
-        if disagreement > .5:
-            return dict(offset_s=0., verified=False, errors=errors, samples=values,
-                        note='NTP servers disagree by >0.5s; host UTC retained without correction')
-        return dict(best, verified=True, errors=errors, server_measurements=values,
-                    note='UTC = saved host UTC + measured SNTP offset; uncertainty estimate includes RTT/2 and root dispersion, not a certified timing guarantee')
-    return dict(offset_s=0., verified=False, errors=errors, estimated_uncertainty_s=None,
-                note='NTP unavailable: host UTC retained; independent accuracy unverified')
+    return select_measurements(values, errors)
 
 
 if __name__ == '__main__':

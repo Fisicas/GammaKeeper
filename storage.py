@@ -11,6 +11,11 @@ import uuid
 import time
 
 from analysis import reconstruct, midpoint, VERSION
+from recovery_progress import report as report_recovery
+
+
+class RecoveryCancelled(Exception):
+    pass
 
 
 def canonical(value):
@@ -65,8 +70,9 @@ class DeviceMutex:
 
 
 class RunStore:
-    def __init__(self, path, config=None):
+    def __init__(self, path, config=None, cancel=None):
         self.path = Path(path).resolve()
+        self.cancel=cancel
         if config is not None:
             self.path.mkdir(parents=True, exist_ok=False)
             immutable_json(self.path / 'manifest.json', config)
@@ -98,11 +104,14 @@ class RunStore:
               CREATE TABLE IF NOT EXISTS telemetry(id INTEGER PRIMARY KEY, utc REAL NOT NULL, payload TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, utc TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS state(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS telemetry_integrity(id INTEGER PRIMARY KEY, sha256 TEXT NOT NULL);
               CREATE INDEX IF NOT EXISTS telemetry_utc ON telemetry(utc);
             ''')
             self.previous = None
             self.epoch = 0
             self.next_seq = 0
+            self.summary = dict(total_counts=0,device_elapsed_s=0.,intervals=0,quality_counts={},epochs=1,
+                                first_utc=None,last_utc=None,mean_spectral_rate_cps=None)
             self.recover()
         except BaseException:
             self.close()
@@ -115,9 +124,14 @@ class RunStore:
 
     def recover(self):
         rows = {seq: (name, digest) for seq, name, digest in self.db.execute('SELECT seq,file,sha256 FROM snapshots')}
+        report_recovery(self.path,'running',0,len(rows))
+        last_report=time.monotonic()
         seen = set()
         # Sequence is authoritative; UTC can step backwards across a date boundary.
         for file in sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem)):
+            if self.cancel and self.cancel():
+                report_recovery(self.path,'cancelled',self.next_seq,len(rows))
+                raise RecoveryCancelled('Stop requested during integrity recovery')
             payload = file.read_bytes()
             value = json.loads(payload)
             if not isinstance(value,dict) or not isinstance(value.get('seq'),int):
@@ -140,11 +154,16 @@ class RunStore:
                 self.db.execute('INSERT INTO snapshots VALUES(?,?,?,?,?,?)',
                                 (seq, name, digest, midpoint(value), derived['epoch'], canonical(derived).decode()))
             self.previous, self.epoch = value, derived['epoch']
+            self.update_summary(value, derived)
             self.next_seq += 1
             seen.add(seq)
+            if time.monotonic()-last_report>=2:
+                report_recovery(self.path,'running',self.next_seq,len(rows))
+                last_report=time.monotonic()
         if set(rows) - seen:
             raise ValueError('Index references missing raw files; recording will not continue')
         self.db.commit()
+        report_recovery(self.path,'complete',self.next_seq,len(rows))
         partials = list(self.path.rglob('*.partial'))
         if partials:
             self.event('recovery_partial_files', dict(files=[p.relative_to(self.path).as_posix() for p in partials]))
@@ -156,19 +175,39 @@ class RunStore:
         file = self.path / 'spectra' / date / f'{self.next_seq:09d}.json'
         derived = reconstruct(self.previous, snapshot, self.config['interval_s'], self.epoch)
         digest = immutable_json(file, snapshot)
+        self.update_summary(snapshot,derived)
         with self.db:
             self.db.execute('INSERT INTO snapshots VALUES(?,?,?,?,?,?)',
                             (self.next_seq, file.relative_to(self.path).as_posix(), digest,
                              midpoint(snapshot), derived['epoch'], canonical(derived).decode()))
+            self.db.execute('INSERT OR REPLACE INTO state VALUES(?,?)',
+                            ('acquisition_summary',canonical(self.summary).decode()))
         self.previous, self.epoch = snapshot, derived['epoch']
         self.next_seq += 1
         return snapshot, derived
 
+    def update_summary(self, snapshot, derived):
+        value=self.summary
+        value['first_utc'] = value['first_utc'] or snapshot['utc_after']
+        value['last_utc'] = snapshot['utc_after']
+        value['snapshots'] = snapshot['seq']+1
+        value['epochs'] = derived['epoch']+1
+        if derived['counts_delta'] is not None:
+            value['total_counts'] += derived['total_counts']
+            value['device_elapsed_s'] += derived['device_duration_s']
+            value['intervals'] += 1
+        value['mean_spectral_rate_cps'] = value['total_counts']/value['device_elapsed_s'] if value['device_elapsed_s'] else None
+        for key in derived['quality']:
+            value['quality_counts'][key] = value['quality_counts'].get(key,0)+1
+
     def append_telemetry(self, batch):
         self.check_space()
+        payload=canonical(batch)
         with self.db:
-            self.db.execute('INSERT INTO telemetry(utc,payload) VALUES(?,?)',
-                            (dt.datetime.fromisoformat(batch['utc_after']).timestamp(), canonical(batch).decode()))
+            cursor=self.db.execute('INSERT INTO telemetry(utc,payload) VALUES(?,?)',
+                                   (dt.datetime.fromisoformat(batch['utc_after']).timestamp(),payload.decode()))
+            self.db.execute('INSERT INTO telemetry_integrity VALUES(?,?)',
+                            (cursor.lastrowid,hashlib.sha256(payload).hexdigest()))
 
     def event(self, kind, payload):
         with self.db:
@@ -181,7 +220,7 @@ class RunStore:
 
     def close(self):
         if getattr(self, 'db', None):
-            self.db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+            self.db.execute('PRAGMA wal_checkpoint(PASSIVE)')
             self.db.close()
             self.db = None
         if getattr(self, 'lock', None):
