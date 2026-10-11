@@ -12,7 +12,7 @@ def load_run_settings(run):
             raise ValueError(f'Invalid saved {key}')
     interval = float(settings['interval_s'])
     duration = float(settings['duration_s'])
-    if not math.isfinite(interval) or not 1 <= interval <= 600:
+    if not math.isfinite(interval) or not 1 <= interval <= 86400:
         raise ValueError('Invalid saved spectrum interval')
     if not math.isfinite(duration) or duration < 0:
         raise ValueError('Invalid saved duration')

@@ -211,6 +211,8 @@ class AnalysisUI:
         event_layout.addWidget(self.event_table)
         logs=Q.QPushButton('Open recorder diagnostics');logs.clicked.connect(self.open_diagnostics);event_layout.addWidget(logs)
         self.tabs.addTab(event_page,'Events / logs')
+        from time_export_ui import install_time_export
+        install_time_export(self)
         right.addWidget(self.tabs,1)
         self.charts.mpl_connect('button_press_event',self.select_interval)
         self.charts.mpl_connect('button_release_event',self.navigation_finished)
@@ -441,12 +443,29 @@ class AnalysisUI:
         target=Path(location) if resume else Path(location)/(self.run.name+'_backup_'+dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ'))
         self.run_job('backup_run.py',target,str(target))
 
-    def refresh_analysis_status(self,state,active,coverage):
-        self.refresh_spectrum()
+    def poll_background_jobs(self):
         for job in list(self.background_jobs):
             if job['process'].poll() is not None:
                 self.message(f"{job['script']}: {'complete' if job['process'].returncode==0 else 'failed; inspect log '+str(job['log'])}: {job['target']}")
                 self.background_jobs.remove(job)
+                if job['script']=='time_resolved.py':
+                    ok=job['process'].returncode==0 and (job['target']/'COMPLETE.json').exists()
+                    self.export_series_result.setText(('Export complete' if ok else 'Export failed; open the export log for details')+f": {job['target']}")
+                    self.update_time_export()
+                    QtCore.QTimer.singleShot(0,lambda:self.export_scroll.ensureWidgetVisible(self.export_open_log))
+            elif job['script']=='time_resolved.py':
+                try:
+                    with job['log'].open('rb') as handle:
+                        handle.seek(max(0,job['log'].stat().st_size-2048))
+                        lines=handle.read().decode('utf-8',errors='replace').splitlines()
+                    progress=lines[-1] if lines else 'Checking source integrity…'
+                    self.export_series_result.setText(f'Export running: {progress}\nOutput: {job["target"]}')
+                except OSError:
+                    pass
+
+    def refresh_analysis_status(self,state,active,coverage):
+        self.refresh_spectrum()
+        self.poll_background_jobs()
         summary=state.get('acquisition_summary') or (self.preview_summary if self.view_mode.currentIndex()==1 else {})
         if not summary and state.get('last_snapshot') and (state.get('last_interval') or {}).get('epoch',0)==0:
             db=readonly(self.run/'run.sqlite')

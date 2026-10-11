@@ -62,7 +62,7 @@ def require_resume(run):
 
 
 def validate_schedule(interval, seconds):
-    if not math.isfinite(interval) or not 1 <= interval <= 600:
-        raise ValueError('Interval must be finite and within 1–600 seconds')
+    if not math.isfinite(interval) or not 1 <= interval <= 86400:
+        raise ValueError('Interval must be finite and within 1–86400 seconds')
     if not math.isfinite(seconds) or seconds < 0:
         raise ValueError('Duration must be finite and nonnegative')

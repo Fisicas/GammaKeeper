@@ -1,4 +1,10 @@
-# RadiaLog 0.4.2
+# RadiaLog 0.5.0
+
+## Flexible time input and time-resolved export
+
+Duration and count interval now accept expressions such as **60 minutes**, **1 hour**, and **1h 30min**. A new **Time-resolved export** tab writes original intervals, wider nonoverlapping bins, a chosen number of spectra, or moving averages. It provides CSV/NPZ, native RCSPG for nonoverlapping selections, and optional XLSX matrices for UFit. Actual bin timing, device exposure, source hashes, exclusions and overlap are preserved. See [TIME_RESOLVED.md](TIME_RESOLVED.md) for formats, usage and scientific limits.
+
+This release preserves v0.4.2 and all acquired records in their original folders. Validation includes synthetic fault/GUI regressions and a real saved-run export with channel-by-channel count conservation. New RCSPG files have structural and roundtrip checks; native Windows import and UFit execution have not been tested. Capture defaults remain 10 s and seven days; shorter cadence requires experimental qualification. Reconnect supervision cannot survive a Windows reboot without relaunch; no startup task is installed.
 
 Native Windows GUI and an independent experiment recorder for the connected RadiaCode-103. Defaults: **10-second cumulative-spectrum reads, one-week runs, one-second telemetry polling**. This reliability update has targeted fault-regression validation; a real seven-day soak remains required for week-long experimental qualification.
 
@@ -30,7 +36,7 @@ The time-series tab offers recent/full/custom UTC windows, epoch selection, UTC/
 
 Completed runs automatically launch a detached, low-priority validation/export job. Acquisition completion is preserved if optional export fails. **Create verified backup** copies a consistent journal horizon and verifies copied hashes. **Resume interrupted backup** continues that same horizon without overwriting changed files. Backup snapshots can be inspected but cannot be resumed as recordings. Optional derived caches/checkpoints accelerate reopened analysis; cache age/source-check time is labeled and full integrity validation remains separate.
 
-Use `Open_RadiaLog.cmd` for this release. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.4; GUI closure does not stop acquisition. Tests, GUI lifecycle/render evidence and a connected-device fault pilot are under `validation`; detailed changes and qualification limits are in `../upgrade_20261008_v01/release_notes_v01.md`. The historical sections below describe earlier releases and their checks.
+Use the workspace's `Open_RadiaLog.cmd` or `Open_RadiaLog_v05.cmd` for this release. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.5; GUI closure does not stop acquisition. Current regression and simulation evidence are under `validation`; saved-run export and owned-widget renders are in `../time_units_export_20261011_v01`. Earlier connected-device pilot evidence remains in the original version directories. The historical sections below describe earlier releases and their checks.
 
 ## Saved-run settings correction
 
@@ -120,9 +126,9 @@ Do not concatenate cumulative spectra directly as if they were independent time 
 & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\export_run.py' '.\runs\example_unique_run'
 ```
 
-Run these commands from this application folder. Simulation requires `--demo` and is prominently labeled. Live pilots are in `validation`; original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_validation_v*.json` records automated/integration/pilot checks and source hashes. Earlier reports remain preserved.
+Run these commands from this application folder. Simulation requires `--demo` and is prominently labeled. Original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_manifest_v*.json`, produced by `release_checks.py`, records current automated/integration/export checks and source hashes. Earlier pilot reports remain in their original version directories.
 
-The 38 release checks include the original baseline/duration/conservation tests and new locking, automatic restart, decoder, historical-status and integrity checks. Original checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
+The v0.5.0 suite has 94 checks, including flexible-unit parsing, real GUI export arguments, time-bin conservation, range selection, overlap, integrity and XLSX orientation. Inherited coverage includes baseline/duration/conservation, locking, automatic restart, decoder, historical-status and integrity checks. Original checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
 
 Before the experiment: perform an unattended 24–48 hour soak, physically unplug/replug USB once, verify an app stop/resume and a Windows restart/resume on a disposable run, and audit exported counts and gap flags. Then complete a representative week if the experiment requires that qualification. Do not use experimental raw data as a fault-injection target.
 

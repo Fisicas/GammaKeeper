@@ -2,7 +2,7 @@
 import datetime as dt
 import math
 
-VERSION = '0.4.2'
+VERSION = '0.5.0'
 DOSE_R_TO_USV = 1e4  # Instrument convention: 1 R -> 0.01 Sv, not a universal physical conversion.
 
 

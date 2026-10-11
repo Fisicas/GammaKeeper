@@ -139,7 +139,8 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                                          creationflags=subprocess.CREATE_NO_WINDOW)
             state.update(status='running',child_pid=child.pid,child_log=str(log),utc=dt.datetime.now(dt.timezone.utc).isoformat())
             started = time.monotonic()
-            interval = (float(arguments[arguments.index('--interval')+1]) if '--interval' in arguments
+            from time_units import parse_time
+            interval = (parse_time(arguments[arguments.index('--interval')+1]) if '--interval' in arguments
                         else json.loads((run/'manifest.json').read_text())['interval_s'] if (run/'manifest.json').exists() else 10.)
             watchdog = StreamWatchdog(interval, stall_timeout)
             recovery_grace=max(300., ((previous_progress or (None,None,0))[2] or 0)*.05)

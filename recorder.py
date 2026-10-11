@@ -490,15 +490,18 @@ def main():
     parser.add_argument('--run', required=True, type=Path)
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--serial', default='RC-103-006489')
-    parser.add_argument('--interval', type=float, default=10.)
-    parser.add_argument('--seconds', type=float, default=604800.)
+    from time_units import parse_time
+    parser.add_argument('--interval', type=parse_time, default=10.)
+    parser.add_argument('--seconds', '--duration', type=lambda value: parse_time(value, continuous=True), default=604800.)
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--label', default='')
     parser.add_argument('--test-reconnect-at', type=float, default=None)
     parser.add_argument('--stop-request', type=Path)
     args = parser.parse_args()
-    if not 1 <= args.interval <= 600 or args.seconds < 0:
-        parser.error('Interval must be 1..600 seconds; duration must be >=0')
+    try:
+        validate_schedule(args.interval, args.seconds)
+    except ValueError as error:
+        parser.error(str(error))
     config = None if args.resume else make_config('SIMULATED' if args.demo else args.serial, args.interval, args.seconds,
                                                   'demo' if args.demo else 'device', args.label)
     return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request)

@@ -153,6 +153,9 @@ class Charts(FigureCanvasQTAgg):
         self.draw_idle()
 
 
+from time_input import TimeInput
+
+
 class SettingsSpinBox(Q.QDoubleSpinBox):
     def textFromValue(self, value):
         return f'{value:.12g}'
@@ -222,12 +225,12 @@ class Window(AnalysisUI,Q.QMainWindow):
         self.label = Q.QLineEdit()
         self.label.setPlaceholderText('Run label / sample / conditions')
         self.serial = Q.QLineEdit('RC-103-006489')
-        self.interval = SettingsSpinBox()
+        self.interval = TimeInput('s')
         self.interval.setDecimals(9)
-        self.interval.setRange(1, 600)
+        self.interval.setRange(1, 86400)
         self.interval.setValue(10)
         self.interval.setSuffix(' s')
-        self.days = SettingsSpinBox()
+        self.days = TimeInput('days', continuous=True)
         self.days.setRange(0, 365)
         self.days.setDecimals(9)
         self.days.setValue(7)
@@ -391,6 +394,10 @@ class Window(AnalysisUI,Q.QMainWindow):
             self.view_until.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(int(end),QtCore.QTimeZone(0)))
             self.collection_from.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(begin*1000),QtCore.QTimeZone(0)))
             self.collection_until.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(end*1000),QtCore.QTimeZone(0)))
+            self.export_from.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(begin*1000),QtCore.QTimeZone(0)))
+            self.export_until.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(end*1000),QtCore.QTimeZone(0)))
+            self.export_time_zero.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(begin*1000),QtCore.QTimeZone(0)))
+            self.update_time_export()
             self.run_summary.setToolTip(
                 f"Saved start UTC: {saved['created_utc']}\n"
                 f"Saved planned end UTC: {saved.get('planned_end_utc') or 'none'}\n"
@@ -405,6 +412,7 @@ class Window(AnalysisUI,Q.QMainWindow):
             self.fail('Stop the selected recording before setting up a new recording')
             return
         self.run = None
+        self.update_time_export()
         self.preview_cancel.set();self.analysis_rows=[];self.preview_key=None;self.preview_summary={}
         self.selected_analysis_row=None;self._spectrum_key=None
         self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
@@ -466,9 +474,12 @@ class Window(AnalysisUI,Q.QMainWindow):
             serial = 'SIMULATED' if mode == 'demo' else self.serial.text().strip()
             if not serial or any(ch in serial for ch in '<>:"/\\|?*'):
                 raise ValueError('Enter a valid device serial number')
+            from run_policy import validate_schedule
+            interval, seconds = self.interval.seconds(), self.days.seconds()
+            validate_schedule(interval, seconds)
             self.run = Path(self.folder.text()).resolve() / (dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '_' + serial)
-            args = ['--run', str(self.run), '--serial', serial, '--interval', str(self.interval.value()),
-                    '--seconds', str(self.days.value() * 86400), '--label', self.label.text()]
+            args = ['--run', str(self.run), '--serial', serial, '--interval', str(interval),
+                    '--seconds', str(seconds), '--label', self.label.text()]
             if mode == 'demo':
                 args.append('--demo')
             self.launch(args)
@@ -551,6 +562,7 @@ class Window(AnalysisUI,Q.QMainWindow):
             self.fail(error)
 
     def refresh(self):
+        self.poll_background_jobs()
         if self.export_process and self.export_process.poll() is not None:
             code = self.export_process.returncode
             self.export_log.close()
@@ -686,10 +698,15 @@ class Window(AnalysisUI,Q.QMainWindow):
         self._closing=True
         self.preview_cancel.set()
         self.accumulation_cancel.set()
-        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,
-                                      setup=dict(label=self.label.text(),serial=self.serial.text(),
-                                                 interval_s=self.interval.value(),days=self.days.value(),
-                                                 folder=self.folder.text(),demo=self.demo.isChecked())))
+        try:
+            setup=dict(label=self.label.text(),serial=self.serial.text(),
+                       interval_s=self.interval.value(),days=self.days.value(),
+                       folder=self.folder.text(),demo=self.demo.isChecked())
+        except ValueError:
+            # Invalid unfinished text must neither prevent closing nor overwrite
+            # the last valid schedule with a guessed value.
+            setup=(gui_preferences.read(ROOT) or {}).get('setup',{})
+        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,setup=setup))
         event.accept()
 
 
