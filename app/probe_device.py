@@ -2,8 +2,10 @@ import bootstrap
 import json
 import time
 from device import ReadoutDevice
+import os as _os
+SERIAL = _os.environ.get('GAMMAKEEPER_SERIAL') or __import__('sys').exit('Set GAMMAKEEPER_SERIAL to the detector serial number')
 
-with ReadoutDevice('RC-103-006489') as d:
+with ReadoutDevice(SERIAL) as d:
     print(json.dumps(d.info(), indent=2), flush=True)
     print('SFR_DESCRIPTION', d.commands(), flush=True)
     for i in range(3):

@@ -27,7 +27,7 @@ Agents follow [AGENTS.md](AGENTS.md) as well; this file describes the workflow.
 
 ## Workflow
 1. Branch from `main` per work item, preferably in a separate worktree: `git worktree add ..\gk-feat-x -b feat/x`.
-2. Once per clone: rebuild `app/dependencies/` (`tools\vendor_dependencies.py`) and install the pre-push hook (`git config core.hooksPath tools/hooks`). The repository is private on GitHub Free, which offers no branch protection there, so the hook stands in for it: it refuses direct pushes to `main` and runs the suite before every other push.
+2. Once per clone: name the Python that has PySide6, NumPy and Matplotlib (`git config gammakeeper.python "C:\path\to\python.exe"`; stored only in this clone, used by the installer, launcher and hook), rebuild `app/dependencies/` (`tools\vendor_dependencies.py`) and install the pre-push hook (`git config core.hooksPath tools/hooks`). The repository is private on GitHub Free, which offers no branch protection there, so the hook stands in for it: it refuses direct pushes to `main` and runs the suite before every other push.
 3. Run the suite (`python -X utf8 -m unittest discover -s app\tests`); CI runs the same suite on `windows-latest` for every pull request.
 4. Open a pull request into `main`; merge only with a green suite.
 

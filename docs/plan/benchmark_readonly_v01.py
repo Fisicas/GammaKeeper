@@ -2,7 +2,7 @@
 """Read-only timing of v0.5.1 GUI data paths against saved runs. Writes only into this folder."""
 import sys, os, time, json, hashlib
 from pathlib import Path
-app = Path(r'C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051')
+app = Path(r'%USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051')
 sys.path.insert(0, str(app)); sys.path.insert(0, str(app/'dependencies'))
 from preview import read_preview
 from export_run import readonly
@@ -12,8 +12,8 @@ root = app.parent
 res = {}
 def log(k,v):
     res[k]=v; (Path(__file__).parent/'benchmark_results_v01.json').write_text(json.dumps(res,indent=1))
-run3 = root/'radiacode_logger_v03/runs/20261007_165726_535753_RC-103-006489'
-run4 = root/'radiacode_logger_v04/runs/20261008_122840_752326_RC-103-006489'
+run3 = root/'radiacode_logger_v03/runs/20261007_165726_535753_RC-XXX-XXXXXX'
+run4 = root/'radiacode_logger_v04/runs/20261008_122840_752326_RC-XXX-XXXXXX'
 t=time.perf_counter(); r=read_preview(run3,'recent',cache_dir=None); log('v03_recent_preview_s',time.perf_counter()-t)
 t=time.perf_counter(); r=read_preview(run3,'full',cache_dir=None); log('v03_full_preview_uncached_s',time.perf_counter()-t); log('v03_full_rows',len(r['rows']))
 t=time.perf_counter(); r=read_preview(run4,'full',cache_dir=None); log('v04_full_preview_uncached_s',time.perf_counter()-t)

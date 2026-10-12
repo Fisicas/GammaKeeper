@@ -1,5 +1,5 @@
 {
-  "serial": "RC-103-006489",
+  "serial": "RC-XXX-XXXXXX",
   "firmware": [
     [
       4,

@@ -9,6 +9,8 @@ from runtime import python_command
 from saved_status import load_status
 from audit_live import audit
 from storage import immutable_json
+import os as _os
+SERIAL = _os.environ.get('GAMMAKEEPER_SERIAL') or __import__('sys').exit('Set GAMMAKEEPER_SERIAL to the detector serial number')
 
 ROOT=Path(__file__).resolve().parent
 revision=1
@@ -17,7 +19,7 @@ while (ROOT/'validation'/f'live_fault_pilot_v{revision:02d}').exists():
 run=ROOT/'validation'/f'live_fault_pilot_v{revision:02d}'
 log=(ROOT/'validation'/f'live_fault_pilot_v{revision:02d}.log').open('xb')
 process=subprocess.Popen([python_command(),'-X','utf8',str(ROOT/'supervisor.py'),'--run',str(run),
-                          '--serial','RC-103-006489','--seconds','180','--interval','10',
+                          '--serial',SERIAL,'--seconds','180','--interval','10',
                           '--test-reconnect-at','40','--label','v0.4 live validation: cache lock, USB reopen, killed recorder'],
                          cwd=ROOT,stdout=log,stderr=log,creationflags=subprocess.CREATE_NO_WINDOW)
 started=time.monotonic()

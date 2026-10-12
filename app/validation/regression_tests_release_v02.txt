@@ -80,32 +80,32 @@ test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.Te
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 3 spectra
 Exported segment_001_epoch_1: 3 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpascx6asj\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpascx6asj\export
 Verified source spectrum 0 / 7
 test_calibrations_split_epochs_and_number_mode_rejects_crossing (test_time_resolved.SpectralSeries.test_calibrations_split_epochs_and_number_mode_rejects_crossing) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 2 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpksakdm5n\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpksakdm5n\export
 test_complete_range_and_custom_zero (test_time_resolved.SpectralSeries.test_complete_range_and_custom_zero) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 1 spectra
 Exported segment_001_epoch_0: 1 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmp6k99zsx4\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmp6k99zsx4\export
 test_gap_aggregate_retained_separately_and_no_bins_cross_it (test_time_resolved.SpectralSeries.test_gap_aggregate_retained_separately_and_no_bins_cross_it) ... ok
 test_gui_start_uses_entered_hours_and_minutes_and_export_arguments (test_time_resolved.SpectralSeries.test_gui_start_uses_entered_hours_and_minutes_and_export_arguments) ... ok
 Verified source spectrum 0 / 7
 test_hash_corruption_fails_without_complete_output (test_time_resolved.SpectralSeries.test_hash_corruption_fails_without_complete_output) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 7 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmp2eq34buj\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmp2eq34buj\export
 test_native_counts_endpoint_difference_and_no_source_writes (test_time_resolved.SpectralSeries.test_native_counts_endpoint_difference_and_no_source_writes) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 3 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpsrw47xm1\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpsrw47xm1\export
 test_number_balances_complete_intervals_without_interpolation (test_time_resolved.SpectralSeries.test_number_balances_complete_intervals_without_interpolation) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 5 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpfmqvguwb\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpfmqvguwb\export
 test_sliding_overlap_explicit_and_rcspg_omitted (test_time_resolved.SpectralSeries.test_sliding_overlap_explicit_and_rcspg_omitted) ... ok
 Verified source spectrum 0 / 7
 Verified source spectrum 0 / 7
@@ -114,23 +114,23 @@ Verified source spectrum 0 / 7
 Verified source spectrum 0 / 7
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 7 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpe47i9uhm\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpe47i9uhm\export
 Verified source spectrum 0 / 7
 test_strict_resolution_more_bins_and_existing_output_rejected (test_time_resolved.SpectralSeries.test_strict_resolution_more_bins_and_existing_output_rejected) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 3 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpg_861_vh\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpg_861_vh\export
 test_width_conserves_counts_actual_exposure_and_short_tail (test_time_resolved.SpectralSeries.test_width_conserves_counts_actual_exposure_and_short_tail) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 7 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpp8ckn725\export
+Complete: %USERPROFILE%\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpp8ckn725\export
 test_xlsx_orientation_energy_conversion_and_roi_preserves_full_counts (test_time_resolved.SpectralSeries.test_xlsx_orientation_energy_conversion_and_roi_preserves_full_counts) ... ok
 test_equivalent_and_compound_units (test_time_resolved.TimeExpressions.test_equivalent_and_compound_units) ... ok
 test_reject_ambiguous_invalid_and_nonfinite (test_time_resolved.TimeExpressions.test_reject_ambiguous_invalid_and_nonfinite) ... ok
 test_widget_defaults_explicit_units_and_invalid_text (test_time_resolved.TimeExpressions.test_widget_defaults_explicit_units_and_invalid_text) ... ok
 test_completion_export_checks_every_channel_and_preserves_source (test_upgrade_v04.CompletionAndOwnership.test_completion_export_checks_every_channel_and_preserves_source) ... ok
-test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-12T00:07:41.203898+00:00", "pid": 39188, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v051\\validation\\upgrade_temp\\tmpxgadu9fp\\run"}
-{"utc": "2026-10-12T00:07:41.209896+00:00", "pid": 39188, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v051\\validation\\upgrade_temp\\tmpxgadu9fp\\run"}
+test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-12T00:07:41.203898+00:00", "pid": 39188, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "%USERPROFILE%\\Desktop\\Radiacode Data\\radiacode_logger_v051\\validation\\upgrade_temp\\tmpxgadu9fp\\run"}
+{"utc": "2026-10-12T00:07:41.209896+00:00", "pid": 39188, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "%USERPROFILE%\\Desktop\\Radiacode Data\\radiacode_logger_v051\\validation\\upgrade_temp\\tmpxgadu9fp\\run"}
 ok
 test_failed_completion_never_changes_acquisition_status (test_upgrade_v04.CompletionAndOwnership.test_failed_completion_never_changes_acquisition_status) ... ok
 test_supervisor_reporting_does_not_write_or_lock_acquisition_database (test_upgrade_v04.CompletionAndOwnership.test_supervisor_reporting_does_not_write_or_lock_acquisition_database) ... ok

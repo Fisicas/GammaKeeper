@@ -207,7 +207,7 @@ Either option is a per-user Windows change. It will be proposed with exact entri
 
 **What the current code does (verified by reading it, not tested with two devices):**
 - **Per-device exclusivity already exists at the lowest level.** Each recorder takes a Windows mutex named `Local\RadiaLog_<serial>`, and each supervisor takes `…_<serial>_supervisor`. The name is identical in every version from v0.1 to v0.5.1. The USB transport opens the device whose path contains that serial (`phyton.py`), and its handle is exclusive.
-- **Recording from different RadiaCodes at the same time is therefore possible in the backend**: different serials, different mutexes, different run folders. It has **never been tested with two physical devices**; only one device (RC-103-006489) has been used.
+- **Recording from different RadiaCodes at the same time is therefore possible in the backend**: different serials, different mutexes, different run folders. It has **never been tested with two physical devices**; only one device (RC-XXX-XXXXXX) has been used.
 - **The GUI does not support it and gives poor feedback:**
   - One window follows one run, and *Open saved run* is refused while that run is active.
   - *Start new recording* checks only the run currently selected in that window, not other runs on the same serial.
@@ -330,7 +330,7 @@ Raw scientific data never enter git.
 - The original folders stay in place, unchanged, as the archive. Mark them read-only only with your approval.
 
 **Hosting:**
-- Step 1: a local repository, e.g. `C:\Users\nelso\Desktop\Radiacode Data\RadiaLog` or another path you choose.
+- Step 1: a local repository, e.g. `%USERPROFILE%\Desktop\Radiacode Data\RadiaLog` or another path you choose.
 - Step 2: a **private** GitHub remote. This needs your explicit approval and your account. **Nothing is pushed until you approve.**
 - This repository is separate from the flight-data repository already being staged.
 
@@ -407,7 +407,7 @@ The following are unchanged; see v01 for evidence and detail:
 **Resolved:** D8–D20 (§1).
 
 **Remaining, all about the repository (§3.9):**
-1. **Repository location** on disk (proposed: `C:\Users\nelso\Desktop\Radiacode Data\RadiaLog`).
+1. **Repository location** on disk (proposed: `%USERPROFILE%\Desktop\Radiacode Data\RadiaLog`).
 2. **Vendored dependencies:** rebuild them from the lock file with a script (proposed), or commit them via Git LFS?
 3. **History import:** import v0.1–v0.5.1 as tagged commits (proposed), or start fresh at v0.5.1?
 4. **GitHub:** which account or organization will own the private remote, and is GitHub Actions on a private repository acceptable?

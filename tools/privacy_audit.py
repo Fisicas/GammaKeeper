@@ -18,6 +18,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg'}
+# Public no-reply addresses (GitHub, commit trailers) are not private details.
+ALLOWED_EMAIL = re.compile(r'(@users\.noreply\.github\.com|^noreply@github\.com|^noreply@anthropic\.com)$')
 
 
 def git(*args):
@@ -45,7 +47,10 @@ def scan_tree(rev, compiled):
         except subprocess.CalledProcessError:
             continue
         for name, regex in compiled.items():
-            count = len(regex.findall(text))
+            found = [m.group(0) for m in regex.finditer(text)]
+            if name == 'e-mail address':
+                found = [m for m in found if not ALLOWED_EMAIL.search(m)]
+            count = len(found)
             if count:
                 hits[name][path] += count
     return hits, images

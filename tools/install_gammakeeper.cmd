@@ -5,10 +5,14 @@ rem Double-click from Explorer. Optional argument: a tag (v0.5.2) or branch (def
 rem It exports a clean copy into Radiacode Data\GammaKeeper Releases, rebuilds dependencies, runs the
 rem test suite, activates the release and creates Desktop and Start Menu shortcuts. The repository's
 rem working files are only read; earlier releases stay installed side by side.
-set "PY=C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe"
-if defined GAMMAKEEPER_SCIENCE_PYTHON set "PY=%GAMMAKEEPER_SCIENCE_PYTHON%"
-if not exist "%PY%" (
-  echo Science Python not found: %PY%
+rem Interpreter: GAMMAKEEPER_SCIENCE_PYTHON, else the per-clone "git config gammakeeper.python", else python on PATH.
+set "PY=%GAMMAKEEPER_SCIENCE_PYTHON%"
+if not defined PY for /f "usebackq delims=" %%p in (`git -C "%~dp0.." config --get gammakeeper.python`) do set "PY=%%p"
+if not defined PY set "PY=python"
+"%PY%" -c "import PySide6, numpy, matplotlib" 2>nul
+if errorlevel 1 (
+  echo Python with PySide6, NumPy and Matplotlib not found ^(%PY%^).
+  echo Set it once per clone:  git config gammakeeper.python "C:\path\to\python.exe"
   pause
   exit /b 1
 )
