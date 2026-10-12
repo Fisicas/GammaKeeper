@@ -11,6 +11,7 @@ import numpy as np
 from export_run import export_run, readonly
 from storage import immutable_json
 from analysis import VERSION
+from run_quality import assess
 
 
 def seal(run, target):
@@ -70,9 +71,18 @@ def seal(run, target):
             db.close()
         import csv
         with (export/'time_bins.csv').open(encoding='utf-8',newline='') as handle:
-            bins = list(csv.DictReader(handle))
-        last = bins[-1] if bins else {}
-        device_elapsed = sum(float(row['device_duration_s']) for row in bins if row['total_counts'])
+            config = json.loads((run/'manifest.json').read_text(encoding='utf-8'))
+            coverage = 0.
+            last = {}
+            def rows_for_assessment():
+                nonlocal last, coverage
+                for row in csv.DictReader(handle):
+                    last = row
+                    coverage = float(row.get('cumulative_dose_time_coverage') or 0.)
+                    yield row
+            assessment = assess(config, rows_for_assessment(), quality, events, 0.)
+            assessment['telemetry'] = dict(dose_time_coverage=coverage, status='covered' if coverage>=.999 else 'partial')
+        device_elapsed = assessment['spectra']['device_exposure_s']
         hashes = {file.relative_to(target).as_posix():hashlib.sha256(file.read_bytes()).hexdigest()
                   for file in target.rglob('*') if file.is_file()
                   and not file.name.endswith(('-wal','-shm'))}
@@ -83,8 +93,7 @@ def seal(run, target):
                        dose_uSv=float(last.get('cumulative_observed_integrated_dose_uSv') or 0),
                        dose_coverage=float(last.get('cumulative_dose_time_coverage') or 0),
                        telemetry_payload_hashes_checked=telemetry_hashes_checked,
-                       data_quality='complete' if float(last.get('cumulative_dose_time_coverage') or 0)>=.999
-                                    and not result['telemetry_decode_warnings'] and result['aggregate_intervals']<=1 else 'review_required',
+                       data_quality=assessment['data_quality'], assessment=assessment,
                        quality_counts=dict(quality),events=events,sqlite_integrity=integrity,
                        export=str(export),file_hashes=hashes,
                        processing=result['processing'],dose_rule=result['telemetry_rule'],
