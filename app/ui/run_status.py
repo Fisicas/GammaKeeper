@@ -128,7 +128,8 @@ class RunStatusMixin:
             self.refresh_experiment(state,active)
             if getattr(self,'read_only',False):
                 for widget in (self.start_button,self.stop_button,self.resume_button,self.setup_button,
-                               self.seal_button,self.note_button,self.sample_button,self.monitor_button):widget.setEnabled(False)
+                               self.seal_button,self.note_button,self.sample_button,self.monitor_button,
+                               self.export_button,self.audit_button):widget.setEnabled(False)
             diagnostics = ''
             if state.get('status_cache_warning'):
                 diagnostics += '\nDisplay cache unavailable; reading saved journal. Recording continues.'

@@ -244,8 +244,8 @@ def export_stream(run,target=None,mode='native',width_s=None,step_s=None,number=
                     else:
                         change(old_a,a,-1);change(old_b,b,1)
                     old_a,old_b=a,b
-                    begin,finish,exposure,halfwidth,uncertainty,clock_quality,ag=db.execute(
-                        'SELECT min(begin),max(end),sum(exposure),max(halfwidth),max(uncertainty),group_concat(DISTINCT clock_quality),max(aggregate) FROM bins WHERE id>=? AND id<?',(a,b)).fetchone()
+                    begin,finish,exposure,halfwidth,uncertainty,known_uncertainties,clock_quality,ag=db.execute(
+                        'SELECT min(begin),max(end),sum(exposure),max(halfwidth),max(uncertainty),count(uncertainty),group_concat(DISTINCT clock_quality),max(aggregate) FROM bins WHERE id>=? AND id<?',(a,b)).fetchone()
                     seq0,seq1=db.execute('SELECT min(seq),max(seq) FROM bins WHERE id>=? AND id<?',(a,b)).fetchone()
                     flags=sorted(set(flag for text, in db.execute('SELECT DISTINCT flags FROM bins WHERE id>=? AND id<?',(a,b)) for flag in json.loads(text)))
                     row=dict(first_seq=seq0,last_seq=seq1,epoch=ep,source_intervals=b-a,
@@ -253,7 +253,8 @@ def export_stream(run,target=None,mode='native',width_s=None,step_s=None,number=
                         time_s=(begin+finish)/2-zero,bin_start_s=begin-zero,bin_end_s=finish-zero,
                         wall_duration_s=finish-begin,device_exposure_s=exposure,total_counts=int(summed.sum()),
                         quality=flags,aggregate=bool(ag),final_short_group=mode=='width' and b-a<width,
-                        clock_quality=clock_quality.split(','),clock_estimated_uncertainty_max_s=uncertainty,
+                        clock_quality=clock_quality.split(','),clock_estimated_uncertainty_max_s=uncertainty if known_uncertainties==b-a else None,
+                        clock_known_uncertainty_max_s=uncertainty,clock_uncertainty_missing_intervals=b-a-known_uncertainties,
                         read_halfwidth_max_s=halfwidth,_first_id=a,_last_id=b-1)
                     group_rows.append(row);group_counts.append(summed.copy())
                     if len(group_rows)>=chunk_size: flush()

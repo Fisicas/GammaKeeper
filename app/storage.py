@@ -9,6 +9,8 @@ import shutil
 import sqlite3
 import uuid
 import time
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 
 from analysis import reconstruct, midpoint, VERSION
 from recovery_progress import report as report_recovery
@@ -16,6 +18,22 @@ from recovery_progress import report as report_recovery
 
 class RecoveryCancelled(Exception):
     pass
+
+
+def ordered_reads(files, workers=8):
+    """Overlap file-open latency with at most 2*workers payloads; yield in sequence."""
+    iterator=iter(files)
+    with ThreadPoolExecutor(max_workers=workers,thread_name_prefix='raw-verify-read') as pool:
+        pending=deque()
+        for file in iterator:
+            pending.append((file,pool.submit(file.read_bytes)))
+            if len(pending)>=workers*2:break
+        while pending:
+            file,future=pending.popleft()
+            payload=future.result()
+            next_file=next(iterator,None)
+            if next_file is not None:pending.append((next_file,pool.submit(next_file.read_bytes)))
+            yield file,payload
 
 
 def canonical(value):
@@ -131,11 +149,11 @@ class RunStore:
         last_report=time.monotonic()
         seen = set()
         # Sequence is authoritative; UTC can step backwards across a date boundary.
-        for file in sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem)):
+        files=sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem))
+        for file,payload in ordered_reads(files):
             if self.cancel and self.cancel():
                 report_recovery(self.path,'cancelled',self.next_seq,len(rows))
                 raise RecoveryCancelled('Stop requested during integrity recovery')
-            payload = file.read_bytes()
             value = json.loads(payload)
             if not isinstance(value,dict) or not isinstance(value.get('seq'),int):
                 raise ValueError(f'Invalid raw snapshot schema: {file}')

@@ -69,3 +69,16 @@ class StreamingExports(unittest.TestCase):
                     if expected[field] is None:self.assertIsNone(actual[field])
                     else:self.assertAlmostEqual(actual[field],expected[field])
         finally:db.close()
+
+    def test_unknown_clock_uncertainty_is_not_replaced_by_a_known_maximum(self):
+        run=self.root/'uncertain'
+        store=RunStore(run,make_config('TEST',10,0,'demo','uncertain time'))
+        for i in range(3):
+            clock={'quality':'unverified','estimated_uncertainty_s':None} if i<2 else {'quality':'referenced','estimated_uncertainty_s':.2}
+            store.append_snapshot(snapshot(i*10,[100+i],clock=clock))
+        store.close()
+        target,report=export_series(run,self.root/'export',mode='width',width_s=20)
+        row=json.loads((target/(report['segments'][0]['stem']+'_bins.jsonl')).read_text().splitlines()[0])
+        self.assertIsNone(row['clock_estimated_uncertainty_max_s'])
+        self.assertEqual(row['clock_known_uncertainty_max_s'],.2)
+        self.assertEqual(row['clock_uncertainty_missing_intervals'],1)

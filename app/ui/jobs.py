@@ -11,6 +11,7 @@ from ui.paths import ROOT
 
 class JobsMixin:
     def export(self):
+        if getattr(self,'read_only',False):return
         try:
             if not self.run or not (self.run / 'run.sqlite').exists():
                 raise ValueError('Open or record a run first')
@@ -26,6 +27,8 @@ class JobsMixin:
             self.fail(error)
 
     def run_job(self,script,target,*extra):
+        if getattr(self,'read_only',False) and Path(target).resolve().is_relative_to(self.run.resolve()):
+            self.fail('Choose an export destination outside the source recording in this read-only viewer');return
         logs=self.analysis_root/'logs';logs.mkdir(exist_ok=True)
         log=logs/(script+'_'+uuid.uuid4().hex+'.log')
         with log.open('xb') as handle:
@@ -36,6 +39,7 @@ class JobsMixin:
         self.message(f'{script}: started; result folder {target}')
 
     def audit_selected(self):
+        if getattr(self,'read_only',False):return
         if self.last_status.get('state')!='completed':
             self.fail('Completion validation is available after a scheduled run completes');return
         target=self.run/('completion_'+dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ'))

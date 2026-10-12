@@ -84,3 +84,18 @@ class ExperimentIntegrity(unittest.TestCase):
         fake = SimpleNamespace(last_status={'last_snapshot':{'clock':clock.metadata()}},
                                current_timeline_seconds=clock.seconds)
         self.assertEqual(NotesMixin.note_clock(fake)[1], 'host_clock')
+
+    def test_prefetched_recovery_still_refuses_early_or_tail_corruption_before_client_open(self):
+        from recorder import record
+        run=self.data()
+        # The fixture is resumable and synthetic; no device client may be constructed.
+        db=__import__('sqlite3').connect(run/'run.sqlite')
+        db.execute("UPDATE state SET value=? WHERE key='recorder'",(json.dumps({'status':'stopped'}),));db.commit();db.close()
+        from run_policy import require_resume
+        for file in [min(run.glob('spectra/*/*.json')),max(run.glob('spectra/*/*.json'))]:
+            original=file.read_bytes();changed=json.loads(original);changed['spectrum']['counts'][0]+=1
+            file.write_text(json.dumps(changed),encoding='utf-8')
+            with patch('recorder.require_resume'),patch('recorder.DemoClient') as client:
+                self.assertEqual(record(run),2)
+                client.assert_not_called()
+            file.write_bytes(original)

@@ -290,7 +290,7 @@ class SetupPanelMixin:
             self.fail(error)
 
     def open_run(self):
-        if self.active():
+        if self.active() and not getattr(self,'read_only',False):
             self.fail('Stop the selected recording before switching runs; reopen this window to monitor another run')
             return
         path = Q.QFileDialog.getExistingDirectory(self, 'Select a run containing manifest.json', str(DATA_ROOT))

@@ -139,7 +139,7 @@ class Monitor:
                 active['audit_review']='No completion audit is available; use Validate completed run in GammaKeeper.'
         for key,text in self.policy.update(active,time.monotonic(),config['disconnect_warn_s']):
             delivered=bool(self.notify(self.run.name,text)) if config['enabled'] and config['notifications'] else False
-            self.event('alert',code=key,text=text,notification_delivered=delivered)
+            self.event('alert',code=key,text=text,notification_requested=delivered,delivery_confirmation='unavailable')
         self.health.update(utc=dt.datetime.now(dt.timezone.utc).isoformat(),pid=os.getpid(),notified=sorted(self.policy.notified),
                            active_conditions=active,config=config,job=self.job['script'] if self.job else None)
         with self.db:self.db.execute('INSERT OR REPLACE INTO state VALUES(?,?)',('health',json.dumps(self.health)))
@@ -168,7 +168,7 @@ class Monitor:
         with self.db:self.db.execute('INSERT OR REPLACE INTO state VALUES(?,?)',('health',json.dumps(self.health)))
         terminal=state.get('state') in ('completed','stopped','error','interrupted_by_shutdown')
         last=self.health.get('last_backup') or {}
-        backup_done=not config['backup_parent'] or last.get('snapshots',0)>=state.get('snapshots',0) or self.health.get('backup_error')
+        backup_done=not config['enabled'] or not config['backup_parent'] or last.get('snapshots',0)>=state.get('snapshots',0) or self.health.get('backup_error')
         audit_done=state.get('state')!='completed' or self.health.get('completion_audit')
         return bool(terminal and not self.job and backup_done and audit_done and time.monotonic()-self.started>15)
 
