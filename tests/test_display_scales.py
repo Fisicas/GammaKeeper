@@ -141,7 +141,7 @@ class DisplayScales(unittest.TestCase):
         run=self.run_data();window=self.window(run)
         files=[run/'run.sqlite',run/'manifest.json']
         before=[hashlib.sha256(f.read_bytes()).hexdigest() for f in files]
-        with patch('gui_analysis.latest_interval',side_effect=AssertionError('scale must reuse displayed data')),patch.object(window,'launch') as launch:
+        with patch('ui.spectrum_tab.latest_interval',side_effect=AssertionError('scale must reuse displayed data')),patch.object(window,'launch') as launch:
             window.spectrum_energy_axis.setCurrentIndex(1);window.spectrum_counts_axis.setCurrentIndex(1)
             launch.assert_not_called()
         self.assertEqual(before,[hashlib.sha256(f.read_bytes()).hexdigest() for f in files])

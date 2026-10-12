@@ -1,0 +1,154 @@
+"""Time series tab: background previews, heatmap selection and display scales."""
+import datetime as dt
+import sqlite3
+import threading
+
+import numpy as np
+from PySide6 import QtCore, QtWidgets as Q
+import matplotlib.dates as mdates
+from export_run import readonly
+from plot_scales import apply_scale
+import display_controls
+from ui.tasks import PreviewTask
+
+
+class TimeSeriesMixin:
+    def _build_timeseries_tab(self):
+        """Time series tab: view controls, display scales, ranges, ROI and the Charts canvas."""
+        page=Q.QWidget();layout=Q.QVBoxLayout(page);layout.setContentsMargins(0,0,0,0)
+        controls=Q.QHBoxLayout()
+        self.view_mode=Q.QComboBox();self.view_mode.addItems(['Recent intervals','Whole run','Selected UTC window'])
+        self.view_epoch=Q.QComboBox();self.view_epoch.addItem('All epochs',None)
+        self.follow_live=Q.QCheckBox('Follow live');self.follow_live.setChecked(True)
+        self.axis_timezone=Q.QComboBox();self.axis_timezone.addItems(['UTC','Local time'])
+        self.color_percentile=Q.QDoubleSpinBox();self.color_percentile.setRange(90,100);self.color_percentile.setDecimals(1);self.color_percentile.setValue(99.5);self.color_percentile.setSuffix(' % color limit')
+        refresh=Q.QPushButton('Refresh plot');refresh.clicked.connect(lambda:self.request_preview(True))
+        for widget in (self.view_mode,self.view_epoch,self.follow_live,self.axis_timezone,self.color_percentile,refresh):controls.addWidget(widget)
+        layout.addLayout(controls)
+        layout.addLayout(display_controls.controls(self))
+        self.display_scale_note=Q.QLabel('Scales change display only; log axes hide zeros/nonpositive values. Spectrogram intensity is independent of the count-rate axis.')
+        self.display_scale_note.setWordWrap(True)
+        self.display_scale_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        layout.addWidget(self.display_scale_note)
+        ranges=Q.QHBoxLayout()
+        self.view_from=Q.QDateTimeEdit();self.view_until=Q.QDateTimeEdit()
+        for edit in (self.view_from,self.view_until):
+            edit.setDisplayFormat('yyyy-MM-dd HH:mm:ss');edit.setCalendarPopup(True);edit.setTimeZone(QtCore.QTimeZone(0))
+        ranges.addWidget(Q.QLabel('UTC from'));ranges.addWidget(self.view_from)
+        ranges.addWidget(Q.QLabel('to'));ranges.addWidget(self.view_until)
+        self.roi_enabled=Q.QCheckBox('ROI')
+        self.roi_from=Q.QDoubleSpinBox();self.roi_to=Q.QDoubleSpinBox()
+        for spin in (self.roi_from,self.roi_to):spin.setRange(0,10000);spin.setDecimals(1);spin.setSuffix(' keV')
+        self.roi_from.setValue(500);self.roi_to.setValue(700)
+        self.roi_terminal=Q.QCheckBox('Include terminal channel')
+        for widget in (self.roi_enabled,self.roi_from,self.roi_to,self.roi_terminal):ranges.addWidget(widget)
+        layout.addLayout(ranges)
+        self.preview_note=Q.QLabel('Plots are derived views; original records remain saved. Click the heatmap to inspect an interval spectrum.')
+        self.preview_note.setWordWrap(True);self.preview_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        layout.addWidget(self.preview_note)
+        layout.addWidget(self.chart_toolbar);layout.addWidget(self.charts,1)
+        self.tabs.addTab(page,'Time series')
+
+    def request_preview(self,force=False):
+        if not self.run or not (self.run/'run.sqlite').exists() or self._closing:
+            return
+        if not force and not self.follow_live.isChecked():return
+        if self.preview_busy:
+            if force:
+                self.preview_cancel.set();self.preview_pending=True
+            return
+        try:
+            view=('recent','full',None)[self.view_mode.currentIndex()]
+            db=readonly(self.run/'run.sqlite')
+            try:
+                head=db.execute('SELECT coalesce(max(seq),-1) FROM snapshots').fetchone()[0]
+                epochs=[x[0] for x in db.execute('SELECT DISTINCT epoch FROM snapshots ORDER BY epoch')]
+                if self.view_mode.currentIndex()==2:
+                    begin=self.view_from.dateTime().toSecsSinceEpoch();end=self.view_until.dateTime().toSecsSinceEpoch()
+                    if begin>=end:raise ValueError('The selected UTC start must precede its end')
+                    low,high=db.execute('SELECT min(seq),max(seq) FROM snapshots WHERE utc>=? AND utc<=?',(begin,end)).fetchone()
+                    if low is None:raise ValueError('No saved intervals in the selected UTC window')
+                    view=(low,high)
+                if self.view_epoch.count()!=len(epochs)+1:
+                    current=self.view_epoch.currentData();self.view_epoch.blockSignals(True)
+                    self.view_epoch.clear();self.view_epoch.addItem('All epochs',None)
+                    for epoch in epochs:self.view_epoch.addItem(f'Epoch {epoch}',epoch)
+                    self.view_epoch.setCurrentIndex(max(0,self.view_epoch.findData(current)));self.view_epoch.blockSignals(False)
+            finally:db.close()
+            if head<0:return
+            key=(str(self.run.resolve()),repr(view),self.view_epoch.currentData(),head)
+            if key==self.preview_key and not force:return
+            self.preview_cancel=threading.Event();self.preview_busy=True
+            self._preview_forced=force
+            task=PreviewTask(self.run,view,self.view_epoch.currentData(),key,self.preview_cancel,self.analysis_root/'cache'/'previews')
+            self._preview_task=task
+            task.signals.progress.connect(self.preview_note.setText)
+            task.signals.done.connect(self.preview_done)
+            self.preview_pool.start(task)
+        except (OSError,ValueError,sqlite3.Error) as error:
+            self.preview_note.setText(str(error))
+
+    def preview_done(self,message):
+        self.preview_busy=False
+        if self._closing:return
+        if self.preview_pending:
+            self.preview_pending=False;self.request_preview(True);return
+        if not self.run or message['key'][0]!=str(self.run.resolve()):return
+        if message['error']:
+            self.preview_note.setText('Plot unavailable: '+message['error']);return
+        result=message['result']
+        if result is None:return
+        self.preview_key=message['key'];self.analysis_rows=result['rows'];self.preview_summary=result['summary']
+        self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • {result['aggregation']} recorded intervals / group"
+        kind='Cached preview' if result.get('cached') else 'Verified raw reconstruction'
+        self.preview_note.setText(f"{kind} through spectrum {result['head']:,}; source check {result['source_verified_utc']}. "
+                                  'Groups sum counts / device seconds; gaps remain blank. Full integrity audit is separate. Click a heatmap interval to inspect its spectrum.')
+        if self.follow_live.isChecked() or self._preview_forced:self.redraw_analysis()
+
+    def redraw_analysis(self,*args):
+        self.refresh_spectrum(True)
+        if not self.analysis_rows:return
+        snapshot=self.last_status.get('last_snapshot') or self.analysis_rows[-1][3]
+        self.charts.color_percentile=self.color_percentile.value()
+        self.charts.local_time=self.axis_timezone.currentIndex()==1
+        self.charts.show_dates=self.view_mode.currentIndex()!=0
+        self.charts.roi=(self.roi_from.value(),self.roi_to.value(),self.roi_terminal.isChecked()) if self.roi_enabled.isChecked() and self.roi_to.value()>self.roi_from.value() else None
+        self.charts.show_rows(self.analysis_rows,snapshot,self.last_status.get('mode','device'))
+
+    def display_scales_changed(self,*unused):
+        if not hasattr(self,'spectrum_canvas'):return
+        energy=self.energy_axis.currentData();counts=self.counts_axis.currentData()
+        self.spectrum_canvas.energy_scale=energy;self.spectrum_canvas.counts_scale=counts
+        self.charts.energy_scale=energy;self.charts.counts_scale=counts
+        self.charts.intensity_scale=self.intensity_scale.currentData()
+        # Redraw the already displayed row; toggling a scale never starts a new
+        # reconstruction or acquisition job and does not change the selection.
+        row=self.spectrum_canvas.display_row
+        if row is not None:
+            roi=(self.roi_from.value(),self.roi_to.value(),self.roi_terminal.isChecked()) if self.roi_enabled.isChecked() else None
+            self.spectrum_canvas.show_interval(row,roi)
+        else:
+            apply_scale(self.spectrum_canvas.ax,'x',energy)
+            apply_scale(self.spectrum_canvas.ax,'y',counts)
+            self.spectrum_canvas.draw_idle()
+        if self.analysis_rows:
+            snapshot=self.last_status.get('last_snapshot') or self.analysis_rows[-1][3]
+            self.charts.show_rows(self.analysis_rows,snapshot,self.last_status.get('mode','device'))
+        else:
+            apply_scale(self.charts.spg,'x',energy)
+            apply_scale(self.charts.count,'y',counts)
+            self.charts.draw_idle()
+        for toolbar in (self.spectrum_toolbar,self.chart_toolbar):
+            toolbar.update();toolbar.push_current()
+
+    def select_interval(self,event):
+        if event.inaxes!=self.charts.spg or event.ydata is None or not self.analysis_rows or self.chart_toolbar.mode:return
+        ends=np.array([mdates.date2num(dt.datetime.fromtimestamp(row[0],dt.timezone.utc)) for row in self.analysis_rows])
+        index=min(len(ends)-1,int(np.searchsorted(ends,event.ydata)))
+        self.selected_analysis_row=self.analysis_rows[index]
+        self.spectrum_mode.setCurrentIndex(1)
+        self.refresh_spectrum(True)
+        self.tabs.setCurrentIndex(1)
+
+    def navigation_finished(self,event):
+        if self.chart_toolbar.mode:self.follow_live.setChecked(False)
