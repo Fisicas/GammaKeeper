@@ -1,0 +1,215 @@
+test_calibration_changes_are_not_silently_combined (test_accumulated_spectrum.CollectedSpectrum.test_calibration_changes_are_not_silently_combined) ... ok
+test_exact_range_boundaries_include_both_selected_intervals (test_accumulated_spectrum.CollectedSpectrum.test_exact_range_boundaries_include_both_selected_intervals) ... ok
+test_gui_accumulated_modes_and_roi_show_recording_and_range (test_accumulated_spectrum.CollectedSpectrum.test_gui_accumulated_modes_and_roi_show_recording_and_range) ... ok
+test_no_complete_intervals_and_invalid_range_are_explicit (test_accumulated_spectrum.CollectedSpectrum.test_no_complete_intervals_and_invalid_range_are_explicit) ... ok
+test_recording_total_excludes_existing_counts_and_updates_incrementally (test_accumulated_spectrum.CollectedSpectrum.test_recording_total_excludes_existing_counts_and_updates_incrementally) ... ok
+test_recovered_gap_counts_are_retained_and_flagged (test_accumulated_spectrum.CollectedSpectrum.test_recovered_gap_counts_are_retained_and_flagged) ... ok
+test_requested_range_only_sums_complete_intervals_and_reports_edges (test_accumulated_spectrum.CollectedSpectrum.test_requested_range_only_sums_complete_intervals_and_reports_edges) ... ok
+test_reset_boundaries_are_not_counted_as_new_photons (test_accumulated_spectrum.CollectedSpectrum.test_reset_boundaries_are_not_counted_as_new_photons) ... ok
+test_backup_refuses_foreign_destination (test_analysis_backup_v04.DerivedViewsAndBackups.test_backup_refuses_foreign_destination) ... ok
+test_cached_completed_preview_preserves_data_and_validation_date (test_analysis_backup_v04.DerivedViewsAndBackups.test_cached_completed_preview_preserves_data_and_validation_date) ... ok
+test_display_aggregation_conserves_all_channels_and_durations (test_analysis_backup_v04.DerivedViewsAndBackups.test_display_aggregation_conserves_all_channels_and_durations) ... ok
+test_endpoint_clamp_and_checkpoint_match_reception_integral (test_analysis_backup_v04.DerivedViewsAndBackups.test_endpoint_clamp_and_checkpoint_match_reception_integral) ... ok
+test_interrupted_backup_resumes_frozen_horizon_and_never_overwrites (test_analysis_backup_v04.DerivedViewsAndBackups.test_interrupted_backup_resumes_frozen_horizon_and_never_overwrites) ... ok
+test_preview_rejects_modified_raw_input (test_analysis_backup_v04.DerivedViewsAndBackups.test_preview_rejects_modified_raw_input) ... ok
+test_sealing_detects_changed_raw_telemetry_payload (test_analysis_backup_v04.DerivedViewsAndBackups.test_sealing_detects_changed_raw_telemetry_payload) ... ok
+test_append_only_and_latest_entered_seal_is_time_zero (test_annotations.AnnotationTests.test_append_only_and_latest_entered_seal_is_time_zero) ... ok
+test_export_includes_notes_csv (test_annotations.AnnotationTests.test_export_includes_notes_csv) ... ok
+test_gui_marks_seal_shows_marker_and_sets_export_time_zero (test_annotations.AnnotationTests.test_gui_marks_seal_shows_marker_and_sets_export_time_zero) ... ok
+test_hung_worker_deadline_and_cleanup (test_core.BoundedIOAndTime.test_hung_worker_deadline_and_cleanup) ... ok
+test_measurement_and_calibration_writes_are_blocked (test_core.BoundedIOAndTime.test_measurement_and_calibration_writes_are_blocked) ... ok
+test_sntp_offset_and_invalid_origin (test_core.BoundedIOAndTime.test_sntp_offset_and_invalid_origin) ... ok
+test_utc_reference_uses_monotonic_clock (test_core.BoundedIOAndTime.test_utc_reference_uses_monotonic_clock) ... ok
+test_atomic_raw_commit_recovers_missing_index (test_core.Durability.test_atomic_raw_commit_recovers_missing_index) ... ok
+test_integrity_change_blocks_resume (test_core.Durability.test_integrity_change_blocks_resume) ... ok
+test_missing_raw_file_blocks_resume (test_core.Durability.test_missing_raw_file_blocks_resume) ... ok
+test_original_file_never_overwritten (test_core.Durability.test_original_file_never_overwritten) ... ok
+test_recovery_uses_sequence_when_utc_moves_back_across_midnight (test_core.Durability.test_recovery_uses_sequence_when_utc_moves_back_across_midnight) ... ok
+test_second_writer_blocked (test_core.Durability.test_second_writer_blocked) ... ok
+test_utc_day_rollover_and_export_counts (test_core.Durability.test_utc_day_rollover_and_export_counts) ... ok
+test_actual_duration_not_nominal_interval (test_core.ScientificRules.test_actual_duration_not_nominal_interval) ... ok
+test_calibration_change_creates_boundary (test_core.ScientificRules.test_calibration_change_creates_boundary) ... ok
+test_clock_step_does_not_change_device_count_rate (test_core.ScientificRules.test_clock_step_does_not_change_device_count_rate) ... ok
+test_duplicate_telemetry_timestamp_does_not_double_weight (test_core.ScientificRules.test_duplicate_telemetry_timestamp_does_not_double_weight) ... ok
+test_existing_counts_are_baseline_not_first_bin (test_core.ScientificRules.test_existing_counts_are_baseline_not_first_bin) ... ok
+test_exponential_schedule_has_cap (test_core.ScientificRules.test_exponential_schedule_has_cap) ... ok
+test_reconnect_preserves_aggregate_but_flags_missing_bins (test_core.ScientificRules.test_reconnect_preserves_aggregate_but_flags_missing_bins) ... ok
+test_reset_event_even_if_counts_exceed_old_counts (test_core.ScientificRules.test_reset_event_even_if_counts_exceed_old_counts) ... ok
+test_seven_days_no_rolling_limit_and_count_conservation (test_core.ScientificRules.test_seven_days_no_rolling_limit_and_count_conservation) ... ok
+test_telemetry_gap_is_not_interpolated (test_core.ScientificRules.test_telemetry_gap_is_not_interpolated) ... ok
+test_unsigned_underflow_is_reset_not_clipped (test_core.ScientificRules.test_unsigned_underflow_is_reset_not_clipped) ... ok
+test_all_four_energy_count_combinations_and_roi_counts_unchanged (test_display_scales.DisplayScales.test_all_four_energy_count_combinations_and_roi_counts_unchanged) ... ok
+test_all_zero_and_empty_log_views_have_valid_domains_without_warnings (test_display_scales.DisplayScales.test_all_zero_and_empty_log_views_have_valid_domains_without_warnings) ... ok
+test_axes_link_across_tabs_while_intensity_is_independent (test_display_scales.DisplayScales.test_axes_link_across_tabs_while_intensity_is_independent) ... ok
+test_log_hides_zeros_and_linear_restores_them_without_pseudocounts (test_display_scales.DisplayScales.test_log_hides_zeros_and_linear_restores_them_without_pseudocounts) ... ok
+test_masked_gaps_and_small_positive_values_are_preserved (test_display_scales.DisplayScales.test_masked_gaps_and_small_positive_values_are_preserved) ... ok
+test_nonpositive_calibrated_energies_are_hidden_only_in_log_display (test_display_scales.DisplayScales.test_nonpositive_calibrated_energies_are_hidden_only_in_log_display) ... ok
+test_preferences_restore_and_close_save_the_actual_scales (test_display_scales.DisplayScales.test_preferences_restore_and_close_save_the_actual_scales) ... ok
+test_scale_switch_does_not_reconstruct_touch_sources_or_launch_recorder (test_display_scales.DisplayScales.test_scale_switch_does_not_reconstruct_touch_sources_or_launch_recorder) ... ok
+test_single_interval_time_axis_and_home_use_the_current_log_domain (test_display_scales.DisplayScales.test_single_interval_time_axis_and_home_use_the_current_log_domain) ... ok
+test_spectrogram_linear_shows_zero_cells_log_masks_them (test_display_scales.DisplayScales.test_spectrogram_linear_shows_zero_cells_log_masks_them) ... ok
+test_corrected_seal_survives_host_clock_backstep_and_backup_keeps_notes (test_experiment_integrity.ExperimentIntegrity.test_corrected_seal_survives_host_clock_backstep_and_backup_keeps_notes) ... ok
+test_missing_tail_and_zero_count_exposure_are_reported (test_experiment_integrity.ExperimentIntegrity.test_missing_tail_and_zero_count_exposure_are_reported) ... ok
+test_prefetched_recovery_still_refuses_early_or_tail_corruption_before_client_open (test_experiment_integrity.ExperimentIntegrity.test_prefetched_recovery_still_refuses_early_or_tail_corruption_before_client_open) ... Traceback (most recent call last):
+  File "C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\recorder.py", line 204, in record
+    store = RunStore(path, config, cancel=lambda: bool(stop_request and Path(stop_request).exists()))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\storage.py", line 136, in __init__
+    self.recover()
+  File "C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\storage.py", line 168, in recover
+    raise ValueError(f'Raw snapshot integrity mismatch: {file}')
+ValueError: Raw snapshot integrity mismatch: C:\Users\nelso\AppData\Local\Temp\tmpt0r3mlbg\recording\spectra\2026-01-01\000000000.json
+
+Traceback (most recent call last):
+  File "C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\recorder.py", line 204, in record
+    store = RunStore(path, config, cancel=lambda: bool(stop_request and Path(stop_request).exists()))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\storage.py", line 136, in __init__
+    self.recover()
+  File "C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\storage.py", line 168, in recover
+    raise ValueError(f'Raw snapshot integrity mismatch: {file}')
+ValueError: Raw snapshot integrity mismatch: C:\Users\nelso\AppData\Local\Temp\tmpt0r3mlbg\recording\spectra\2026-01-01\000000003.json
+
+ok
+test_reset_is_intact_but_incomplete_and_tail_is_independently_checked (test_experiment_integrity.ExperimentIntegrity.test_reset_is_intact_but_incomplete_and_tail_is_independently_checked) ... ok
+test_unverified_clock_is_not_labeled_sntp (test_experiment_integrity.ExperimentIntegrity.test_unverified_clock_is_not_labeled_sntp) ... ok
+test_expired_run_is_disabled_and_never_launched (test_gui_run_settings.SavedRunSettings.test_expired_run_is_disabled_and_never_launched) ... ok
+test_invalid_manifest_does_not_present_defaults_as_saved_values (test_gui_run_settings.SavedRunSettings.test_invalid_manifest_does_not_present_defaults_as_saved_values) ... ok
+test_reopening_restores_real_run_and_preserves_manifest (test_gui_run_settings.SavedRunSettings.test_reopening_restores_real_run_and_preserves_manifest) ... ok
+test_resume_retains_original_end_instead_of_restarting_duration (test_gui_run_settings.SavedRunSettings.test_resume_retains_original_end_instead_of_restarting_duration) ... ok
+test_switching_to_continuous_run_then_new_setup (test_gui_run_settings.SavedRunSettings.test_switching_to_continuous_run_then_new_setup) ... ok
+test_artwork_renders (test_identity.IdentityTests.test_artwork_renders) ... ok
+test_committed_ico_has_all_sizes (test_identity.IdentityTests.test_committed_ico_has_all_sizes) ... ok
+test_icon_has_small_and_large_sizes (test_identity.IdentityTests.test_icon_has_small_and_large_sizes) ... ok
+test_run_label_is_escaped (test_identity.IdentityTests.test_run_label_is_escaped) ... ok
+test_splash_steps_and_run_label (test_identity.IdentityTests.test_splash_steps_and_run_label) ... ok
+test_alert_debounce_deduplication_and_recovery (test_monitor_and_experiment_ui.MonitorAndUI.test_alert_debounce_deduplication_and_recovery) ... ok
+test_background_link_negative_net_and_shared_variance_are_explicit (test_monitor_and_experiment_ui.MonitorAndUI.test_background_link_negative_net_and_shared_variance_are_explicit) ... ok
+test_monitor_backs_up_without_any_gui_or_device (test_monitor_and_experiment_ui.MonitorAndUI.test_monitor_backs_up_without_any_gui_or_device) ... ok
+test_sample_versions_ui_read_only_and_scientific_render (test_monitor_and_experiment_ui.MonitorAndUI.test_sample_versions_ui_read_only_and_scientific_render) ... ok
+test_cache_lock_is_nonfatal_and_recovers (test_reliability.Reliability.test_cache_lock_is_nonfatal_and_recovers) ... ok
+test_corrupt_raw_data_suppresses_automatic_restart (test_reliability.Reliability.test_corrupt_raw_data_suppresses_automatic_restart) ... ok
+test_empty_and_unknown_payload_preserve_valid_prefix (test_reliability.Reliability.test_empty_and_unknown_payload_preserve_valid_prefix) ... ok
+test_exact_overnight_decoder_fixture (test_reliability.Reliability.test_exact_overnight_decoder_fixture) ... ok
+test_gui_never_previews_modified_raw_snapshot (test_reliability.Reliability.test_gui_never_previews_modified_raw_snapshot) ... ok
+test_gui_reads_journal_even_with_corrupt_status_cache (test_reliability.Reliability.test_gui_reads_journal_even_with_corrupt_status_cache) ... ok
+test_historical_counter_is_not_a_dose_reset (test_reliability.Reliability.test_historical_counter_is_not_a_dose_reset) ... ok
+test_recording_continues_under_real_windows_status_lock (test_reliability.Reliability.test_recording_continues_under_real_windows_status_lock) ... ok
+test_repeated_empty_usb_packets_fail_with_bounded_reads (test_reliability.Reliability.test_repeated_empty_usb_packets_fail_with_bounded_reads) ... ok
+test_reproduce_overnight_status_replace_error (test_reliability.Reliability.test_reproduce_overnight_status_replace_error) ... ok
+test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... {"utc": "2026-10-12T21:22:51.825469+00:00", "pid": 41404, "kind": "device_request_failed", "command": "spectrum", "elapsed_s": 0.258077400008915, "timeout_s": 0.25, "error": "Device worker exceeded 0.25s deadline", "command_queue_depth": 0}
+ok
+test_supervisor_restarts_killed_recorder_and_stop_is_final (test_reliability.Reliability.test_supervisor_restarts_killed_recorder_and_stop_is_final) ... ok
+test_transient_raw_commit_lock_retries_without_overwrite (test_reliability.Reliability.test_transient_raw_commit_lock_retries_without_overwrite) ... ok
+test_unknown_group4_schema_is_not_guessed (test_reliability.Reliability.test_unknown_group4_schema_is_not_guessed) ... ok
+test_watchdog_uses_monotonic_progress_not_wall_time (test_reliability.Reliability.test_watchdog_uses_monotonic_progress_not_wall_time) ... ok
+test_zero_length_and_split_usb_headers (test_reliability.Reliability.test_zero_length_and_split_usb_headers) ... ok
+test_bin_integrated_joint_poisson_decay_and_shared_background (test_scientific_progress.ScientificProgress.test_bin_integrated_joint_poisson_decay_and_shared_background) ... ok
+test_gain_model_recovers_known_shift_with_blend_and_refuses_no_information (test_scientific_progress.ScientificProgress.test_gain_model_recovers_known_shift_with_blend_and_refuses_no_information) ... ok
+test_incremental_cache_conserves_channels_and_detects_changed_endpoint (test_scientific_progress.ScientificProgress.test_incremental_cache_conserves_channels_and_detects_changed_endpoint) ... ok
+test_live_pid_from_another_windows_boot_is_not_active (test_session_end.LivenessTests.test_live_pid_from_another_windows_boot_is_not_active) ... ok
+test_recorder_saves_final_snapshot_and_stays_resumable (test_session_end.ProcessShutdownTests.test_recorder_saves_final_snapshot_and_stays_resumable) ... ok
+test_supervisor_does_not_restart_or_kill_the_recorder_at_session_end (test_session_end.ProcessShutdownTests.test_supervisor_does_not_restart_or_kill_the_recorder_at_session_end) ... ok
+test_blocks_normal_restart_allows_critical_and_waits_for_close (test_session_end.WatcherTests.test_blocks_normal_restart_allows_critical_and_waits_for_close) ... ok
+test_no_block_reason_never_blocks (test_session_end.WatcherTests.test_no_block_reason_never_blocks) ... ok
+test_baseline_only_has_a_styled_explanation_and_no_invented_delta (test_spectrum_tab.SpectrumTab.test_baseline_only_has_a_styled_explanation_and_no_invented_delta) ... ok
+test_latest_interval_advances_without_a_heatmap_click (test_spectrum_tab.SpectrumTab.test_latest_interval_advances_without_a_heatmap_click) ... ok
+test_opening_tab_directly_draws_latest_difference_not_existing_counts (test_spectrum_tab.SpectrumTab.test_opening_tab_directly_draws_latest_difference_not_existing_counts) ... ok
+test_roi_controls_on_spectrum_tab_are_shared_and_change_counts (test_spectrum_tab.SpectrumTab.test_roi_controls_on_spectrum_tab_are_shared_and_change_counts) ... ok
+test_selected_interval_is_retained_while_latest_advances (test_spectrum_tab.SpectrumTab.test_selected_interval_is_retained_while_latest_advances) ... ok
+test_source_reset_clears_previous_spectrum (test_spectrum_tab.SpectrumTab.test_source_reset_clears_previous_spectrum) ... ok
+test_acquisition_zero_is_explicit_and_sliding_aggregate_is_rejected (test_stream_exports.StreamingExports.test_acquisition_zero_is_explicit_and_sliding_aggregate_is_rejected) ... Verified source spectrum 0 / 8
+Exported segment_000_epoch_0: 3 spectra
+Exported segment_001_epoch_0: 4 spectra
+Complete: C:\Users\nelso\AppData\Local\Temp\tmpk9vrxfys\acquisition
+ok
+test_chunks_conserve_counts_and_isolate_recovered_aggregate (test_stream_exports.StreamingExports.test_chunks_conserve_counts_and_isolate_recovered_aggregate) ... Verified source spectrum 0 / 8
+Exported segment_000_epoch_0: 2 spectra
+Exported segment_000_epoch_0_part_001: 1 spectra
+Exported segment_001_epoch_0: 1 spectra
+Exported segment_002_epoch_0: 2 spectra
+Exported segment_002_epoch_0_part_001: 2 spectra
+Complete: C:\Users\nelso\AppData\Local\Temp\tmpopbv3_qj\export
+ok
+test_streaming_telemetry_matches_reference_with_duplicates_and_gaps (test_stream_exports.StreamingExports.test_streaming_telemetry_matches_reference_with_duplicates_and_gaps) ... ok
+test_unknown_clock_uncertainty_is_not_replaced_by_a_known_maximum (test_stream_exports.StreamingExports.test_unknown_clock_uncertainty_is_not_replaced_by_a_known_maximum) ... Verified source spectrum 0 / 2
+Exported segment_000_epoch_0: 1 spectra
+Complete: C:\Users\nelso\AppData\Local\Temp\tmp8dzt5fxn\export
+ok
+test_export_rebuilds_bad_old_dose_bins_without_changing_raws (test_telemetry_observations.TelemetryObservationTests.test_export_rebuilds_bad_old_dose_bins_without_changing_raws) ... ok
+test_future_projection_is_preserved_and_not_discarded (test_telemetry_observations.TelemetryObservationTests.test_future_projection_is_preserved_and_not_discarded) ... ok
+test_incremental_reader_matches_complete_bin_integral (test_telemetry_observations.TelemetryObservationTests.test_incremental_reader_matches_complete_bin_integral) ... ok
+test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.TelemetryObservationTests.test_reception_bins_do_not_impute_through_outage) ... ok
+test_calibrations_split_epochs_and_number_mode_rejects_crossing (test_time_resolved.SpectralSeries.test_calibrations_split_epochs_and_number_mode_rejects_crossing) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 3 spectra
+Exported segment_001_epoch_1: 3 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmpmqjndi6j\export
+Verified source spectrum 0 / 7
+ok
+test_complete_range_and_custom_zero (test_time_resolved.SpectralSeries.test_complete_range_and_custom_zero) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 2 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmpevggtlw7\export
+ok
+test_gap_aggregate_retained_separately_and_no_bins_cross_it (test_time_resolved.SpectralSeries.test_gap_aggregate_retained_separately_and_no_bins_cross_it) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 1 spectra
+Exported segment_001_epoch_0: 1 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmpkda2q1g3\export
+ok
+test_gui_start_uses_entered_hours_and_minutes_and_export_arguments (test_time_resolved.SpectralSeries.test_gui_start_uses_entered_hours_and_minutes_and_export_arguments) ... ok
+test_hash_corruption_fails_without_complete_output (test_time_resolved.SpectralSeries.test_hash_corruption_fails_without_complete_output) ... Verified source spectrum 0 / 7
+ok
+test_native_counts_endpoint_difference_and_no_source_writes (test_time_resolved.SpectralSeries.test_native_counts_endpoint_difference_and_no_source_writes) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 7 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmp6xvy2djg\export
+ok
+test_number_balances_complete_intervals_without_interpolation (test_time_resolved.SpectralSeries.test_number_balances_complete_intervals_without_interpolation) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 3 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmp43n48hpm\export
+ok
+test_report_records_current_software_version (test_time_resolved.SpectralSeries.test_report_records_current_software_version) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 7 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmpuztmp7w_\export
+ok
+test_sliding_overlap_explicit_and_rcspg_omitted (test_time_resolved.SpectralSeries.test_sliding_overlap_explicit_and_rcspg_omitted) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 5 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmpsk47si_n\export
+ok
+test_strict_resolution_more_bins_and_existing_output_rejected (test_time_resolved.SpectralSeries.test_strict_resolution_more_bins_and_existing_output_rejected) ... Verified source spectrum 0 / 7
+Verified source spectrum 0 / 7
+Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 7 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmp2x2w99gq\export
+ok
+test_width_conserves_counts_actual_exposure_and_short_tail (test_time_resolved.SpectralSeries.test_width_conserves_counts_actual_exposure_and_short_tail) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 3 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmp1xjamqt3\export
+ok
+test_xlsx_orientation_energy_conversion_and_roi_preserves_full_counts (test_time_resolved.SpectralSeries.test_xlsx_orientation_energy_conversion_and_roi_preserves_full_counts) ... Verified source spectrum 0 / 7
+Exported segment_000_epoch_0: 7 spectra
+Complete: C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper-ten-day-workflow\app\validation\time_export_temp\tmpcecfv7yp\export
+ok
+test_equivalent_and_compound_units (test_time_resolved.TimeExpressions.test_equivalent_and_compound_units) ... ok
+test_reject_ambiguous_invalid_and_nonfinite (test_time_resolved.TimeExpressions.test_reject_ambiguous_invalid_and_nonfinite) ... ok
+test_widget_defaults_explicit_units_and_invalid_text (test_time_resolved.TimeExpressions.test_widget_defaults_explicit_units_and_invalid_text) ... ok
+test_default_window_and_colormap (test_time_windows.TimeWindowTests.test_default_window_and_colormap) ... ok
+test_time_format_follows_span (test_time_windows.TimeWindowTests.test_time_format_follows_span) ... ok
+test_view_preferences_round_trip (test_time_windows.TimeWindowTests.test_view_preferences_round_trip) ... ok
+test_completion_export_checks_every_channel_and_preserves_source (test_upgrade_v04.CompletionAndOwnership.test_completion_export_checks_every_channel_and_preserves_source) ... ok
+test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-12T21:23:17.721435+00:00", "pid": 41404, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\GammaKeeper-ten-day-workflow\\app\\validation\\upgrade_temp\\tmppxdu9afs\\run"}
+{"utc": "2026-10-12T21:23:17.727472+00:00", "pid": 41404, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\GammaKeeper-ten-day-workflow\\app\\validation\\upgrade_temp\\tmppxdu9afs\\run"}
+ok
+test_failed_completion_never_changes_acquisition_status (test_upgrade_v04.CompletionAndOwnership.test_failed_completion_never_changes_acquisition_status) ... ok
+test_supervisor_reporting_does_not_write_or_lock_acquisition_database (test_upgrade_v04.CompletionAndOwnership.test_supervisor_reporting_does_not_write_or_lock_acquisition_database) ... ok
+test_advancing_spectra_cannot_mask_stalled_telemetry (test_upgrade_v04.TimeAndStreams.test_advancing_spectra_cannot_mask_stalled_telemetry) ... ok
+test_advancing_telemetry_or_events_cannot_mask_stalled_spectra (test_upgrade_v04.TimeAndStreams.test_advancing_telemetry_or_events_cannot_mask_stalled_spectra) ... ok
+test_bad_reference_jump_is_rejected_without_stopping_capture (test_upgrade_v04.TimeAndStreams.test_bad_reference_jump_is_rejected_without_stopping_capture) ... ok
+test_network_failure_preserves_anchor_and_exposes_holdover (test_upgrade_v04.TimeAndStreams.test_network_failure_preserves_anchor_and_exposes_holdover) ... ok
+test_reconnect_backoff_and_long_spectrum_interval_are_respected (test_upgrade_v04.TimeAndStreams.test_reconnect_backoff_and_long_spectrum_interval_are_respected) ... ok
+test_restart_during_network_outage_preserves_same_boot_reference (test_upgrade_v04.TimeAndStreams.test_restart_during_network_outage_preserves_same_boot_reference) ... ok
+test_servers_must_agree_and_single_source_is_visible (test_upgrade_v04.TimeAndStreams.test_servers_must_agree_and_single_source_is_visible) ... ok
+test_wall_step_and_negative_correction_cannot_reverse_recorded_utc (test_upgrade_v04.TimeAndStreams.test_wall_step_and_negative_correction_cannot_reverse_recorded_utc) ... ok
+
+----------------------------------------------------------------------
+Ran 137 tests in 67.182s
+
+OK
