@@ -9,11 +9,13 @@ from storage import immutable_json
 from saved_status import load_status
 from audit_live import audit
 from export_run import export_run
+import os as _os
+SERIAL = _os.environ.get('GAMMAKEEPER_SERIAL') or __import__('sys').exit('Set GAMMAKEEPER_SERIAL to the detector serial number')
 
 ROOT=Path(__file__).resolve().parent
 
 def main():
-    run=ROOT/'runs'/('soak_'+dt.datetime.now().strftime('%Y%m%d_%H%M%S')+'_RC-103-006489')
+    run=ROOT/'runs'/('soak_'+dt.datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+SERIAL)
     (ROOT/'validation').mkdir(exist_ok=True)
     request=dict(run_path=str(run),duration_s=86400,interval_s=10,
                  started_host_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -23,7 +25,7 @@ def main():
     immutable_json(marker,request)
     with marker.with_suffix('.log').open('xb') as output:
         process=subprocess.Popen([python_command(),'-X','utf8',str(ROOT/'supervisor.py'),'--run',str(run),
-                                  '--seconds','86400','--interval','10','--serial','RC-103-006489',
+                                  '--seconds','86400','--interval','10','--serial',SERIAL,
                                   '--label',request['label']],cwd=ROOT,stdout=output,stderr=output,
                                  creationflags=subprocess.CREATE_NO_WINDOW)
         code=process.wait()

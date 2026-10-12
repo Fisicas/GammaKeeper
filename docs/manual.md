@@ -88,7 +88,7 @@ The interface adds data ages, supervisor restart count, clock-projection lead, b
 Install with `tools\install_gammakeeper.cmd` (see the README) and use the **GammaKeeper** Desktop or Start Menu shortcut, or double-click `app\Launch_GammaKeeper.cmd` in a checkout. The archived RadiaLog launchers in the workspace still start their original version folders. The launcher uses the existing science Python; dependencies added for this app are confined to `app/dependencies`. The shared environment and USB driver were not changed.
 
 1. Close the manufacturer app and other device clients. The USB handle is exclusive.
-2. Enter the sample/condition label, confirm serial `RC-103-006489`, interval **10 s**, duration **7 days**, and save folder.
+2. Enter the sample/condition label, enter your detector's serial number (remembered for the next run), interval **10 s**, duration **7 days**, and save folder.
 3. Click **Start new recording**. Check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
 4. The recorder continues if the GUI closes. Reopen the GUI and use **Open saved run** to monitor it. Use **Stop recording** to end it. Stopping attempts a final short snapshot, explicitly marked in the data.
 5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. Unexpected recorder exits are restarted and resumed automatically by the supervisor. **Resume selected run** remains available for manually stopped or reboot-interrupted runs, until the original planned end. A Windows reboot requires reopening and resuming; no system startup task was installed.
@@ -137,10 +137,11 @@ Do not concatenate cumulative spectra directly as if they were independent time 
 ## Development and validation
 
 ```powershell
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s '.\tests' -v
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\gui.py'
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\supervisor.py' --run '.\runs\example_unique_run' --seconds 604800 --interval 10
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\export_run.py' '.\runs\example_unique_run'
+$py = git config --get gammakeeper.python   # the Python with PySide6, NumPy and Matplotlib
+& $py -X utf8 -m unittest discover -s '.\tests' -v
+& $py -X utf8 '.\gui.py'
+& $py -X utf8 '.\supervisor.py' --run '.\runs\example_unique_run' --serial RC-103-000000 --seconds 604800 --interval 10
+& $py -X utf8 '.\export_run.py' '.\runs\example_unique_run'
 ```
 
 Run these commands from the `app` folder. Simulation requires `--demo` and is prominently labeled. Original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_manifest_v*.json`, produced by `release_checks.py`, records current automated/integration/export checks and source hashes. Earlier pilot reports remain in their original version directories.

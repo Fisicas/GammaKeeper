@@ -201,7 +201,7 @@ Either option is a per-user Windows change. It will be proposed with exact entri
 
 **What the current code does (verified by reading it, not tested with two devices):**
 - **Per-device exclusivity already exists at the lowest level.** Each recorder takes a Windows mutex named `Local\RadiaLog_<serial>`, and each supervisor takes `…_<serial>_supervisor`. The name is identical in every version from v0.1 to v0.5.1. The USB transport opens the device whose path contains that serial (`phyton.py`), and its handle is exclusive.
-- **Recording from different RadiaCodes at the same time is therefore possible in the backend**: different serials, different mutexes, different run folders. It has **never been tested with two physical devices**; only one device (RC-103-006489) has been used.
+- **Recording from different RadiaCodes at the same time is therefore possible in the backend**: different serials, different mutexes, different run folders. It has **never been tested with two physical devices**; only one device (RC-XXX-XXXXXX) has been used.
 - **The GUI does not support it and gives poor feedback:**
   - One window follows one run, and *Open saved run* is refused while that run is active.
   - *Start new recording* checks only the run currently selected in that window, not other runs on the same serial.

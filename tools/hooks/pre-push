@@ -18,7 +18,9 @@ done
 [ "$pushing" = "1" ] || exit 0
 
 root=$(git rev-parse --show-toplevel)
-python="${GAMMAKEEPER_SCIENCE_PYTHON:-${RADIALOG_SCIENCE_PYTHON:-C:/Users/nelso/.venvs/codex-science-v1/Scripts/python.exe}}"
+# Interpreter: GAMMAKEEPER_SCIENCE_PYTHON, else the per-clone git config gammakeeper.python, else python on PATH.
+python="${GAMMAKEEPER_SCIENCE_PYTHON:-$(git config --get gammakeeper.python)}"
+python="${python:-python}"
 if [ ! -d "$root/app/dependencies" ]; then
     echo "pre-push: app/dependencies/ is missing; run: \"$python\" -X utf8 tools/vendor_dependencies.py" >&2
     exit 1

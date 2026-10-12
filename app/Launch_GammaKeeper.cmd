@@ -1,8 +1,12 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-set "GAMMAKEEPER_PYTHON=C:\Users\nelso\.venvs\codex-science-v1\Scripts\pythonw.exe"
-if not exist "%GAMMAKEEPER_PYTHON%" (
+rem Interpreter: GAMMAKEEPER_SCIENCE_PYTHON, else the per-clone "git config gammakeeper.python", else pythonw on PATH.
+set "GAMMAKEEPER_PYTHON=%GAMMAKEEPER_SCIENCE_PYTHON%"
+if not defined GAMMAKEEPER_PYTHON for /f "usebackq delims=" %%p in (`git -C "%~dp0.." config --get gammakeeper.python 2^>nul`) do set "GAMMAKEEPER_PYTHON=%%p"
+if defined GAMMAKEEPER_PYTHON set "GAMMAKEEPER_PYTHON=%GAMMAKEEPER_PYTHON:python.exe=pythonw.exe%"
+if not defined GAMMAKEEPER_PYTHON set "GAMMAKEEPER_PYTHON=pythonw.exe"
+if not "%GAMMAKEEPER_PYTHON%"=="pythonw.exe" if not exist "%GAMMAKEEPER_PYTHON%" (
   echo The configured science Python is missing. See docs\manual.md.
   pause
   exit /b 1

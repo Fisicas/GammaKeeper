@@ -14,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-WORKSPACE = Path(r'C:\Users\nelso\Desktop\Radiacode Data')
+WORKSPACE = Path(r'%USERPROFILE%\Desktop\Radiacode Data')
 REPO = WORKSPACE / 'GammaKeeper'
 VERSIONS = [('v01', '0.1.0'), ('v02', '0.2.0'), ('v03', '0.3.0'), ('v031', '0.3.1'), ('v04', '0.4.0'),
             ('v041', '0.4.1'), ('v042', '0.4.2'), ('v05', '0.5.0'), ('v051', '0.5.1')]

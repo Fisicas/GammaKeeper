@@ -31,7 +31,7 @@ smoke=json.loads((root/'validation'/'gui_smoke_report_v02.json').read_text())
 assert all(smoke[key] for key in ['recording_survived_gui_close','stop_button_saved_cleanly','export_button_completed'])
 old_hashes=json.loads((root.parent/'investigation_20261007_v01'/'v01_source_hashes.json').read_text())
 assert all(hashlib.sha256((root.parent/'radiacode_logger_v01'/name).read_bytes()).hexdigest()==digest for name,digest in old_hashes.items())
-original=root.parent/'radiacode_logger_v01'/'runs'/'20261006_233228_177627_RC-103-006489'
+original=root.parent/'radiacode_logger_v01'/'runs'/'20261006_233228_177627_RC-XXX-XXXXXX'
 raw_hashes=json.loads((root.parent/'investigation_20261007_v01'/'raw_snapshot_hashes_v01.json').read_text())
 assert all(hashlib.sha256((original/value['file']).read_bytes()).hexdigest()==value['sha256'] for value in raw_hashes)
 files=sources+list(root.glob('*.md'))+list(root.glob('*.cmd'))+[root/'LICENSE',root/'requirements-app.txt']

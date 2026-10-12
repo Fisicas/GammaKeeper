@@ -52,8 +52,9 @@ The local UFit import interface was inspected, but UFit was not executed or copi
 From this release directory, using PowerShell:
 
 ```powershell
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\supervisor.py' --run '.\runs\unique_new_run' --interval '10 seconds' --duration '1 hour' --label 'sample / conditions'
-& 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\time_resolved.py' 'C:\path\to\saved_run' --mode width --width '1 minute' --xlsx --energy-min-kev 200 --energy-max-kev 700
+$py = git config --get gammakeeper.python   # the Python with PySide6, NumPy and Matplotlib
+& $py -X utf8 '.\supervisor.py' --run '.\runs\unique_new_run' --serial RC-103-000000 --interval '10 seconds' --duration '1 hour' --label 'sample / conditions'
+& $py -X utf8 '.\time_resolved.py' 'C:\path\to\saved_run' --mode width --width '1 minute' --xlsx --energy-min-kev 200 --energy-max-kev 700
 ```
 
 The second command writes a unique export directory within the source run; `--target` can specify a different new directory. `--mode number --number 100` chooses 100 spectra. `--mode sliding --width '1 minute' --step '10 seconds'` produces correlated moving averages. UTC CLI selection and time-zero values are epoch seconds (`--start-utc`, `--end-utc`, `--time-zero-utc`); the GUI provides date/time selectors.

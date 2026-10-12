@@ -119,7 +119,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         if not self.run:
             values=preferences.get('setup') or {}
             self.label.setText(values.get('label',''))
-            self.serial.setText(values.get('serial','RC-103-006489'))
+            self.serial.setText(values.get('serial',''))
             self.interval.setValue(values.get('interval_s',10))
             self.days.setValue(values.get('days',7))
             self.folder.setText(values.get('folder',str(DATA_ROOT)))
