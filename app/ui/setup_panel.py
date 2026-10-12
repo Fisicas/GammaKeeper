@@ -228,6 +228,10 @@ class SetupPanelMixin:
         if self.recorder and self.recorder.poll() is None:
             return True
         sup = self.last_status.get('supervisor') or {}
+        # After a Windows restart a reused PID must not make a dead run look active (finding F3).
+        from system_time import boot_identity
+        if any(record.get('system_boot_id') and record['system_boot_id'] != boot_identity() for record in (self.last_status, sup)):
+            return False
         if sup.get('status') in ('starting','running','restart_wait','stopping'):
             try:
                 if dt.datetime.now(dt.timezone.utc).timestamp()-timestamp(sup['utc'])<6:

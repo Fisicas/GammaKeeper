@@ -8,6 +8,7 @@ from export_run import readonly
 from saved_status import load_status
 from telemetry_analysis import LiveJournalTelemetry
 from run_policy import resume_allowed
+from system_time import boot_identity
 from ui.paths import ROOT
 from ui.theme import TEAL, GOLD, MUTED
 
@@ -49,21 +50,26 @@ class RunStatusMixin:
             prefix = 'SIMULATED • ' if state['mode'] == 'demo' else ''
             name = 'STATUS STALE — recorder may have stopped' if self.status_stale else state['state'].upper()
             sup = state.get('supervisor') or {}
+            allowed,reason=resume_allowed(self.run)
+            booted = state.get('system_boot_id')
+            rebooted = bool(booted) and booted != boot_identity()
             if sup.get('status') == 'restart_wait' and active:
                 name = 'RESTARTING RECORDER'
             elif sup.get('status') == 'attention_required':
                 name = 'ATTENTION REQUIRED — recording stopped'
+            elif state['state'] == 'interrupted_by_shutdown' or (state['state'] in ('recording','reconnecting','connecting') and not active and rebooted):
+                cause = 'WINDOWS SHUTDOWN' if state['state'] == 'interrupted_by_shutdown' else 'WINDOWS RESTART (no warning received)'
+                name = f'INTERRUPTED BY {cause} — ' + ('resume available' if allowed else 'schedule ended')
             elif state['state'] in ('recording','reconnecting','connecting') and not active:
                 name = 'RECORDER EXITED — resume available'
             if (self.run/'BACKUP_PLAN.json').exists():name='BACKUP SNAPSHOT'
             recovery=sup.get('recovery_progress')
             if recovery and active:name=f"RECOVERING SAVED DATA • {recovery['verified']:,} verified"
             self.connection.setText(prefix + name)
-            warning_color = '#ff7b86' if ('ERROR' in name or 'ATTENTION' in name or 'EXITED' in name or 'STALE' in name) else GOLD if ('RECONNECT' in name or 'RESTART' in name) else TEAL
+            warning_color = '#ff7b86' if ('ERROR' in name or 'ATTENTION' in name or 'EXITED' in name or 'STALE' in name) else GOLD if ('RECONNECT' in name or 'RESTART' in name or 'INTERRUPTED' in name) else TEAL
             self.connection.setStyleSheet(f'color: {warning_color}; font-weight: 600;')
             self.start_button.setEnabled(False)
             self.stop_button.setEnabled(active)
-            allowed,reason=resume_allowed(self.run)
             self.resume_button.setEnabled(not active and allowed)
             self.resume_button.setToolTip(reason or 'Continue the original saved schedule')
             self.setup_button.setEnabled(not active)

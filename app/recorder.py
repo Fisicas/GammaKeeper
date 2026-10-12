@@ -27,6 +27,7 @@ from status_observations import select_rare
 from telemetry_analysis import observation_from_batch
 from run_policy import require_resume, validate_schedule
 from diagnostics import diagnostic
+from session_end import start_watcher, RECORDER_BLOCK_REASON
 
 
 class DemoClient:
@@ -121,7 +122,8 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
     mode = config.get('mode') if config else json.loads((Path(path) / 'manifest.json').read_text())['mode']
     serial = config.get('serial') if config else json.loads((Path(path) / 'manifest.json').read_text())['serial']
     state = dict(state='starting', run_path=str(Path(path).resolve()), boot_id=boot, pid=os.getpid(), mode=mode,
-                 serial=serial, software_version=VERSION, utc=utc_now(), retries=0)
+                 serial=serial, software_version=VERSION, utc=utc_now(), retries=0, system_boot_id=boot_identity())
+    watcher = None
     records = []
     last_rt = None
     last_rare = None
@@ -168,9 +170,9 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                     store.db.execute('PRAGMA busy_timeout=5000')
                 except sqlite3.Error:
                     pass
-    def capture_spectrum(final=False):
+    def capture_spectrum(final=False, final_timeout=5):
         nonlocal dose_integral, dose_observed_s, dose_elapsed_s, gap, successful_spectra, failure_index, next_spectrum
-        msg = client.request('spectrum', timeout=5 if final else 12)
+        msg = client.request('spectrum', timeout=final_timeout if final else 12)
         snapshot = make_snapshot(msg, serial, boot, connection_id, generation, gap, last_rt, last_rare,
                                  final=final, dose_baseline=dose_baseline, dose_reset_seen=dose_reset_seen)
         if store.previous:
@@ -211,7 +213,10 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
             generation = store.previous['spectrum_generation']
             gap = True
         store.event('recorder_started', dict(boot_id=boot, versions=versions(), resumed=bool(store.previous)))
-        store.set_state('recorder', dict(boot_id=boot, pid=os.getpid(), status='running'))
+        store.set_state('recorder', dict(boot_id=boot, pid=os.getpid(), status='running', system_boot_id=boot_identity()))
+        # Windows session end: warn on a normal restart and save a final snapshot when the session really ends.
+        watcher = start_watcher(f'GammaKeeper recorder {Path(path).name}', RECORDER_BLOCK_REASON)
+        store.event('session_end_watcher', dict(available=bool(watcher), blocks_normal_restart=bool(watcher)))
         old_dose = store.db.execute("SELECT value FROM state WHERE key='dose_baseline'").fetchone()
         dose_baseline = json.loads(old_dose[0]) if old_dose else None
         old_reset = store.db.execute("SELECT value FROM state WHERE key='dose_reset_seen'").fetchone()
@@ -257,6 +262,19 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
         next_buffer = start
         while True:
             now = time.monotonic()
+            if watcher:
+                for kind, details in watcher.drain():
+                    store.event(kind, details)
+                if watcher.ending.is_set():
+                    # Windows is ending the session: a short final interval within the budget, then a
+                    # resumable 'interrupted_by_shutdown' state. Counts accrued while off are kept by the device.
+                    outcome = 'interrupted_by_shutdown'
+                    if client and store.previous and now - (store.previous['monotonic_after'] if store.previous['boot_id'] == boot else start) > .5:
+                        try:
+                            capture_spectrum(final=True, final_timeout=2)
+                        except DeviceFailure as error:
+                            store.event('final_read_failed', dict(error=str(error), reason='host_shutdown'))
+                    break
             stop_file = Path(path) / f'stop_{boot}.request'
             if stop_file.exists() or (stop_request and Path(stop_request).exists()) or now >= stop_deadline:
                 outcome = 'completed' if now >= stop_deadline else 'stopped'
@@ -426,7 +444,7 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
         if store:
             try:
                 store.event('recorder_ended', dict(outcome=outcome, boot_id=boot))
-                store.set_state('recorder', dict(boot_id=boot, pid=os.getpid(), status=outcome))
+                store.set_state('recorder', dict(boot_id=boot, pid=os.getpid(), status=outcome, system_boot_id=boot_identity()))
                 publish(dict(state,state=outcome,utc=utc_now(),uptime_s=time.monotonic()-start),force=True)
             except Exception as error:
                 exit_code = 2
@@ -446,6 +464,8 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
             pass
         if publisher:
             publisher.close(dict(state,state=outcome,utc=utc_now(),uptime_s=time.monotonic()-start))
+        if watcher:
+            watcher.close()  # releases a waiting WM_ENDSESSION only after the durable writes above
     return exit_code
 
 

@@ -17,6 +17,8 @@ from supervisor_store import save_health
 from run_policy import require_resume
 from diagnostics import diagnostic
 from recovery_progress import read as read_recovery
+from session_end import start_watcher
+from system_time import boot_identity
 
 ROOT = Path(__file__).resolve().parent
 
@@ -116,7 +118,11 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
     token = uuid.uuid4().hex
     stop = run/f'stop_supervisor_{token}.request'
     state = dict(pid=os.getpid(),token=token,status='starting',restarts=0,stop_request=str(stop),
-                 utc=dt.datetime.now(dt.timezone.utc).isoformat())
+                 utc=dt.datetime.now(dt.timezone.utc).isoformat(),system_boot_id=boot_identity())
+    # Session end: never restart or kill the recorder while Windows signs out or restarts.
+    watcher = start_watcher(f'GammaKeeper supervisor {run.name}')
+    host_ending = False
+    shutdown_requested_at = None
     logs = ROOT/'logs'
     logs.mkdir(exist_ok=True)
     (ROOT/'validation').mkdir(exist_ok=True)
@@ -147,6 +153,14 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
             last_persist = -float('inf')
             while child.poll() is None:
                 now = time.monotonic()
+                if watcher:
+                    for kind,details in watcher.drain():
+                        shutdown_requested_at = (now if kind=='host_shutdown_requested' else
+                                                 None if kind=='host_shutdown_cancelled' else shutdown_requested_at)
+                        save_health(run,state,diagnostic(kind,role='supervisor',**details))
+                    if watcher.ending.is_set():
+                        host_ending = True
+                        break
                 if now-last_persist >= 2:
                     state['utc'] = dt.datetime.now(dt.timezone.utc).isoformat()
                     save_supervisor_state(run,state)
@@ -178,6 +192,16 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                     # Recorder sees the same stable stop file across restarts.
                     state['status'] = 'stopping'
                 time.sleep(.2)
+            if not host_ending and shutdown_requested_at is not None and time.monotonic()-shutdown_requested_at<60:
+                host_ending = True  # the recorder ended during a sign-out/restart; do not restart it
+            if host_ending:
+                try:
+                    child.wait(timeout=3.0)  # the recorder is saving its final snapshot
+                except subprocess.TimeoutExpired:
+                    pass
+                state.update(status='host_shutdown',last_exit_code=child.poll(),utc=dt.datetime.now(dt.timezone.utc).isoformat(),
+                             reason='Windows session ended; resume the run after signing in if its schedule is still open')
+                break
             rc = child.returncode
             _,last_progress = inspect_run(run)
             state['last_durable_progress'] = last_progress
@@ -216,9 +240,11 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
         save_supervisor_state(run,state)
         return rc
     finally:
-        if child and child.poll() is None:
+        if child and child.poll() is None and not host_ending:
             terminate_tree(child.pid)
         mutex.close()
+        if watcher:
+            watcher.close()
 
 
 def terminate_tree(pid):
