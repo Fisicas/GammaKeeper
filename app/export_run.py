@@ -186,7 +186,10 @@ def export_run(run, target=None, with_npz=True):
                       telemetry_rule='Recomputed from raw journal: latest real-time estimator per received batch, host reception UTC, <=3s zero-order hold. Original device timestamps retained; exact sample/filter latency unverified.',
                       npz_rule='Integer channel differences, -1 sentinel for invalid/baseline; consult valid, nominal_time_bin, quality, epoch; no resampling',
                       processing='No smoothing, background subtraction, normalization or calibration changes; UTC axes and ascending channel index')
-        report['annotations'] = annotations.export_csv(run, target / 'annotations.csv')
+        report['annotation_snapshot'] = annotations.export_snapshot(run, target)
+        report['annotations'] = len(report['annotation_snapshot']['notes'])
+        from build_identity import identity
+        report['analysis_build'] = identity()
         immutable_json(target / 'EXPORT_COMPLETE.json', report)
         return target, report
     finally:

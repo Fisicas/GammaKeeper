@@ -22,6 +22,12 @@ class NoteDialog(Q.QDialog):
         self.kind.setCurrentIndex(self.kind.findData('note'))
         self.text = Q.QLineEdit()
         self.text.setPlaceholderText('e.g. charcoal 25.0 g, canister 3, exposed 72 h in basement')
+        self.uncertainty = Q.QDoubleSpinBox()
+        self.uncertainty.setRange(0, 86400)
+        self.uncertainty.setSuffix(' s')
+        self.uncertainty_known = Q.QCheckBox('Event-time uncertainty estimated')
+        self.uncertainty_known.toggled.connect(self.uncertainty.setEnabled)
+        self.uncertainty.setEnabled(False)
         local = dt.datetime.fromtimestamp(now_utc).astimezone()
         self.at_now = Q.QRadioButton(f'Now ({local:%H:%M:%S %Z})')
         self.at_time = Q.QRadioButton('At')
@@ -38,6 +44,7 @@ class NoteDialog(Q.QDialog):
         form.addRow('Kind', self.kind)
         form.addRow('Note', self.text)
         form.addRow('Event time (local)', when)
+        form.addRow(self.uncertainty_known, self.uncertainty)
         buttons = Q.QDialogButtonBox(Q.QDialogButtonBox.StandardButton.Ok | Q.QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -89,8 +96,11 @@ class NotesMixin:
     def note_clock(self):
         """(UTC seconds, time basis) on the same timeline as the recorded data."""
         clock = ((self.last_status or {}).get('last_snapshot') or {}).get('clock') or {}
-        referenced = clock.get('anchor_monotonic_s') is not None and clock.get('system_boot_id') == boot_identity()
-        return self.current_timeline_seconds(), 'recorder_sntp_reference' if referenced else 'host_clock'
+        same_boot = clock.get('anchor_monotonic_s') is not None and clock.get('system_boot_id') == boot_identity()
+        referenced = same_boot and clock.get('last_good_monotonic_s') is not None
+        basis = ('recorder_sntp_holdover' if clock.get('quality') == 'holdover' else
+                 'recorder_sntp_reference') if referenced else 'host_clock'
+        return self.current_timeline_seconds(), basis
 
     def _notes_run(self):
         return self.run if self.run and (self.run / 'manifest.json').exists() else None
@@ -119,11 +129,15 @@ class NotesMixin:
         if dialog.exec() != Q.QDialog.DialogCode.Accepted:
             return
         kind, text, when, entered = dialog.values()
-        self._append_note(run, when, kind, text, 'entered_by_user' if entered else basis)
+        self._append_note(run, when, kind, text, 'entered_by_user' if entered else basis,
+                          event_uncertainty_s=dialog.uncertainty.value() if dialog.uncertainty_known.isChecked() else None)
 
-    def _append_note(self, run, utc, kind, text, basis):
+    def _append_note(self, run, utc, kind, text, basis, event_uncertainty_s=None):
         try:
-            annotations.add(run, utc, kind, text, basis)
+            clock = ((self.last_status or {}).get('last_snapshot') or {}).get('clock') or {}
+            from build_identity import identity
+            annotations.add(run, utc, kind, text, basis,
+                            dict(clock=clock, event_uncertainty_s=event_uncertainty_s, build=identity()))
         except (OSError, sqlite3.Error, ValueError) as error:
             self.fail(f'Note not saved: {error}')
             return
@@ -132,8 +146,9 @@ class NotesMixin:
 
     def refresh_notes(self, force=False):
         run = self._notes_run()
-        self.seal_button.setEnabled(bool(run))
-        self.note_button.setEnabled(bool(run))
+        writable = bool(run) and not (run / 'BACKUP_PLAN.json').exists()
+        self.seal_button.setEnabled(writable)
+        self.note_button.setEnabled(writable)
         path = run / annotations.FILE if run else None
         try:
             key = (str(run), path.stat().st_mtime_ns if path and path.exists() else None)

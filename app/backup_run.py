@@ -102,10 +102,31 @@ def backup(run,target,progress=None):
                 note='Read-only point-in-time backup. Resume copying reuses this journal horizon; recording from the backup is disabled.')
     marker=target/'BACKUP_COMPLETE.json'
     if not marker.exists():
-        # Notes may still grow, so they are copied as a point-in-time CSV rather than a hashed file.
-        result['annotations']=annotations.export_csv(run,target/'annotations.csv') if not (target/'annotations.csv').exists() else 'kept'
+        # This is a separate, frozen annotation horizon, not an atomic two-database snapshot.
+        notes = target / annotations.FILE
+        if not notes.exists() and (run / annotations.FILE).exists():
+            stage = notes.with_name(notes.name + '.partial')
+            if stage.exists(): stage.unlink()
+            source = readonly(run / annotations.FILE)
+            destination = sqlite3.connect(stage)
+            try:
+                source.backup(destination)
+            finally:
+                destination.close(); source.close()
+            os.rename(stage, notes)
+        if not (target / 'ANNOTATIONS.json').exists():
+            annotations.export_snapshot(target, target)
+        result['annotations'] = json.loads((target / 'ANNOTATIONS.json').read_text())['last_note_id']
+        result['auxiliary_hashes'] = {p.name:digest(p) for p in
+            (notes, target/'annotations.csv', target/'ANNOTATIONS.json') if p.exists()}
         immutable_json(marker,result)
-    return result
+    saved = json.loads(marker.read_text(encoding='utf-8'))
+    for name, expected in saved.get('auxiliary_hashes', {}).items():
+        file = (target / name).resolve()
+        if file.parent != target or not file.exists() or digest(file) != expected:
+            raise ValueError('Backup annotation integrity failed: ' + name)
+    saved['notes_verification'] = 'hash_verified' if 'auxiliary_hashes' in saved else 'legacy_unverified'
+    return saved
 
 
 if __name__=='__main__':
