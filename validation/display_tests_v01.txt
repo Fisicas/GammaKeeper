@@ -1,0 +1,16 @@
+test_all_four_energy_count_combinations_and_roi_counts_unchanged (test_display_scales.DisplayScales.test_all_four_energy_count_combinations_and_roi_counts_unchanged) ... ok
+test_all_zero_and_empty_log_views_have_valid_domains_without_warnings (test_display_scales.DisplayScales.test_all_zero_and_empty_log_views_have_valid_domains_without_warnings) ... ok
+test_axes_link_across_tabs_while_intensity_is_independent (test_display_scales.DisplayScales.test_axes_link_across_tabs_while_intensity_is_independent) ... C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\gui.py:126: PendingDeprecationWarning: The set_bad function will be deprecated in a future version. Use cmap.with_extremes(bad=...) or Colormap(bad=...) instead.
+  cmap.set_bad(PANEL)
+ok
+test_log_hides_zeros_and_linear_restores_them_without_pseudocounts (test_display_scales.DisplayScales.test_log_hides_zeros_and_linear_restores_them_without_pseudocounts) ... ok
+test_masked_gaps_and_small_positive_values_are_preserved (test_display_scales.DisplayScales.test_masked_gaps_and_small_positive_values_are_preserved) ... ok
+test_nonpositive_calibrated_energies_are_hidden_only_in_log_display (test_display_scales.DisplayScales.test_nonpositive_calibrated_energies_are_hidden_only_in_log_display) ... ok
+test_preferences_restore_and_close_save_the_actual_scales (test_display_scales.DisplayScales.test_preferences_restore_and_close_save_the_actual_scales) ... ok
+test_scale_switch_does_not_reconstruct_touch_sources_or_launch_recorder (test_display_scales.DisplayScales.test_scale_switch_does_not_reconstruct_touch_sources_or_launch_recorder) ... ok
+test_spectrogram_linear_shows_zero_cells_log_masks_them (test_display_scales.DisplayScales.test_spectrogram_linear_shows_zero_cells_log_masks_them) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 9.507s
+
+OK

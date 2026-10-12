@@ -1,8 +1,6 @@
 test_calibration_changes_are_not_silently_combined (test_accumulated_spectrum.CollectedSpectrum.test_calibration_changes_are_not_silently_combined) ... ok
 test_exact_range_boundaries_include_both_selected_intervals (test_accumulated_spectrum.CollectedSpectrum.test_exact_range_boundaries_include_both_selected_intervals) ... ok
-test_gui_accumulated_modes_and_roi_show_recording_and_range (test_accumulated_spectrum.CollectedSpectrum.test_gui_accumulated_modes_and_roi_show_recording_and_range) ... C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\gui.py:120: PendingDeprecationWarning: The set_bad function will be deprecated in a future version. Use cmap.with_extremes(bad=...) or Colormap(bad=...) instead.
-  cmap.set_bad(PANEL)
-ok
+test_gui_accumulated_modes_and_roi_show_recording_and_range (test_accumulated_spectrum.CollectedSpectrum.test_gui_accumulated_modes_and_roi_show_recording_and_range) ... ok
 test_no_complete_intervals_and_invalid_range_are_explicit (test_accumulated_spectrum.CollectedSpectrum.test_no_complete_intervals_and_invalid_range_are_explicit) ... ok
 test_recording_total_excludes_existing_counts_and_updates_incrementally (test_accumulated_spectrum.CollectedSpectrum.test_recording_total_excludes_existing_counts_and_updates_incrementally) ... ok
 test_recovered_gap_counts_are_retained_and_flagged (test_accumulated_spectrum.CollectedSpectrum.test_recovered_gap_counts_are_retained_and_flagged) ... ok
@@ -37,6 +35,16 @@ test_reset_event_even_if_counts_exceed_old_counts (test_core.ScientificRules.tes
 test_seven_days_no_rolling_limit_and_count_conservation (test_core.ScientificRules.test_seven_days_no_rolling_limit_and_count_conservation) ... ok
 test_telemetry_gap_is_not_interpolated (test_core.ScientificRules.test_telemetry_gap_is_not_interpolated) ... ok
 test_unsigned_underflow_is_reset_not_clipped (test_core.ScientificRules.test_unsigned_underflow_is_reset_not_clipped) ... ok
+test_all_four_energy_count_combinations_and_roi_counts_unchanged (test_display_scales.DisplayScales.test_all_four_energy_count_combinations_and_roi_counts_unchanged) ... ok
+test_all_zero_and_empty_log_views_have_valid_domains_without_warnings (test_display_scales.DisplayScales.test_all_zero_and_empty_log_views_have_valid_domains_without_warnings) ... ok
+test_axes_link_across_tabs_while_intensity_is_independent (test_display_scales.DisplayScales.test_axes_link_across_tabs_while_intensity_is_independent) ... ok
+test_log_hides_zeros_and_linear_restores_them_without_pseudocounts (test_display_scales.DisplayScales.test_log_hides_zeros_and_linear_restores_them_without_pseudocounts) ... ok
+test_masked_gaps_and_small_positive_values_are_preserved (test_display_scales.DisplayScales.test_masked_gaps_and_small_positive_values_are_preserved) ... ok
+test_nonpositive_calibrated_energies_are_hidden_only_in_log_display (test_display_scales.DisplayScales.test_nonpositive_calibrated_energies_are_hidden_only_in_log_display) ... ok
+test_preferences_restore_and_close_save_the_actual_scales (test_display_scales.DisplayScales.test_preferences_restore_and_close_save_the_actual_scales) ... ok
+test_scale_switch_does_not_reconstruct_touch_sources_or_launch_recorder (test_display_scales.DisplayScales.test_scale_switch_does_not_reconstruct_touch_sources_or_launch_recorder) ... ok
+test_single_interval_time_axis_and_home_use_the_current_log_domain (test_display_scales.DisplayScales.test_single_interval_time_axis_and_home_use_the_current_log_domain) ... ok
+test_spectrogram_linear_shows_zero_cells_log_masks_them (test_display_scales.DisplayScales.test_spectrogram_linear_shows_zero_cells_log_masks_them) ... ok
 test_expired_run_is_disabled_and_never_launched (test_gui_run_settings.SavedRunSettings.test_expired_run_is_disabled_and_never_launched) ... ok
 test_invalid_manifest_does_not_present_defaults_as_saved_values (test_gui_run_settings.SavedRunSettings.test_invalid_manifest_does_not_present_defaults_as_saved_values) ... ok
 test_reopening_restores_real_run_and_preserves_manifest (test_gui_run_settings.SavedRunSettings.test_reopening_restores_real_run_and_preserves_manifest) ... ok
@@ -52,7 +60,7 @@ test_historical_counter_is_not_a_dose_reset (test_reliability.Reliability.test_h
 test_recording_continues_under_real_windows_status_lock (test_reliability.Reliability.test_recording_continues_under_real_windows_status_lock) ... ok
 test_repeated_empty_usb_packets_fail_with_bounded_reads (test_reliability.Reliability.test_repeated_empty_usb_packets_fail_with_bounded_reads) ... ok
 test_reproduce_overnight_status_replace_error (test_reliability.Reliability.test_reproduce_overnight_status_replace_error) ... ok
-test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... {"utc": "2026-10-11T19:20:46.801543+00:00", "pid": 20116, "kind": "device_request_failed", "command": "spectrum", "elapsed_s": 0.26085669999974925, "timeout_s": 0.25, "error": "Device worker exceeded 0.25s deadline", "command_queue_depth": 0}
+test_request_timeout_terminates_hung_device_owner (test_reliability.Reliability.test_request_timeout_terminates_hung_device_owner) ... {"utc": "2026-10-12T00:07:26.253856+00:00", "pid": 39188, "kind": "device_request_failed", "command": "spectrum", "elapsed_s": 0.26998249999815016, "timeout_s": 0.25, "error": "Device worker exceeded 0.25s deadline", "command_queue_depth": 0}
 ok
 test_supervisor_restarts_killed_recorder_and_stop_is_final (test_reliability.Reliability.test_supervisor_restarts_killed_recorder_and_stop_is_final) ... ok
 test_transient_raw_commit_lock_retries_without_overwrite (test_reliability.Reliability.test_transient_raw_commit_lock_retries_without_overwrite) ... ok
@@ -72,32 +80,32 @@ test_reception_bins_do_not_impute_through_outage (test_telemetry_observations.Te
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 3 spectra
 Exported segment_001_epoch_1: 3 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmpdt7fbnk4\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpascx6asj\export
 Verified source spectrum 0 / 7
 test_calibrations_split_epochs_and_number_mode_rejects_crossing (test_time_resolved.SpectralSeries.test_calibrations_split_epochs_and_number_mode_rejects_crossing) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 2 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmp55qf1wkn\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpksakdm5n\export
 test_complete_range_and_custom_zero (test_time_resolved.SpectralSeries.test_complete_range_and_custom_zero) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 1 spectra
 Exported segment_001_epoch_0: 1 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmp57d1z4v7\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmp6k99zsx4\export
 test_gap_aggregate_retained_separately_and_no_bins_cross_it (test_time_resolved.SpectralSeries.test_gap_aggregate_retained_separately_and_no_bins_cross_it) ... ok
 test_gui_start_uses_entered_hours_and_minutes_and_export_arguments (test_time_resolved.SpectralSeries.test_gui_start_uses_entered_hours_and_minutes_and_export_arguments) ... ok
 Verified source spectrum 0 / 7
 test_hash_corruption_fails_without_complete_output (test_time_resolved.SpectralSeries.test_hash_corruption_fails_without_complete_output) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 7 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmp52e6rwmt\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmp2eq34buj\export
 test_native_counts_endpoint_difference_and_no_source_writes (test_time_resolved.SpectralSeries.test_native_counts_endpoint_difference_and_no_source_writes) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 3 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmpqxjloydz\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpsrw47xm1\export
 test_number_balances_complete_intervals_without_interpolation (test_time_resolved.SpectralSeries.test_number_balances_complete_intervals_without_interpolation) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 5 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmpkfevvki2\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpfmqvguwb\export
 test_sliding_overlap_explicit_and_rcspg_omitted (test_time_resolved.SpectralSeries.test_sliding_overlap_explicit_and_rcspg_omitted) ... ok
 Verified source spectrum 0 / 7
 Verified source spectrum 0 / 7
@@ -106,23 +114,23 @@ Verified source spectrum 0 / 7
 Verified source spectrum 0 / 7
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 7 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmp6prexvly\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpe47i9uhm\export
 Verified source spectrum 0 / 7
 test_strict_resolution_more_bins_and_existing_output_rejected (test_time_resolved.SpectralSeries.test_strict_resolution_more_bins_and_existing_output_rejected) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 3 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmpiz6h77km\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpg_861_vh\export
 test_width_conserves_counts_actual_exposure_and_short_tail (test_time_resolved.SpectralSeries.test_width_conserves_counts_actual_exposure_and_short_tail) ... ok
 Verified source spectrum 0 / 7
 Exported segment_000_epoch_0: 7 spectra
-Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\validation\time_export_temp\tmpzynbnpn6\export
+Complete: C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v051\validation\time_export_temp\tmpp8ckn725\export
 test_xlsx_orientation_energy_conversion_and_roi_preserves_full_counts (test_time_resolved.SpectralSeries.test_xlsx_orientation_energy_conversion_and_roi_preserves_full_counts) ... ok
 test_equivalent_and_compound_units (test_time_resolved.TimeExpressions.test_equivalent_and_compound_units) ... ok
 test_reject_ambiguous_invalid_and_nonfinite (test_time_resolved.TimeExpressions.test_reject_ambiguous_invalid_and_nonfinite) ... ok
-test_widget_defaults_explicit_units_and_invalid_text (test_time_resolved.TimeExpressions.test_widget_defaults_explicit_units_and_invalid_text) ... FAIL
+test_widget_defaults_explicit_units_and_invalid_text (test_time_resolved.TimeExpressions.test_widget_defaults_explicit_units_and_invalid_text) ... ok
 test_completion_export_checks_every_channel_and_preserves_source (test_upgrade_v04.CompletionAndOwnership.test_completion_export_checks_every_channel_and_preserves_source) ... ok
-test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-11T19:21:00.616695+00:00", "pid": 20116, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v05\\validation\\upgrade_temp\\tmptbffinlk\\run"}
-{"utc": "2026-10-11T19:21:00.623896+00:00", "pid": 20116, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v05\\validation\\upgrade_temp\\tmptbffinlk\\run"}
+test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint (test_upgrade_v04.CompletionAndOwnership.test_expired_resume_cannot_change_a_completed_run_from_either_entrypoint) ... {"utc": "2026-10-12T00:07:41.203898+00:00", "pid": 39188, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v051\\validation\\upgrade_temp\\tmpxgadu9fp\\run"}
+{"utc": "2026-10-12T00:07:41.209896+00:00", "pid": 39188, "kind": "resume_refused", "error": "This recording completed successfully. Set up a new recording instead.", "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v051\\validation\\upgrade_temp\\tmpxgadu9fp\\run"}
 ok
 test_failed_completion_never_changes_acquisition_status (test_upgrade_v04.CompletionAndOwnership.test_failed_completion_never_changes_acquisition_status) ... ok
 test_supervisor_reporting_does_not_write_or_lock_acquisition_database (test_upgrade_v04.CompletionAndOwnership.test_supervisor_reporting_does_not_write_or_lock_acquisition_database) ... ok
@@ -135,15 +143,7 @@ test_restart_during_network_outage_preserves_same_boot_reference (test_upgrade_v
 test_servers_must_agree_and_single_source_is_visible (test_upgrade_v04.TimeAndStreams.test_servers_must_agree_and_single_source_is_visible) ... ok
 test_wall_step_and_negative_correction_cannot_reverse_recorded_utc (test_upgrade_v04.TimeAndStreams.test_wall_step_and_negative_correction_cannot_reverse_recorded_utc) ... ok
 
-======================================================================
-FAIL: test_widget_defaults_explicit_units_and_invalid_text (test_time_resolved.TimeExpressions.test_widget_defaults_explicit_units_and_invalid_text)
 ----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Users\nelso\Desktop\Radiacode Data\radiacode_logger_v05\tests\test_time_resolved.py", line 56, in test_widget_defaults_explicit_units_and_invalid_text
-    self.assertEqual(widget.seconds(), 172800)
-AssertionError: 120.0 != 172800
+Ran 104 tests in 51.541s
 
-----------------------------------------------------------------------
-Ran 94 tests in 41.679s
-
-FAILED (failures=1)
+OK

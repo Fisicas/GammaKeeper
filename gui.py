@@ -17,7 +17,7 @@ from PySide6 import QtCore, QtGui, QtWidgets as Q
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 import matplotlib.dates as mdates
-from matplotlib.colors import LogNorm
+from plot_scales import apply_scale,display_values,intensity_norm
 import matplotlib
 
 from analysis import VERSION, midpoint, timestamp, DOSE_R_TO_USV
@@ -31,6 +31,7 @@ from run_policy import require_resume,resume_allowed
 from gui_analysis import AnalysisUI
 from matplotlib.ticker import FuncFormatter
 import gui_preferences
+import display_controls
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 ROOT = Path(__file__).resolve().parent
@@ -52,6 +53,8 @@ class Charts(FigureCanvasQTAgg):
         self.local_time=False
         self.show_dates=False
         self.roi=None
+        self.energy_scale='linear';self.counts_scale='linear';self.intensity_scale='log'
+        self.scale_note=''
         self.empty()
 
     def style(self, ax):
@@ -69,6 +72,8 @@ class Charts(FigureCanvasQTAgg):
             self.style(ax)
             ax.set_title(title, loc='left')
             ax.text(.5, .5, 'Waiting for recorded data', transform=ax.transAxes, ha='center', va='center', color=MUTED)
+        apply_scale(self.spg,'x',self.energy_scale)
+        apply_scale(self.count,'y',self.counts_scale)
         self.draw_idle()
 
     def show_rows(self, rows, last_snapshot, mode):
@@ -113,22 +118,22 @@ class Charts(FigureCanvasQTAgg):
         if ends and np.all(np.diff(energy) > 0):
             yedges = [starts[0]] + ends
             values = np.ma.masked_invalid(np.asarray(matrix))
-            positive = values.compressed()
-            positive = positive[positive > 0]
-            maximum = max(float(np.percentile(positive, self.color_percentile)), .1) if len(positive) else 1.
-            cmap = __import__('matplotlib').colormaps['magma'].copy()
-            cmap.set_bad(PANEL)
-            mesh = self.spg.pcolormesh(energy, yedges, np.ma.masked_less_equal(values, 0),
-                                     cmap=cmap, norm=LogNorm(vmin=.001, vmax=maximum), shading='flat', rasterized=True)
+            values,norm=intensity_norm(values,self.intensity_scale,self.color_percentile)
+            if self.energy_scale=='log':
+                values=np.ma.masked_where(np.broadcast_to(energy[:-1]<=0,values.shape),values)
+            cmap = __import__('matplotlib').colormaps['magma'].with_extremes(bad=PANEL)
+            mesh = self.spg.pcolormesh(energy, yedges, values,
+                                     cmap=cmap, norm=norm, shading='flat', rasterized=True)
             self.colorbar = self.figure.colorbar(mesh, ax=self.spg, pad=.02, fraction=.025)
-            self.colorbar.set_label('counts/s/channel', color=MUTED, fontsize=8)
+            self.colorbar.set_label('counts/s/channel • '+self.intensity_scale, color=MUTED, fontsize=8)
             self.colorbar.ax.tick_params(colors=MUTED, labelsize=8)
             self.spg.invert_yaxis()
             self.spg.yaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S', tz=dt.timezone.utc))
             if self.show_dates:self.spg.yaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M',tz=dt.timezone.utc))
-            self.count.plot(ends, rates, color=TEAL, linewidth=1.4, label='Spectrum differences')
-            self.count.plot(ends, filtered, color=MUTED, linewidth=1., linestyle='--', label='Device estimator')
-            if self.roi:self.count.plot(ends,roi_rates,color=GOLD,linewidth=1.,label='Selected ROI')
+            self.count.plot(ends, display_values(rates,self.counts_scale=='log'), color=TEAL, linewidth=1.4,
+                            marker='.' if self.counts_scale=='log' else None,markersize=3,label='Spectrum differences')
+            self.count.plot(ends, display_values(filtered,self.counts_scale=='log'), color=MUTED, linewidth=1., linestyle='--', label='Device estimator')
+            if self.roi:self.count.plot(ends,display_values(roi_rates,self.counts_scale=='log'),color=GOLD,linewidth=1.,label='Selected ROI')
             self.dose.plot(ends, dose_rates, color=GOLD, linewidth=1.4)
             self.count.legend(facecolor=PANEL, edgecolor=PANEL, labelcolor=MUTED, fontsize=7, loc='upper left')
         else:
@@ -150,6 +155,16 @@ class Charts(FigureCanvasQTAgg):
                 ax.xaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime('%H:%M %z')))
                 ax.set_xlabel('Local time • original timestamps are UTC')
             ax.grid(alpha=.12, color=MUTED)
+            if len(ends)==1:ax.set_xlim(starts[0],ends[0])
+        apply_scale(self.spg,'x',self.energy_scale,energy)
+        apply_scale(self.count,'y',self.counts_scale,[*rates,*filtered,*roi_rates])
+        if self.counts_scale=='log' and ends and not display_values([*rates,*filtered,*roi_rates],True).count():
+            self.count.text(.5,.5,'No positive count rates\nChoose Linear to display zeros',transform=self.count.transAxes,ha='center',color=MUTED)
+        notes=[]
+        if self.energy_scale=='log':notes.append('Log energy shows only bins with positive energy edges')
+        if self.counts_scale=='log':notes.append('Log count-rate axis hides zero/nonpositive values')
+        if self.intensity_scale=='log':notes.append('Log intensity hides zero bins; Linear shows measured zeros')
+        self.scale_note=' • '.join(notes)
         self.draw_idle()
 
 
@@ -165,6 +180,8 @@ class Window(AnalysisUI,Q.QMainWindow):
     def __init__(self, inspect_run=None):
         super().__init__()
         preferences=gui_preferences.read(ROOT)
+        if not preferences:
+            preferences=gui_preferences.read(ROOT.parent/'radiacode_logger_v05')
         remembered=preferences.get('run')
         if inspect_run is None and remembered and (Path(remembered)/'manifest.json').exists():inspect_run=remembered
         self.setWindowTitle(f'RadiaLog {VERSION} — experiment recorder')
@@ -346,6 +363,7 @@ class Window(AnalysisUI,Q.QMainWindow):
             self.days.setValue(values.get('days',7))
             self.folder.setText(values.get('folder',str(ROOT/'runs')))
             self.demo.setChecked(values.get('demo',False))
+        display_controls.restore(self,preferences.get("display",{}))
         self.refresh()
 
     def message(self, text):
@@ -706,7 +724,7 @@ class Window(AnalysisUI,Q.QMainWindow):
             # Invalid unfinished text must neither prevent closing nor overwrite
             # the last valid schedule with a guessed value.
             setup=(gui_preferences.read(ROOT) or {}).get('setup',{})
-        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,setup=setup))
+        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,setup=setup,display=display_controls.preferences(self)))
         event.accept()
 
 

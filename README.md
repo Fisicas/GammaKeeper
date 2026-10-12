@@ -1,4 +1,9 @@
-# RadiaLog 0.5.0
+# RadiaLog 0.5.1
+
+## Linear and logarithmic display
+
+Use the independent **Energy axis** and **Counts axis** selectors in **Spectrum / ROI**. Their linked controls also change the spectrogram energy axis and time-series count-rate axis. **Spectrogram intensity** independently selects linear or logarithmic colors. Choices are remembered on GUI reopening. Log views hide nonpositive values without adding pseudocounts; Linear shows measured zeros. Raw spectra, calibrated energies, ROI sums and scientific exports are unchanged. Acquisition and reconstruction rules are retained.
+
 
 ## Flexible time input and time-resolved export
 
@@ -36,7 +41,7 @@ The time-series tab offers recent/full/custom UTC windows, epoch selection, UTC/
 
 Completed runs automatically launch a detached, low-priority validation/export job. Acquisition completion is preserved if optional export fails. **Create verified backup** copies a consistent journal horizon and verifies copied hashes. **Resume interrupted backup** continues that same horizon without overwriting changed files. Backup snapshots can be inspected but cannot be resumed as recordings. Optional derived caches/checkpoints accelerate reopened analysis; cache age/source-check time is labeled and full integrity validation remains separate.
 
-Use the workspace's `Open_RadiaLog.cmd` or `Open_RadiaLog_v05.cmd` for this release. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.5; GUI closure does not stop acquisition. Current regression and simulation evidence are under `validation`; saved-run export and owned-widget renders are in `../time_units_export_20261011_v01`. Earlier connected-device pilot evidence remains in the original version directories. The historical sections below describe earlier releases and their checks.
+Use the workspace's `Open_RadiaLog.cmd` or `Open_RadiaLog_v051.cmd` for this release. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.5.1; GUI closure does not stop acquisition. Current regressions are under `validation`; display renders are in `../display_scales_20261011_v01`, and earlier saved-run export evidence remains in `../time_units_export_20261011_v01`. See [DISPLAY_SCALES.md](DISPLAY_SCALES.md) for display semantics. Earlier connected-device pilot evidence remains in the original version directories. The historical sections below describe earlier releases and their checks.
 
 ## Saved-run settings correction
 
