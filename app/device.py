@@ -121,8 +121,13 @@ def clean(value):
     return value
 
 
+# Click-sound flag in SOUND_CTRL, as written by the radiacode library's set_sound_ctrl (CTRL.CLICKS).
+SOUND_CLICKS = 0x2
+
+
 class ReadoutDevice(RadiaCode):
     def __init__(self, serial, clock=None):
+        self._permitted_write = None  # the single register write currently allowed (see set_click_sound)
         self.clock = UTCClock(clock or dict(offset_s=0., verified=False))
         self._seq = 0
         self._connection = PhytonTransport(serial)
@@ -161,8 +166,9 @@ class ReadoutDevice(RadiaCode):
                    COMMAND.RD_VIRT_STRING, COMMAND.RD_VIRT_SFR, COMMAND.RD_VIRT_SFR_BATCH,
                    COMMAND.SET_TIME, COMMAND.SET_EXCHANGE}
         if reqtype == COMMAND.WR_VIRT_SFR:
-            if args != struct.pack('<II', int(VSFR.DEVICE_TIME), 0):
-                raise PermissionError('Only exchange timebase initialization is permitted')
+            permitted = getattr(self, '_permitted_write', None)  # absent means nothing extra is permitted
+            if args != struct.pack('<II', int(VSFR.DEVICE_TIME), 0) and (permitted is None or args != permitted):
+                raise PermissionError('Only exchange timebase initialization and the click-sound flag may be written')
         elif reqtype not in allowed:
             raise PermissionError(f'Blocked device command {reqtype}')
         # Replace upstream assertion (removed under python -O) with a real check.
@@ -174,6 +180,47 @@ class ReadoutDevice(RadiaCode):
         if response.unpack('<4s')[0] != header:
             raise OSError('USB response sequence/header mismatch')
         return response
+
+    def _read_register(self, register):
+        """Raw 32-bit register value (no library format decoding)."""
+        response = self.execute(COMMAND.RD_VIRT_SFR_BATCH, struct.pack('<II', 1, int(register)))
+        valid, value = response.unpack('<II')
+        if valid != 1:
+            raise OSError(f'Register {int(register):#06x} could not be read')
+        return value
+
+    def _write_register(self, register, value):
+        self._permitted_write = struct.pack('<II', int(register), value)
+        try:
+            response = self.execute(COMMAND.WR_VIRT_SFR, self._permitted_write)
+        finally:
+            self._permitted_write = None
+        code = response.unpack('<I')[0]
+        if code != 1:
+            raise OSError(f'Register {int(register):#06x} write refused (status {code})')
+
+    def set_click_sound(self, on):
+        """Turn only the per-particle click sound on or off.
+
+        Read-modify-write of the raw SOUND_CTRL value: every other bit (alarm and button sounds)
+        is kept. The value is read back; if the device did not keep it, the original is written
+        back exactly and an error is reported. No measurement setting is touched.
+        """
+        before = self._read_register(VSFR.SOUND_CTRL)
+        target = before | SOUND_CLICKS if on else before & ~SOUND_CLICKS
+        result = dict(requested_clicks=bool(on), sound_ctrl_before=before, sound_ctrl_target=target)
+        after = before
+        if target != before:
+            self._write_register(VSFR.SOUND_CTRL, target)
+            after = self._read_register(VSFR.SOUND_CTRL)
+            if after != target:
+                self._write_register(VSFR.SOUND_CTRL, before)
+                result.update(sound_ctrl_after=self._read_register(VSFR.SOUND_CTRL),
+                              error='The device did not keep the click-sound setting; its original value was restored')
+                return result
+        result.update(sound_ctrl_after=after, clicks=bool(after & SOUND_CLICKS),
+                      sound_on_raw=self._read_register(VSFR.SOUND_ON))
+        return result
 
     def read_request(self, command_id):
         r = self.execute(COMMAND.RD_VIRT_STRING, struct.pack('<I', int(command_id)))
@@ -227,6 +274,12 @@ def io_worker(connection, serial, clock=None):
                 device._base_time += dt.timedelta(seconds=shift)
                 result = dict(clock_shift_s=shift, clock=device.clock.metadata())
                 command = 'clock'
+            elif isinstance(command, dict) and command.get('kind') == 'click_sound':
+                try:  # report failures instead of ending the worker (and the connection)
+                    result = device.set_click_sound(bool(command.get('on')))
+                except (OSError, ValueError, PermissionError) as error:
+                    result = dict(requested_clicks=bool(command.get('on')), error=f'{type(error).__name__}: {error}')
+                command = 'click_sound'
             elif command == 'buffer':
                 result = device.read_buffer()
             elif command == 'spectrum':

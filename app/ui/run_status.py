@@ -125,6 +125,7 @@ class RunStatusMixin:
             if not active and state['state'] in ('completed','stopped'):
                 self.health.setText(f"Saved final spectrum: {(snapshot or {}).get('utc_after','unknown')} • supervisor restarts: {sup.get('restarts',0)} • {lead_text}\nCompleted data are static; dose uses received estimators with uncalibrated sample/filter latency.")
             self.refresh_analysis_status(state,active,coverage if caught_up else None)
+            self.update_sound_button(state,active)
             self.refresh_experiment(state,active)
             if getattr(self,'read_only',False):
                 for widget in (self.start_button,self.stop_button,self.resume_button,self.setup_button,
