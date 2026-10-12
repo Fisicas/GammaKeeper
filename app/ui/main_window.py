@@ -16,6 +16,7 @@ from ui.charts import Charts
 from ui.paths import ROOT
 from ui.run_status import RunStatusMixin
 from ui.setup_panel import SetupPanelMixin
+from ui.splash import SplashScreen, app_icon, set_app_user_model_id
 from ui.theme import BG, PANEL, TEXT, TEAL, STYLESHEET
 
 
@@ -155,18 +156,36 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--inspect-run', type=Path)
     parser.add_argument('--screenshot', type=Path)
+    parser.add_argument('--no-splash', action='store_true', help='start without the splash page')
     args = parser.parse_args()
+    set_app_user_model_id()  # before any window exists, so the taskbar groups under GammaKeeper
     app = Q.QApplication(sys.argv[:1])
+    app.setApplicationName('GammaKeeper')
+    app.setWindowIcon(app_icon())
     # Explicit font bytes also make offscreen rendering reproducible in restricted
     # Windows sessions whose Qt platform plugin cannot enumerate system fonts.
-    for name in ['segoeui.ttf', 'segoeuib.ttf']:
+    # Loaded before the splash so its text never falls back to missing glyphs.
+    for name in ['segoeui.ttf', 'segoeuib.ttf', 'seguisb.ttf']:
         font = Path(os.environ.get('WINDIR', r'C:\Windows')) / 'Fonts' / name
         if font.exists():
             QtGui.QFontDatabase.addApplicationFontFromData(QtCore.QByteArray(font.read_bytes()))
+    splash = None
+    if not args.no_splash:
+        reopening = args.inspect_run or (gui_preferences.read(ROOT) or {}).get('run')
+        splash = SplashScreen(VERSION, ['Applying style', 'Building window and reading saved run',
+                                        'Opening main window'], reopening)
+        splash.show()
+        splash.begin(0)
     app.setFont(QtGui.QFont('Segoe UI', 10))
     app.setStyle('Fusion')
+    if splash:
+        splash.begin(1)
     window = Window(args.inspect_run)
+    if splash:
+        splash.begin(2)
     window.show()
+    if splash:
+        splash.finish()
     if args.screenshot:
         capture_deadline=__import__('time').monotonic()+20
         def grab():
