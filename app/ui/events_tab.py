@@ -21,7 +21,7 @@ class EventsMixin:
     def refresh_events(self,force=False):
         if not self.run or (not force and time.monotonic()-self._last_events<5):return
         self._last_events=time.monotonic();events=[]
-        for source,name in (('recorder','run.sqlite'),('supervisor','supervisor.sqlite')):
+        for source,name in (('recorder','run.sqlite'),('supervisor','supervisor.sqlite'),('monitor','monitor.sqlite')):
             if not (self.run/name).exists():continue
             db=readonly(self.run/name)
             try:
@@ -30,11 +30,19 @@ class EventsMixin:
         query=self.event_search.text().casefold()
         events=sorted(events,reverse=True)
         events=[row for row in events if query in ' '.join(row).casefold()][:300]
+        key=(str(self.run),query,tuple(events))
+        if key==getattr(self,'_events_key',None):return
+        self._events_key=key
+        scroll=self.event_table.verticalScrollBar().value()
+        selected=self.event_table.currentRow()
+        previous=tuple(self.event_table.item(selected,j).toolTip() for j in range(4)) if selected>=0 and all(self.event_table.item(selected,j) for j in range(4)) else None
         self.event_table.setRowCount(len(events))
         for i,row in enumerate(events):
             for j,value in enumerate(row):
                 item=Q.QTableWidgetItem(value if j!=3 else value[:300]);item.setToolTip(value)
                 self.event_table.setItem(i,j,item)
+            if previous==row:self.event_table.selectRow(i)
+        self.event_table.verticalScrollBar().setValue(scroll)
 
     def open_diagnostics(self):
         path=(self.last_status.get('supervisor') or {}).get('child_log') or self.last_launch_log

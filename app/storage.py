@@ -9,6 +9,8 @@ import shutil
 import sqlite3
 import uuid
 import time
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 
 from analysis import reconstruct, midpoint, VERSION
 from recovery_progress import report as report_recovery
@@ -16,6 +18,22 @@ from recovery_progress import report as report_recovery
 
 class RecoveryCancelled(Exception):
     pass
+
+
+def ordered_reads(files, workers=8):
+    """Overlap file-open latency with at most 2*workers payloads; yield in sequence."""
+    iterator=iter(files)
+    with ThreadPoolExecutor(max_workers=workers,thread_name_prefix='raw-verify-read') as pool:
+        pending=deque()
+        for file in iterator:
+            pending.append((file,pool.submit(file.read_bytes)))
+            if len(pending)>=workers*2:break
+        while pending:
+            file,future=pending.popleft()
+            payload=future.result()
+            next_file=next(iterator,None)
+            if next_file is not None:pending.append((next_file,pool.submit(next_file.read_bytes)))
+            yield file,payload
 
 
 def canonical(value):
@@ -111,7 +129,9 @@ class RunStore:
             self.previous = None
             self.epoch = 0
             self.next_seq = 0
+            self.recovered_dose = dict(integral=0.,observed_s=0.,elapsed_s=0.)
             self.summary = dict(total_counts=0,device_elapsed_s=0.,intervals=0,quality_counts={},epochs=1,
+                                normal_device_exposure_s=0.,aggregate_device_exposure_s=0.,other_valid_device_exposure_s=0.,invalid_wall_s=0.,
                                 first_utc=None,last_utc=None,mean_spectral_rate_cps=None)
             self.recover()
         except BaseException:
@@ -129,11 +149,11 @@ class RunStore:
         last_report=time.monotonic()
         seen = set()
         # Sequence is authoritative; UTC can step backwards across a date boundary.
-        for file in sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem)):
+        files=sorted((self.path / 'spectra').glob('*/*.json'), key=lambda item: int(item.stem))
+        for file,payload in ordered_reads(files):
             if self.cancel and self.cancel():
                 report_recovery(self.path,'cancelled',self.next_seq,len(rows))
                 raise RecoveryCancelled('Stop requested during integrity recovery')
-            payload = file.read_bytes()
             value = json.loads(payload)
             if not isinstance(value,dict) or not isinstance(value.get('seq'),int):
                 raise ValueError(f'Invalid raw snapshot schema: {file}')
@@ -156,6 +176,11 @@ class RunStore:
                                 (seq, name, digest, midpoint(value), derived['epoch'], canonical(derived).decode()))
             self.previous, self.epoch = value, derived['epoch']
             self.update_summary(value, derived)
+            tb=value.get('telemetry_bin') or {}
+            self.recovered_dose['integral']+=tb.get('observed_integrated_dose_uSv',tb.get('integrated_dose_uSv') or 0.)
+            self.recovered_dose['observed_s']+=tb.get('observed_duration_s',0.)
+            if value.get('derived_observed_dose_elapsed_s') is not None:
+                self.recovered_dose['elapsed_s']=value['derived_observed_dose_elapsed_s']
             self.next_seq += 1
             seen.add(seq)
             if time.monotonic()-last_report>=2:
@@ -197,6 +222,12 @@ class RunStore:
             value['total_counts'] += derived['total_counts']
             value['device_elapsed_s'] += derived['device_duration_s']
             value['intervals'] += 1
+            flags=set(derived['quality'])
+            field=('aggregate_device_exposure_s' if flags & {'gap_recovered_aggregate','reconnect_aggregate_continuity_inferred'} else
+                   'normal_device_exposure_s' if flags <= {'normal','final_short_interval'} else 'other_valid_device_exposure_s')
+            value[field]+=derived['device_duration_s']
+        elif self.previous is not None:
+            value['invalid_wall_s']+=max(0.,derived.get('wall_duration_s') or 0.)
         value['mean_spectral_rate_cps'] = value['total_counts']/value['device_elapsed_s'] if value['device_elapsed_s'] else None
         for key in derived['quality']:
             value['quality_counts'][key] = value['quality_counts'].get(key,0)+1

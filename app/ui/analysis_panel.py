@@ -12,9 +12,10 @@ from ui.notes_tab import NotesMixin
 from ui.spectrum_tab import SpectrumTabMixin
 from ui.summary_tab import SummaryMixin
 from ui.timeseries_tab import TimeSeriesMixin
+from ui.experiment_tab import ExperimentMixin
 
 
-class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, NotesMixin, JobsMixin):
+class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, NotesMixin, JobsMixin, ExperimentMixin):
     def current_timeline_seconds(self):
         clock=((self.last_status or {}).get('last_snapshot') or {}).get('clock') or {}
         if clock.get('anchor_monotonic_s') is not None and clock.get('system_boot_id') is not None and clock['system_boot_id']==boot_identity():
@@ -45,6 +46,7 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         from time_export_ui import install_time_export
         install_time_export(self)
         self._build_notes_tab()
+        self._build_experiment_tab()
         right.addWidget(self.tabs,1)
         self.charts.mpl_connect('button_press_event',self.select_interval)
         self.charts.mpl_connect('button_release_event',self.navigation_finished)

@@ -115,6 +115,15 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
     elif '--demo' in arguments:
         serial = 'SIMULATED'
     mutex = DeviceMutex(serial+'_supervisor')
+    monitor_config = (json.loads(arguments[arguments.index('--monitor-config')+1]) if '--monitor-config' in arguments
+                      else json.loads((run/'manifest.json').read_text()).get('monitoring',{}) if (run/'manifest.json').exists() else {})
+    if monitor_config.get('enabled') and os.environ.get('GAMMAKEEPER_TEST_MODE')!='1':
+        try:
+            subprocess.Popen([python_command(),'-X','utf8',str(ROOT/'monitor.py'),str(run)],cwd=ROOT,
+                             stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
+                             creationflags=subprocess.CREATE_NO_WINDOW|subprocess.CREATE_NEW_PROCESS_GROUP)
+        except (OSError,ValueError) as error:
+            diagnostic('optional_monitor_start_failed',error=str(error))
     token = uuid.uuid4().hex
     stop = run/f'stop_supervisor_{token}.request'
     state = dict(pid=os.getpid(),token=token,status='starting',restarts=0,stop_request=str(stop),

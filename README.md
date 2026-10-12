@@ -36,6 +36,10 @@ The [manual](docs/manual.md) covers operation, data formats, scientific conventi
 
 ## Documentation
 
+GammaKeeper 0.6.0 adds a ten-day preset, persistent local monitoring and verified daily backups,
+versioned sample/background metadata, hourly scientific QC, and streamed seal-referenced exports.
+See the [ten-day experiment guide](docs/TEN_DAY_EXPERIMENTS.md) for operation, provenance and qualification limits.
+
 | Document | Contents |
 |---|---|
 | [Manual and release notes](docs/manual.md) | operation, data and scientific meaning, timing and reconnection, exports, validation, release history |

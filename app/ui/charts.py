@@ -97,8 +97,15 @@ class Charts(FigureCanvasQTAgg):
         prefix = 'SIMULATED • ' if mode == 'demo' else ''
         self.spg.set_title(prefix + 'Spectrogram • '+self.display_label+' • gaps left blank', loc='left')
         if ends and np.all(np.diff(energy) > 0):
-            yedges = [starts[0]] + ends
-            values = np.ma.masked_invalid(np.asarray(matrix))
+            # Preserve each interval's actual bounds; skipped baseline/reset intervals
+            # must not stretch the next valid spectrum over unobserved time.
+            yedges = [starts[0]]
+            cells = []
+            for start, end, row in zip(starts, ends, matrix):
+                if start > yedges[-1] + 1e-10:
+                    cells.append(np.full(channels, np.nan));yedges.append(start)
+                cells.append(row);yedges.append(end)
+            values = np.ma.masked_invalid(np.asarray(cells))
             values,norm=intensity_norm(values,self.intensity_scale,self.color_percentile)
             if self.energy_scale=='log':
                 values=np.ma.masked_where(np.broadcast_to(energy[:-1]<=0,values.shape),values)

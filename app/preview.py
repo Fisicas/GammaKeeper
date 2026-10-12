@@ -28,6 +28,9 @@ def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, ca
         cache_prefix=None
         terminal=db.execute("SELECT value FROM state WHERE key='recorder'").fetchone()
         closed=terminal and json.loads(terminal[0]).get('status') in ('completed','stopped')
+        if cache_dir and not closed and view=='full':
+            from incremental_preview import live_preview
+            return live_preview(run,head,config,epoch,max_bins,cache_dir,progress,cancelled)
         signature=hashlib.sha256((str(run)+str((run/'run.sqlite').stat().st_mtime_ns)+
                                   (run/'manifest.json').read_text()+repr((first,head,epoch,max_bins))+
                                   hashlib.sha256(Path(__file__).read_bytes()).hexdigest()+
