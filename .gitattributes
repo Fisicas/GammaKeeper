@@ -1,0 +1,3 @@
+# Store every file byte-for-byte; recorded SHA-256 source hashes must reproduce from a checkout.
+# Line-ending normalization is a separate, reviewed change (plan section 3.10).
+* -text
