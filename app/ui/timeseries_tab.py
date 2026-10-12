@@ -11,13 +11,22 @@ from plot_scales import apply_scale
 import display_controls
 from ui.tasks import PreviewTask
 
+# Time-series windows: seconds before the latest saved spectrum, or a named mode.
+VIEW_WINDOWS = [('Last 5 minutes', 300), ('Last 30 minutes', 1800), ('Last 1 hour', 3600), ('Last 6 hours', 21600),
+                ('Last 24 hours', 86400), ('Last 240 intervals', 'recent'), ('Whole run', 'full'),
+                ('Selected UTC window', 'window')]
+DEFAULT_WINDOW = 1800
+
 
 class TimeSeriesMixin:
     def _build_timeseries_tab(self):
         """Time series tab: view controls, display scales, ranges, ROI and the Charts canvas."""
         page=Q.QWidget();layout=Q.QVBoxLayout(page);layout.setContentsMargins(0,0,0,0)
         controls=Q.QHBoxLayout()
-        self.view_mode=Q.QComboBox();self.view_mode.addItems(['Recent intervals','Whole run','Selected UTC window'])
+        self.view_mode=Q.QComboBox()
+        for text,data in VIEW_WINDOWS:self.view_mode.addItem(text,data)
+        self.view_mode.setCurrentIndex(self.view_mode.findData(DEFAULT_WINDOW))
+        self.view_mode.setToolTip('Time span of the spectrogram, count-rate and dose-rate plots. Windows are measured back from the latest saved spectrum; long spans group intervals (counts summed, divided by device seconds).')
         self.view_epoch=Q.QComboBox();self.view_epoch.addItem('All epochs',None)
         self.follow_live=Q.QCheckBox('Follow live');self.follow_live.setChecked(True)
         self.axis_timezone=Q.QComboBox();self.axis_timezone.addItems(['UTC','Local time'])
@@ -58,12 +67,18 @@ class TimeSeriesMixin:
                 self.preview_cancel.set();self.preview_pending=True
             return
         try:
-            view=('recent','full',None)[self.view_mode.currentIndex()]
+            mode=self.view_mode.currentData()
+            view=mode if mode in ('recent','full') else None
             db=readonly(self.run/'run.sqlite')
             try:
                 head=db.execute('SELECT coalesce(max(seq),-1) FROM snapshots').fetchone()[0]
                 epochs=[x[0] for x in db.execute('SELECT DISTINCT epoch FROM snapshots ORDER BY epoch')]
-                if self.view_mode.currentIndex()==2:
+                if isinstance(mode,int):
+                    latest=db.execute('SELECT max(utc) FROM snapshots').fetchone()[0]
+                    if latest is not None:
+                        low,high=db.execute('SELECT min(seq),max(seq) FROM snapshots WHERE utc>=?',(latest-mode,)).fetchone()
+                        view=(low,high)
+                elif mode=='window':
                     begin=self.view_from.dateTime().toSecsSinceEpoch();end=self.view_until.dateTime().toSecsSinceEpoch()
                     if begin>=end:raise ValueError('The selected UTC start must precede its end')
                     low,high=db.execute('SELECT min(seq),max(seq) FROM snapshots WHERE utc>=? AND utc<=?',(begin,end)).fetchone()
@@ -111,7 +126,7 @@ class TimeSeriesMixin:
         snapshot=self.last_status.get('last_snapshot') or self.analysis_rows[-1][3]
         self.charts.color_percentile=self.color_percentile.value()
         self.charts.local_time=self.axis_timezone.currentIndex()==1
-        self.charts.show_dates=self.view_mode.currentIndex()!=0
+        self.charts.show_dates=self.view_mode.currentData() in ('full','window') or self.view_mode.currentData()==86400
         self.charts.roi=(self.roi_from.value(),self.roi_to.value(),self.roi_terminal.isChecked()) if self.roi_enabled.isChecked() and self.roi_to.value()>self.roi_from.value() else None
         self.charts.show_rows(self.analysis_rows,snapshot,self.last_status.get('mode','device'))
 
@@ -121,6 +136,7 @@ class TimeSeriesMixin:
         self.spectrum_canvas.energy_scale=energy;self.spectrum_canvas.counts_scale=counts
         self.charts.energy_scale=energy;self.charts.counts_scale=counts
         self.charts.intensity_scale=self.intensity_scale.currentData()
+        self.charts.colormap=self.spectrogram_colormap.currentData()
         # Redraw the already displayed row; toggling a scale never starts a new
         # reconstruction or acquisition job and does not change the selection.
         row=self.spectrum_canvas.display_row
@@ -152,3 +168,14 @@ class TimeSeriesMixin:
 
     def navigation_finished(self,event):
         if self.chart_toolbar.mode:self.follow_live.setChecked(False)
+
+    def view_preferences(self):
+        return dict(window=self.view_mode.currentData(),colormap=self.spectrogram_colormap.currentData())
+
+    def restore_view(self,values):
+        values=values if isinstance(values,dict) else {}
+        for widget,value in ((self.view_mode,values.get('window')),(self.spectrogram_colormap,values.get('colormap'))):
+            index=widget.findData(value) if value is not None else -1
+            if index>=0:
+                blocked=widget.blockSignals(True);widget.setCurrentIndex(index);widget.blockSignals(blocked)
+        self.display_scales_changed()
