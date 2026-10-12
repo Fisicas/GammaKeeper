@@ -70,7 +70,13 @@ def install_time_export(window):
     form.addRow('UTC end', window.export_until)
     form.addRow(window.export_latest)
     form.addRow(window.export_custom_zero)
-    form.addRow('Experiment time zero (UTC)', window.export_time_zero)
+    zero_row = Q.QHBoxLayout()
+    zero_row.addWidget(window.export_time_zero, 1)
+    window.export_use_seal = Q.QPushButton('Use seal time')
+    window.export_use_seal.setToolTip('Set time zero to the current seal note from the Notes tab.')
+    window.export_use_seal.clicked.connect(lambda: use_seal_time(window))
+    zero_row.addWidget(window.export_use_seal)
+    form.addRow('Experiment time zero (UTC)', zero_row)
     form.addRow(window.export_energy_range)
     form.addRow('Fitting energy from', window.export_energy_min)
     form.addRow('to', window.export_energy_max)
@@ -209,3 +215,15 @@ def install_time_export(window):
     window.tabs.currentChanged.connect(lambda index: update() if window.tabs.widget(index) is scroll else None)
     window.update_time_export = update
     update()
+
+
+def use_seal_time(window):
+    """Time zero = the run's current seal note (Notes tab)."""
+    import annotations
+    current = annotations.seal(annotations.load(window.run)) if window.run else None
+    if not current:
+        window.fail('No seal time recorded for this run; mark it in the Notes tab first')
+        return
+    window.export_custom_zero.setChecked(True)
+    window.export_time_zero.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(round(current['utc'] * 1000)), QtCore.QTimeZone(0)))
+    window.message(f"Time zero set to the seal time {annotations.iso(current['utc'])} UTC")

@@ -12,6 +12,7 @@ import sqlite3
 import uuid
 from export_run import readonly
 from storage import immutable_json
+import annotations
 
 
 def digest(file):
@@ -101,6 +102,8 @@ def backup(run,target,progress=None):
                 note='Read-only point-in-time backup. Resume copying reuses this journal horizon; recording from the backup is disabled.')
     marker=target/'BACKUP_COMPLETE.json'
     if not marker.exists():
+        # Notes may still grow, so they are copied as a point-in-time CSV rather than a hashed file.
+        result['annotations']=annotations.export_csv(run,target/'annotations.csv') if not (target/'annotations.csv').exists() else 'kept'
         immutable_json(marker,result)
     return result
 

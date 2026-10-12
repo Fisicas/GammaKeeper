@@ -32,6 +32,7 @@ class Charts(FigureCanvasQTAgg):
         self.show_dates=False
         self.colormap='viridis'
         self.roi=None
+        self.annotations=[]  # (utc seconds, kind, text) from the run's notes
         self.energy_scale='linear';self.counts_scale='linear';self.intensity_scale='log'
         self.scale_note=''
         self.empty()
@@ -147,4 +148,22 @@ class Charts(FigureCanvasQTAgg):
         if self.counts_scale=='log':notes.append('Log count-rate axis hides zero/nonpositive values')
         if self.intensity_scale=='log':notes.append('Log intensity hides zero bins; Linear shows measured zeros')
         self.scale_note=' • '.join(notes)
+        self._draw_annotations(starts, ends)
         self.draw_idle()
+
+    def _draw_annotations(self, starts, ends):
+        """Dashed markers for notes inside the plotted span; the seal time (time zero) in gold."""
+        if not ends or not self.annotations:
+            return
+        for utc, kind, text in self.annotations:
+            x = mdates.date2num(dt.datetime.fromtimestamp(utc, dt.timezone.utc))
+            if not starts[0] <= x <= ends[-1]:
+                continue
+            seal = kind == 'seal'
+            style = dict(color=GOLD if seal else TEXT, linewidth=1.2 if seal else .8, linestyle='--', alpha=.95 if seal else .55)
+            self.spg.axhline(x, **style)
+            self.count.axvline(x, **style)
+            self.dose.axvline(x, **style)
+            if seal:
+                self.spg.text(1.005, x, 'seal', transform=self.spg.get_yaxis_transform(), color=GOLD,
+                              fontsize=8, va='center', ha='left', clip_on=False)
