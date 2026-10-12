@@ -13,7 +13,7 @@ import gui_preferences
 import display_controls
 from ui.analysis_panel import AnalysisUI
 from ui.charts import Charts
-from ui.paths import DATA_ROOT, ROOT
+from ui.paths import DATA_ROOT, ROOT, SETTINGS_DIR
 from ui.run_status import RunStatusMixin
 from ui.setup_panel import SetupPanelMixin
 from ui.splash import SplashScreen, app_icon, set_app_user_model_id
@@ -24,9 +24,9 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
     def __init__(self, inspect_run=None, read_only=False):
         super().__init__()
         self.read_only=read_only
-        preferences=gui_preferences.read(ROOT)
-        if not preferences:
-            preferences=gui_preferences.read(ROOT.parent/'radiacode_logger_v05')
+        # Shared settings first; then this release's own file and RadiaLog v0.5 (older layouts).
+        preferences=(gui_preferences.read(SETTINGS_DIR) or gui_preferences.read(ROOT)
+                     or gui_preferences.read(ROOT.parent/'radiacode_logger_v05'))
         remembered=preferences.get('run')
         if inspect_run is None and remembered and (Path(remembered)/'manifest.json').exists():inspect_run=remembered
         self.setWindowTitle(f'GammaKeeper {VERSION} — experiment recorder')
@@ -127,6 +127,8 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
             self.demo.setChecked(values.get('demo',False))
             monitor=values.get('monitoring') or {}
             self.monitor_enabled.setChecked(monitor.get('enabled',True));self.backup_parent.setText(monitor.get('backup_parent',''))
+            if not self.serial.text().strip() and not self.demo.isChecked() and self._device_checks_enabled():
+                self.detect_device()  # no remembered detector: use the one on USB, if exactly one
         display_controls.restore(self,preferences.get("display",{}))
         self.restore_view(preferences.get('view',{}))
         self.refresh()
@@ -147,6 +149,11 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.science_cancel.set()
         if self.read_only:
             event.accept();return
+        self.save_preferences()
+        event.accept()
+
+    def save_preferences(self):
+        """Persist the setup, selected run and display choices in the shared settings folder."""
         try:
             setup=dict(label=self.label.text(),serial=self.serial.text(),
                        interval_s=self.interval.value(),days=self.days.value(),
@@ -155,10 +162,9 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         except ValueError:
             # Invalid unfinished text must neither prevent closing nor overwrite
             # the last valid schedule with a guessed value.
-            setup=(gui_preferences.read(ROOT) or {}).get('setup',{})
-        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,setup=setup,display=display_controls.preferences(self),
+            setup=(gui_preferences.read(SETTINGS_DIR) or {}).get('setup',{})
+        gui_preferences.save(SETTINGS_DIR,dict(run=str(self.run.resolve()) if self.run else None,setup=setup,display=display_controls.preferences(self),
                                        view=self.view_preferences()))
-        event.accept()
 
 
 def main():
@@ -180,7 +186,7 @@ def main():
             QtGui.QFontDatabase.addApplicationFontFromData(QtCore.QByteArray(font.read_bytes()))
     splash = None
     if not args.no_splash:
-        reopening = args.inspect_run or (gui_preferences.read(ROOT) or {}).get('run')
+        reopening = args.inspect_run or (gui_preferences.read(SETTINGS_DIR) or gui_preferences.read(ROOT) or {}).get('run')
         splash = SplashScreen(VERSION, ['Applying style', 'Building window and reading saved run',
                                         'Opening main window'], reopening)
         splash.show()

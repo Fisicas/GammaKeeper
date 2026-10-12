@@ -19,6 +19,10 @@ class SettingsSpinBox(Q.QDoubleSpinBox):
         return f'{value:.12g}'
 
 
+NO_DEVICE_HELP = ('No RadiaCode was found on USB. Check that it is switched on, connected with a data (not charge-only) '
+                  'cable, and that the RadiaCode app is closed; then click Detect again.')
+
+
 class SetupPanelMixin:
     def _build_setup_panel(self, content):
         """Left panel: new-run form and run controls. Returns its layout."""
@@ -33,6 +37,14 @@ class SetupPanelMixin:
         self.label.setPlaceholderText('Run label / sample / conditions')
         self.serial = Q.QLineEdit()
         self.serial.setPlaceholderText('Detector serial, e.g. RC-103-000000')
+        self.detect_button = Q.QPushButton('Detect')
+        self.detect_button.setToolTip('Find RadiaCode detectors connected by USB (read-only; safe during a recording)')
+        self.detect_button.clicked.connect(lambda: self.detect_device(interactive=True))
+        serial_row = Q.QWidget()
+        serial_layout = Q.QHBoxLayout(serial_row)
+        serial_layout.setContentsMargins(0, 0, 0, 0)
+        serial_layout.addWidget(self.serial, 1)
+        serial_layout.addWidget(self.detect_button)
         self.interval = TimeInput('s')
         self.interval.setDecimals(9)
         self.interval.setRange(1, 86400)
@@ -51,7 +63,7 @@ class SetupPanelMixin:
         self.backup_choose.clicked.connect(self.choose_backup_parent)
         self.ten_day_preset=Q.QPushButton('10-day qualification • 10 s')
         self.ten_day_preset.clicked.connect(lambda:(self.days.setValue(10),self.interval.setValue(10)))
-        for text, widget in [('Run label', self.label), ('USB serial number', self.serial), ('Spectrum / count interval', self.interval),
+        for text, widget in [('Run label', self.label), ('USB serial number', serial_row), ('Spectrum / count interval', self.interval),
                              ('Duration • 0 = continuous', self.days), ('Save runs under', self.folder)]:
             label = Q.QLabel(text)
             label.setObjectName('muted')
@@ -84,7 +96,7 @@ class SetupPanelMixin:
         self.setup_button.setEnabled(False)
         settings.addWidget(self.setup_button)
         self.setup_fields = (self.label, self.serial, self.interval, self.days,
-                              self.folder, self.demo, self.choose_button,self.monitor_enabled,self.backup_parent,self.backup_choose,self.ten_day_preset)
+                              self.folder, self.demo, self.choose_button, self.detect_button,self.monitor_enabled,self.backup_parent,self.backup_choose,self.ten_day_preset)
         self.export_button = Q.QPushButton('Export CSV + spectra…')
         self.export_button.clicked.connect(self.export)
         settings.addWidget(self.export_button)
@@ -232,6 +244,10 @@ class SetupPanelMixin:
                 raise RuntimeError('Stop the current recording before starting another')
             mode = 'demo' if self.demo.isChecked() else 'device'
             serial = 'SIMULATED' if mode == 'demo' else self.serial.text().strip()
+            if mode == 'device' and self._device_checks_enabled():
+                serial = self.confirm_device(serial)
+                if serial is None:
+                    return
             if not serial or any(ch in serial for ch in '<>:"/\\|?*'):
                 raise ValueError('Enter a valid device serial number')
             from run_policy import validate_schedule
@@ -247,8 +263,67 @@ class SetupPanelMixin:
             if mode == 'demo':
                 args.append('--demo')
             self.launch(args)
+            if hasattr(self, 'save_preferences'):
+                self.save_preferences()  # remember this detector and setup even if the window never closes cleanly
         except Exception as error:
             self.fail(error)
+
+    def _device_checks_enabled(self):
+        """USB detection and confirmations; off in test mode so tests never see real hardware or block on dialogs."""
+        import gui_preferences
+        return not gui_preferences.test_mode()
+
+    def detect_device(self, interactive=False):
+        """Fill the serial field from the RadiaCode(s) on USB; returns the chosen serial or None."""
+        from device_discovery import connected_serials
+        found = connected_serials()
+        current = self.serial.text().strip().upper()
+        if not found:
+            if interactive:
+                self.fail(NO_DEVICE_HELP)
+            return None
+        if current in found:
+            chosen = current
+        elif len(found) == 1:
+            chosen = found[0]
+        elif interactive:
+            chosen, ok = Q.QInputDialog.getItem(self, 'Choose detector', 'Several RadiaCode detectors are connected:', found, 0, False)
+            if not ok:
+                return None
+        else:
+            self.message('Several RadiaCode detectors are connected (' + ', '.join(found) + '); click Detect to choose one')
+            return None
+        if chosen != self.serial.text().strip():
+            self.serial.setText(chosen)
+            self.message(f'RadiaCode {chosen} detected on USB')
+        elif interactive:
+            self.message(f'RadiaCode {chosen} is connected')
+        return chosen
+
+    def confirm_device(self, serial):
+        """Check the serial against the detectors on USB before starting; None cancels the start."""
+        from device_discovery import connected_serials
+        found = connected_serials()
+        if not serial:
+            if not found:
+                raise ValueError(NO_DEVICE_HELP)
+            return self.detect_device(interactive=True)
+        if serial.upper() in found:
+            return serial
+        Yes = Q.QMessageBox.StandardButton.Yes
+        if found:
+            replacement = found[0] if len(found) == 1 else None
+            if replacement and Q.QMessageBox.question(
+                    self, 'Detector not connected',
+                    f'{serial} is not connected, but {replacement} is.\n\nRecord from {replacement} instead?') == Yes:
+                self.serial.setText(replacement)
+                return replacement
+        if Q.QMessageBox.question(
+                self, 'Detector not detected',
+                f'{serial} is not currently detected on USB.\n\nStart anyway? The recorder keeps retrying until it is '
+                'connected, and the gap is recorded.\n\n' + NO_DEVICE_HELP) != Yes:
+            return None
+        return serial
 
     def active(self):
         if self.run and (self.run/'BACKUP_PLAN.json').exists():return False

@@ -26,6 +26,7 @@ def read(root):
 def save(root,value):
     if test_mode():return
     try:
+        Path(root).mkdir(parents=True,exist_ok=True)
         db=sqlite3.connect(Path(root)/'gui_preferences.sqlite',timeout=.05)
         try:
             db.execute('CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY,value TEXT)')
