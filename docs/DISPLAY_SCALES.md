@@ -14,4 +14,4 @@ An all-zero log spectrum shows an explanation and a positive display domain, wit
 
 Scale toggles redraw already displayed data. They do not connect to the device, restart acquisition or trigger another accumulated-spectrum reconstruction. Close the old GUI and reopen it (see **Start** in the README); closing the GUI does not stop its independent recorder. The initial new-release launch can read the previous release's GUI preferences, preserving the last selected recording or setup.
 
-Validation evidence is in `validation/release_manifest_v*.json` and `../display_scales_20261011_v01`. Original v0.5.0 source and all raw recordings remain preserved. Saved-run renders are owned Qt-widget snapshots, not automated control of an existing desktop window.
+Validation evidence is in `app/validation/release_manifest_v*.json` and the workspace folder `display_scales_20261011_v01`. Original v0.5.0 source and all raw recordings remain preserved. Saved-run renders are owned Qt-widget snapshots, not automated control of an existing desktop window.

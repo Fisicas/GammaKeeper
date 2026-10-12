@@ -10,6 +10,8 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 
 ## Release notes (current code: 0.5.1)
 
+Paths beginning with `../` in these notes are relative to the original `radiacode_logger_v0*` release folder, i.e. they name folders in the `Radiacode Data` workspace. In this repository the application lives in `app/`.
+
 ## Linear and logarithmic display
 
 Use the independent **Energy axis** and **Counts axis** selectors in **Spectrum / ROI**. Their linked controls also change the spectrogram energy axis and time-series count-rate axis. **Spectrogram intensity** independently selects linear or logarithmic colors. Choices are remembered on GUI reopening. Log views hide nonpositive values without adding pseudocounts; Linear shows measured zeros. Raw spectra, calibrated energies, ROI sums and scientific exports are unchanged. Acquisition and reconstruction rules are retained.
@@ -83,7 +85,7 @@ The interface adds data ages, supervisor restart count, clock-projection lead, b
 
 ## Start
 
-Double-click `Launch_GammaKeeper.cmd` in this folder. In the workspace (`C:\Users\nelso\Desktop\Radiacode Data`), `Open_RadiaLog.cmd` still starts the archived RadiaLog v0.5.1 folder; `Open_GammaKeeper.cmd`, which starts the current installed release, arrives with v0.5.2. The launcher uses the existing science Python; dependencies added for this app are confined to `dependencies`. The shared environment and USB driver were not changed.
+Double-click `app\Launch_GammaKeeper.cmd` in the repository. In the workspace (`C:\Users\nelso\Desktop\Radiacode Data`), `Open_RadiaLog.cmd` still starts the archived RadiaLog v0.5.1 folder; `Open_GammaKeeper.cmd`, which starts the current installed release, arrives with v0.5.2. The launcher uses the existing science Python; dependencies added for this app are confined to `dependencies`. The shared environment and USB driver were not changed.
 
 1. Close the manufacturer app and other device clients. The USB handle is exclusive.
 2. Enter the sample/condition label, confirm serial `RC-103-006489`, interval **10 s**, duration **7 days**, and save folder.
@@ -141,7 +143,7 @@ Do not concatenate cumulative spectra directly as if they were independent time 
 & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 '.\export_run.py' '.\runs\example_unique_run'
 ```
 
-Run these commands from this application folder. Simulation requires `--demo` and is prominently labeled. Original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_manifest_v*.json`, produced by `release_checks.py`, records current automated/integration/export checks and source hashes. Earlier pilot reports remain in their original version directories.
+Run these commands from the `app` folder. Simulation requires `--demo` and is prominently labeled. Original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_manifest_v*.json`, produced by `release_checks.py`, records current automated/integration/export checks and source hashes. Earlier pilot reports remain in their original version directories.
 
 The v0.5.0 suite has 94 checks, including flexible-unit parsing, real GUI export arguments, time-bin conservation, range selection, overlap, integrity and XLSX orientation. Inherited coverage includes baseline/duration/conservation, locking, automatic restart, decoder, historical-status and integrity checks. Original checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
 

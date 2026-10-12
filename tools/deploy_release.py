@@ -68,14 +68,20 @@ def compare_folder(staging, blobs, folder):
     return dict(folder=str(folder), files_identical=len(blobs))
 
 
+def app_root(tree):
+    """Application folder: app/ since the 2026-10-12 restructure; the root for tags v0.1.0-v0.5.1."""
+    return tree / 'app' if (tree / 'app' / 'gui.py').is_file() else tree
+
+
 def vendor(staging, python):
     lock = 'dependencies-lock-v01.txt'
-    if sha256((staging / lock).read_bytes()) != sha256((REPO / lock).read_bytes()):
+    app = app_root(staging)
+    if sha256((app / lock).read_bytes()) != sha256((app_root(REPO) / lock).read_bytes()):
         raise SystemExit(f'{lock} in the release differs from the repository; vendor it with its own tooling')
     subprocess.run([str(python), '-X', 'utf8', str(REPO / 'tools' / 'vendor_dependencies.py'),
-                    '--target', str(staging / 'dependencies'), '--python', str(python)], check=True)
-    listing = (REPO / 'dependencies-lock-v01.sha256').read_bytes()
-    return dict(lock_sha256=sha256((staging / lock).read_bytes()), reference_sha256=sha256(listing))
+                    '--target', str(app / 'dependencies'), '--python', str(python)], check=True)
+    listing = (app_root(REPO) / 'dependencies-lock-v01.sha256').read_bytes()
+    return dict(lock_sha256=sha256((app / lock).read_bytes()), reference_sha256=sha256(listing))
 
 
 def run_tests(staging, python):
@@ -84,7 +90,7 @@ def run_tests(staging, python):
         shutil.copytree(staging, copy)
         env = {**os.environ, 'QT_QPA_PLATFORM': 'offscreen', 'GAMMAKEEPER_SCIENCE_PYTHON': str(python)}
         result = subprocess.run([str(python), '-X', 'utf8', '-m', 'unittest', 'discover', '-s', 'tests'],
-                                cwd=copy, env=env, capture_output=True, text=True, encoding='utf-8', errors='replace')
+                                cwd=app_root(copy), env=env, capture_output=True, text=True, encoding='utf-8', errors='replace')
     summary = [line for line in result.stderr.splitlines() if line.startswith(('Ran ', 'OK', 'FAILED'))]
     return dict(passed=result.returncode == 0, summary=summary, tail=result.stderr.splitlines()[-30:])
 

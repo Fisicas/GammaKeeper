@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 set "GAMMAKEEPER_PYTHON=C:\Users\nelso\.venvs\codex-science-v1\Scripts\pythonw.exe"
 if not exist "%GAMMAKEEPER_PYTHON%" (
-  echo The configured science Python is missing. See README.md.
+  echo The configured science Python is missing. See docs\manual.md.
   pause
   exit /b 1
 )

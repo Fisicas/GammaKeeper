@@ -1,4 +1,4 @@
-"""Rebuild the app-local ``dependencies`` folder from the lock file (plan D22).
+"""Rebuild the app-local ``app/dependencies`` folder from the lock file (plan D22).
 
 Installs with ``pip install --target`` into a new folder, so the interpreter's
 own environment is never modified. The result is compared with the committed
@@ -18,8 +18,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCK = ROOT / 'dependencies-lock-v01.txt'
-REFERENCE = ROOT / 'dependencies-lock-v01.sha256'
+APP = ROOT / 'app'
+LOCK = APP / 'dependencies-lock-v01.txt'
+REFERENCE = APP / 'dependencies-lock-v01.sha256'
 METADATA = {'RECORD', 'INSTALLER', 'REQUESTED', 'direct_url.json'}
 
 
@@ -51,7 +52,7 @@ def compare(built, reference):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--target', type=Path, default=ROOT / 'dependencies')
+    parser.add_argument('--target', type=Path, default=APP / 'dependencies')
     parser.add_argument('--python', default=sys.executable)
     parser.add_argument('--write-reference', type=Path, metavar='DIR',
                         help='record DIR as the reference hash list instead of installing')

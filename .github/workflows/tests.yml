@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install test environment
-        run: python -m pip install --disable-pip-version-check -r requirements-ci.txt
+        run: python -m pip install --disable-pip-version-check -r app/requirements-ci.txt
       - name: Vendor app-local dependencies from the lock file
         run: python -X utf8 tools/vendor_dependencies.py
       - name: Run unit and synthetic GUI tests
@@ -32,4 +32,4 @@ jobs:
         run: |
           # Helper processes use runtime.PYTHON; point it at the runner's interpreter.
           $env:GAMMAKEEPER_SCIENCE_PYTHON = Join-Path $env:pythonLocation 'python.exe'
-          python -X utf8 -m unittest discover -s tests -v
+          python -X utf8 -m unittest discover -s app/tests -v
