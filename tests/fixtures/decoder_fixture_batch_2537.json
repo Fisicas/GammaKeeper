@@ -1,0 +1,34 @@
+{
+  "batch_id": 2537,
+  "batch": {
+    "kind": "buffer",
+    "result": {
+      "raw_hex": "3000002f5f030000a08a4007ce95363b00f3004020003101011691030002003200000000000040348037350000c040a69b443632000461910300ee6b04000030",
+      "records": [],
+      "decode_warning": "Decode failed: ValueError: BytesBuffer: 16 bytes required for <IffHH, but have only 6; complete raw payload retained"
+    },
+    "utc_before": "2026-10-07T04:15:03.887828+00:00",
+    "utc_after": "2026-10-07T04:15:03.888250+00:00",
+    "host_utc_before": "2026-10-07T04:15:03.932831+00:00",
+    "host_utc_after": "2026-10-07T04:15:03.933336+00:00",
+    "clock": {
+      "offset_s": 0.057697176933288574,
+      "verified": true,
+      "server": "time.cloudflare.com",
+      "estimated_uncertainty_s": 0.011894822120666504,
+      "checked_host_utc": "2026-10-07T03:32:29.194167+00:00",
+      "note": "UTC = saved host UTC + measured SNTP offset; uncertainty estimate includes RTT/2 and root dispersion, not a certified timing guarantee"
+    },
+    "monotonic_before": 29564.625,
+    "monotonic_after": 29564.625,
+    "connection_id": "174ad44e105f4749a9121ede64272f90",
+    "boot_id": "a511f2d18cfe41928cfb58596ab3e5d0"
+  },
+  "error_offset": 58,
+  "error_header": [
+    50,
+    0,
+    4,
+    233825
+  ]
+}

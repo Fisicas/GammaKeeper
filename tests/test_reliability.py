@@ -27,7 +27,8 @@ from radiacode.bytes_buffer import BytesBuffer
 from test_core import snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = ROOT.parent/'investigation_20261007_v01'
+# Byte-exact copies of workspace evidence; provenance in tests/fixtures/README.md.
+FIXTURES = Path(__file__).resolve().parent/'fixtures'
 
 
 def hung_after_ready(pipe,serial,clock):
@@ -109,9 +110,9 @@ class Reliability(unittest.TestCase):
         self.assertTrue(decoded['decode_warning'])
 
     def test_exact_overnight_decoder_fixture(self):
-        fixture = json.loads((EVIDENCE/'decoder_fixture_batch_2537.json').read_text())
+        fixture = json.loads((FIXTURES/'decoder_fixture_batch_2537.json').read_text())
         raw = bytes.fromhex(fixture['batch']['result']['raw_hex'])
-        config_file = next((ROOT.parent/'radiacode_logger_v01'/'runs'/'20261006_233228_177627_RC-103-006489'/'connections').glob('*.json'))
+        config_file = FIXTURES/'v01_connection_174ad44e105f4749a9121ede64272f90.json'
         config = json.loads(config_file.read_text())['configuration']
         decoded = decode_buffer(raw,dt.datetime(2026,1,1,tzinfo=dt.timezone.utc),config)
         self.assertIsNone(decoded['decode_warning'])
