@@ -1,4 +1,9 @@
-"""Install a tagged release side by side under %LOCALAPPDATA%\\GammaKeeper\\releases (plan section 3.9).
+"""Install a tagged release side by side under ``Radiacode Data\\GammaKeeper Releases`` (plan section 3.9).
+
+Not %LOCALAPPDATA%: a process started inside a packaged (MSIX) app, such as the
+Claude desktop app, has new AppData folders redirected into that package's
+private LocalCache, where launchers started from Explorer cannot see them.
+Override the location with --releases or GAMMAKEEPER_RELEASES.
 
 Steps: export the tag with ``git archive``; check every exported file against
 its git blob (SHA-256); optionally compare with an existing release folder;
@@ -26,7 +31,7 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_RELEASES = Path(os.environ.get('LOCALAPPDATA', Path.home())) / 'GammaKeeper' / 'releases'
+DEFAULT_RELEASES = Path(os.environ.get('GAMMAKEEPER_RELEASES', REPO.parent / 'GammaKeeper Releases'))
 SCIENCE_PYTHON = Path(os.environ.get('RADIALOG_SCIENCE_PYTHON',
                                      r'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe'))
 
