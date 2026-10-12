@@ -475,7 +475,7 @@ The following are unchanged; see v01 for evidence and detail:
 **Remaining before Step 0 can start:**
 1. **Commit identity** (repo-local only):
    - Name, e.g. "Michael R. Nelson".
-   - Email: the private GitHub no-reply address for `Fisicas` (proposed; keeps addresses out of history), `nelsondirect@gmail.com`, or a GSU address.
+   - Email: the private GitHub no-reply address for `Fisicas` (proposed; keeps addresses out of history), a personal address, or a university address.
 2. **License holder line:** keep "RadiaLog contributors", or change it to e.g. "Michael R. Nelson"? A change would be a normal reviewed commit after the import, not a rewrite of history.
 3. **Approval to execute Step 0, runbook steps 1–8** (local only). Step 9 (GitHub creation and push) is approved separately.
 4. **Optional:** update Git for Windows from 2.45.1. This is your action; it is not required.

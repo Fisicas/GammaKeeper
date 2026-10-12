@@ -6,7 +6,7 @@ configured patterns. Images are listed for manual review (text inside them canno
 Nothing is changed; the report goes to stdout or --out (keep it outside the repository).
 
 Usage:
-    python -X utf8 tools/privacy_audit.py [--user nelso] [--out REPORT.md]
+    python -X utf8 tools/privacy_audit.py [--user WINDOWS_USER] [--out REPORT.md]
 """
 import argparse
 import getpass
@@ -50,6 +50,8 @@ def scan_tree(rev, compiled):
             found = [m.group(0) for m in regex.finditer(text)]
             if name == 'e-mail address':
                 found = [m for m in found if not ALLOWED_EMAIL.search(m)]
+            elif name == 'detector serial':
+                found = [m for m in found if not m.endswith('-000000')]  # documented dummies
             count = len(found)
             if count:
                 hits[name][path] += count
