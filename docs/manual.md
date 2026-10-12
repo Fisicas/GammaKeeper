@@ -95,6 +95,10 @@ Install with `tools\install_gammakeeper.cmd` (see the README) and use the **Gamm
 
 Maintain power and prevent deliberate sleep/reboot during the experiment. The recorder requests inhibition of automatic system sleep while active; success is recorded. A power loss or disconnected device creates a real acquisition gap.
 
+## Notes and the seal time
+
+Open the **Notes** tab of a run. **Mark seal time now** records the moment you click (on the recorder's SNTP-referenced timeline when available) as the canister seal time, the time zero for decay analysis. **Add note…** records a seal, canister placement or removal, background start, or a free note, either now or at a time you enter. Notes live beside the run in `annotations.sqlite`; they are append-only (they cannot be edited or deleted), and marking the seal again adds a newer seal note that becomes time zero while the earlier one stays listed as superseded. Notes appear as dashed markers on the spectrogram and time-series plots (the seal in gold), the run summary shows the time since the seal, **Use seal time** in the Time-resolved export tab sets the export's time zero, and exports and backups include `annotations.csv`. The recorder's journal and raw spectra are never changed by notes.
+
 ## Data and scientific meaning
 
 - `manifest.json`: immutable configuration, software/library versions, units and processing rules.

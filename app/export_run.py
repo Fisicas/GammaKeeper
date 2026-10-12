@@ -12,6 +12,7 @@ import uuid
 import numpy as np
 from analysis import reconstruct, midpoint, VERSION, DOSE_R_TO_USV, timestamp
 from storage import immutable_json
+import annotations
 from telemetry_analysis import read_observations,ObservationIndex
 
 
@@ -185,6 +186,7 @@ def export_run(run, target=None, with_npz=True):
                       telemetry_rule='Recomputed from raw journal: latest real-time estimator per received batch, host reception UTC, <=3s zero-order hold. Original device timestamps retained; exact sample/filter latency unverified.',
                       npz_rule='Integer channel differences, -1 sentinel for invalid/baseline; consult valid, nominal_time_bin, quality, epoch; no resampling',
                       processing='No smoothing, background subtraction, normalization or calibration changes; UTC axes and ascending channel index')
+        report['annotations'] = annotations.export_csv(run, target / 'annotations.csv')
         immutable_json(target / 'EXPORT_COMPLETE.json', report)
         return target, report
     finally:

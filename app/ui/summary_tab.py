@@ -33,6 +33,12 @@ class SummaryMixin:
                     summary=dict(total_counts=counts,device_elapsed_s=duration,mean_spectral_rate_cps=counts/duration,
                                  quality_counts={'source':'endpoint difference; full flags in whole-run view/audit'})
         rows=['RUN SUMMARY',self.run_summary.text(),'']
+        import annotations
+        current=annotations.seal(getattr(self,'notes',[]))
+        if current:
+            since=self.current_timeline_seconds()-current['utc']
+            rows += [f"Seal time (time zero): {annotations.iso(current['utc'])} UTC • {since/86400:+.4f} d since seal",
+                     'Notes: '+str(len(self.notes))+' in annotations.sqlite (Notes tab)','']
         if summary:
             counts=summary.get('total_counts',0);duration=summary.get('device_elapsed_s',0)
             rate=summary.get('mean_spectral_rate_cps')
