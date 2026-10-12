@@ -18,7 +18,7 @@ from analysis import VERSION
 FILE = 'annotations.sqlite'
 KINDS = [('seal', 'Seal time (time zero)'), ('canister_placed', 'Canister placed on detector'),
          ('canister_removed', 'Canister removed'), ('background_start', 'Background measurement start'),
-         ('note', 'Note')]
+         ('sample_sheet', 'Sample sheet version'), ('monitoring', 'Monitoring preferences'), ('note', 'Note')]
 KIND_LABELS = dict(KINDS)
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS notes(
