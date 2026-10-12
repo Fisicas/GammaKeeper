@@ -10,6 +10,22 @@ def selector(default='linear'):
     return widget
 
 
+# Spectrogram color maps. Viridis is the default: perceptually uniform, color-blind safe,
+# readable in grayscale, and its darkest color stays distinct from the dark plot panel.
+COLORMAPS = [('Viridis', 'viridis'), ('Cividis (color-blind optimized)', 'cividis'), ('Inferno', 'inferno'),
+             ('Magma', 'magma'), ('Plasma', 'plasma'), ('Turbo (rainbow; not perceptually uniform)', 'turbo'),
+             ('Grayscale', 'gray')]
+DEFAULT_COLORMAP = 'viridis'
+
+
+def colormap_selector():
+    widget=Q.QComboBox()
+    for text,name in COLORMAPS:widget.addItem(text,name)
+    widget.setCurrentIndex(widget.findData(DEFAULT_COLORMAP))
+    widget.setToolTip('Spectrogram color map (display only).')
+    return widget
+
+
 def controls(window, spectrum=False):
     row=Q.QHBoxLayout()
     energy=selector();counts=selector()
@@ -21,6 +37,8 @@ def controls(window, spectrum=False):
         window.energy_axis=energy;window.counts_axis=counts
         window.intensity_scale=selector('log')
         row.addWidget(Q.QLabel('Spectrogram intensity'));row.addWidget(window.intensity_scale)
+        window.spectrogram_colormap=colormap_selector()
+        row.addWidget(Q.QLabel('Colors'));row.addWidget(window.spectrogram_colormap)
     row.addStretch()
     return row
 
@@ -29,7 +47,7 @@ def connect_controls(window):
     for original,mirror in ((window.energy_axis,window.spectrum_energy_axis),(window.counts_axis,window.spectrum_counts_axis)):
         original.currentIndexChanged.connect(mirror.setCurrentIndex)
         mirror.currentIndexChanged.connect(original.setCurrentIndex)
-    for widget in (window.energy_axis,window.counts_axis,window.intensity_scale):
+    for widget in (window.energy_axis,window.counts_axis,window.intensity_scale,window.spectrogram_colormap):
         widget.currentIndexChanged.connect(window.display_scales_changed)
 
 
