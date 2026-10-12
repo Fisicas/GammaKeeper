@@ -5,6 +5,7 @@ import sqlite3
 from PySide6 import QtCore, QtWidgets as Q
 
 import annotations
+from annotation_clock import evidence
 from system_time import boot_identity
 
 
@@ -18,6 +19,7 @@ class NoteDialog(Q.QDialog):
         form = Q.QFormLayout(self)
         self.kind = Q.QComboBox()
         for kind, label in annotations.KINDS:
+            if kind in ('sample_sheet','monitoring'):continue
             self.kind.addItem(label, kind)
         self.kind.setCurrentIndex(self.kind.findData('note'))
         self.text = Q.QLineEdit()
@@ -28,7 +30,7 @@ class NoteDialog(Q.QDialog):
         self.uncertainty_known = Q.QCheckBox('Event-time uncertainty estimated')
         self.uncertainty_known.toggled.connect(self.uncertainty.setEnabled)
         self.uncertainty.setEnabled(False)
-        local = dt.datetime.fromtimestamp(now_utc).astimezone()
+        local = dt.datetime.fromtimestamp(now_utc, dt.timezone.utc).astimezone()
         self.at_now = Q.QRadioButton(f'Now ({local:%H:%M:%S %Z})')
         self.at_time = Q.QRadioButton('At')
         self.at_now.setChecked(True)
@@ -95,7 +97,7 @@ class NotesMixin:
 
     def note_clock(self):
         """(UTC seconds, time basis) on the same timeline as the recorded data."""
-        clock = ((self.last_status or {}).get('last_snapshot') or {}).get('clock') or {}
+        clock = evidence(((self.last_status or {}).get('last_snapshot') or {}).get('clock'))
         same_boot = clock.get('anchor_monotonic_s') is not None and clock.get('system_boot_id') == boot_identity()
         referenced = same_boot and clock.get('last_good_monotonic_s') is not None
         basis = ('recorder_sntp_holdover' if clock.get('quality') == 'holdover' else
@@ -111,7 +113,7 @@ class NotesMixin:
         if not run:
             self.fail('Open or start a recording before marking the seal time')
             return
-        local = dt.datetime.fromtimestamp(utc).astimezone()
+        local = dt.datetime.fromtimestamp(utc, dt.timezone.utc).astimezone()
         question = f'Record the seal time as {local:%Y-%m-%d %H:%M:%S %Z} ({annotations.iso(utc)} UTC)?'
         if annotations.seal(self.notes):
             question += '\n\nThis becomes the new time zero; the earlier seal note is kept.'
@@ -133,8 +135,9 @@ class NotesMixin:
                           event_uncertainty_s=dialog.uncertainty.value() if dialog.uncertainty_known.isChecked() else None)
 
     def _append_note(self, run, utc, kind, text, basis, event_uncertainty_s=None):
+        if getattr(self,'read_only',False):return
         try:
-            clock = ((self.last_status or {}).get('last_snapshot') or {}).get('clock') or {}
+            clock = evidence(((self.last_status or {}).get('last_snapshot') or {}).get('clock'))
             from build_identity import identity
             annotations.add(run, utc, kind, text, basis,
                             dict(clock=clock, event_uncertainty_s=event_uncertainty_s, build=identity()))
@@ -146,7 +149,7 @@ class NotesMixin:
 
     def refresh_notes(self, force=False):
         run = self._notes_run()
-        writable = bool(run) and not (run / 'BACKUP_PLAN.json').exists()
+        writable = bool(run) and not (run / 'BACKUP_PLAN.json').exists() and not getattr(self,'read_only',False)
         self.seal_button.setEnabled(writable)
         self.note_button.setEnabled(writable)
         path = run / annotations.FILE if run else None
@@ -162,7 +165,7 @@ class NotesMixin:
                 self.notes = []
                 self.seal_summary.setText(f'Notes unavailable: {error}')
             self._fill_notes_table()
-            self.charts.annotations = [(n['utc'], n['kind'], n['text']) for n in self.notes]
+            self.charts.annotations = [(n['utc'], n['kind'], n['text']) for n in self.notes if n['kind'] not in ('sample_sheet','monitoring')]
             if self.analysis_rows:
                 self.redraw_analysis()
         self._update_seal_summary()
@@ -176,7 +179,7 @@ class NotesMixin:
                 label += ' • current time zero'
             elif note['kind'] == 'seal':
                 label += ' • superseded'
-            local = dt.datetime.fromtimestamp(note['utc']).astimezone()
+            local = dt.datetime.fromtimestamp(note['utc'], dt.timezone.utc).astimezone()
             for column, value in enumerate([f'{local:%Y-%m-%d %H:%M:%S %Z}', annotations.iso(note['utc']), label,
                                             note['text'], note['time_basis']]):
                 item = Q.QTableWidgetItem(value)
@@ -189,6 +192,6 @@ class NotesMixin:
             self.seal_summary.setText('No seal time recorded.' if self._notes_run() else 'Open a recording to add notes.')
             return
         elapsed = self.current_timeline_seconds() - current['utc']
-        local = dt.datetime.fromtimestamp(current['utc']).astimezone()
+        local = dt.datetime.fromtimestamp(current['utc'], dt.timezone.utc).astimezone()
         self.seal_summary.setText(f'Seal time (time zero): {local:%Y-%m-%d %H:%M:%S %Z} • {annotations.iso(current["utc"])} UTC'
                                   f' • {elapsed / 3600:+.2f} h ({elapsed / 86400:+.3f} d) since seal')

@@ -10,9 +10,9 @@ import sqlite3
 import numpy as np
 from export_run import export_run, readonly
 from storage import immutable_json
-from analysis import VERSION
+from analysis import VERSION, reconstruct
 from run_quality import assess
-from backup_run import digest
+from backup_run import digest as file_digest
 
 
 def seal(run, target):
@@ -27,6 +27,7 @@ def seal(run, target):
         finally:
             db.close()
         export, result = export_run(run, target/'export')
+        config = json.loads((run/'manifest.json').read_text(encoding='utf-8'))
         db = readonly(export/'source_index.sqlite')
         try:
             integrity = [x[0] for x in db.execute('PRAGMA integrity_check')]
@@ -34,6 +35,7 @@ def seal(run, target):
                 raise ValueError(f'Journal integrity: {integrity}')
             records = iter(db.execute('SELECT seq,file,sha256,derived FROM snapshots ORDER BY seq'))
             previous = None
+            previous_epoch = 0
             counts = 0
             missing_seconds = 0.
             rows = 0
@@ -48,7 +50,10 @@ def seal(run, target):
                         if hashlib.sha256(payload).hexdigest() != digest:
                             raise ValueError('Raw spectrum integrity mismatch during sealing')
                         current = json.loads(payload)
-                        d = json.loads(derived)
+                        d = reconstruct(previous,current,config['interval_s'],previous_epoch)
+                        if d['counts_delta']!=json.loads(derived).get('counts_delta'):
+                            raise ValueError('Journal derived counts disagree with raw reconstruction')
+                        previous_epoch=d['epoch']
                         quality.update(d['quality'])
                         if data['valid'][i]:
                             delta = (np.asarray(current['spectrum']['counts'],dtype=np.int64) -
@@ -84,7 +89,7 @@ def seal(run, target):
             assessment = assess(config, rows_for_assessment(), quality, events, 0.)
             assessment['telemetry'] = dict(dose_time_coverage=coverage, status='covered' if coverage>=.999 else 'partial')
         device_elapsed = assessment['spectra']['device_exposure_s']
-        hashes = {file.relative_to(target).as_posix():digest(file)
+        hashes = {file.relative_to(target).as_posix():file_digest(file)
                   for file in target.rglob('*') if file.is_file()
                   and not file.name.endswith(('-wal','-shm'))}
         verdict = dict(schema=1,software_version=VERSION,passed=True,source_run=str(run),

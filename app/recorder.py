@@ -100,7 +100,7 @@ def versions():
     from build_identity import identity
     out = {'python': platform.python_version(), 'platform': platform.platform(), 'app': VERSION}
     out.update(python_executable=sys.executable,python_prefix=sys.prefix, build=identity())
-    for name in ['radiacode', 'PySide6', 'numpy', 'matplotlib', 'pyusb', 'libusb-package']:
+    for name in ['radiacode', 'PySide6', 'numpy', 'matplotlib', 'scipy', 'pyusb', 'libusb-package']:
         try:
             out[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
@@ -224,13 +224,9 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
         dose_reset_seen = bool(json.loads(old_reset[0])) if old_reset else False
         # Recover derived totals from immutable snapshots, including a crash before
         # committing a separate state cache. No extrapolation across an outage.
-        for name, in store.db.execute('SELECT file FROM snapshots ORDER BY seq'):
-            old = json.loads((store.path / name).read_text())
-            bin_data = old.get('telemetry_bin') or {}
-            dose_integral += bin_data.get('observed_integrated_dose_uSv', bin_data.get('integrated_dose_uSv') or 0.)
-            dose_observed_s += bin_data.get('observed_duration_s', 0.)
-            if old.get('derived_observed_dose_elapsed_s') is not None:
-                dose_elapsed_s = old['derived_observed_dose_elapsed_s']
+        dose_integral = store.recovered_dose['integral']
+        dose_observed_s = store.recovered_dose['observed_s']
+        dose_elapsed_s = store.recovered_dose['elapsed_s']
         publish( dict(state, utc=utc_now(), message='Checking UTC reference'))
         if mode == 'device':
             initial=config.get('initial_clock_measurement') or {}
@@ -520,6 +516,7 @@ def main():
     parser.add_argument('--label', default='')
     parser.add_argument('--test-reconnect-at', type=float, default=None)
     parser.add_argument('--stop-request', type=Path)
+    parser.add_argument('--monitor-config', type=json.loads)
     args = parser.parse_args()
     try:
         validate_schedule(args.interval, args.seconds)
@@ -529,6 +526,8 @@ def main():
         parser.error('--serial is required for a new device recording')
     config = None if args.resume else make_config('SIMULATED' if args.demo else args.serial, args.interval, args.seconds,
                                                   'demo' if args.demo else 'device', args.label)
+    if config is not None and args.monitor_config is not None:
+        config['monitoring'] = args.monitor_config
     return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request)
 
 

@@ -111,7 +111,9 @@ class RunStore:
             self.previous = None
             self.epoch = 0
             self.next_seq = 0
+            self.recovered_dose = dict(integral=0.,observed_s=0.,elapsed_s=0.)
             self.summary = dict(total_counts=0,device_elapsed_s=0.,intervals=0,quality_counts={},epochs=1,
+                                normal_device_exposure_s=0.,aggregate_device_exposure_s=0.,other_valid_device_exposure_s=0.,invalid_wall_s=0.,
                                 first_utc=None,last_utc=None,mean_spectral_rate_cps=None)
             self.recover()
         except BaseException:
@@ -156,6 +158,11 @@ class RunStore:
                                 (seq, name, digest, midpoint(value), derived['epoch'], canonical(derived).decode()))
             self.previous, self.epoch = value, derived['epoch']
             self.update_summary(value, derived)
+            tb=value.get('telemetry_bin') or {}
+            self.recovered_dose['integral']+=tb.get('observed_integrated_dose_uSv',tb.get('integrated_dose_uSv') or 0.)
+            self.recovered_dose['observed_s']+=tb.get('observed_duration_s',0.)
+            if value.get('derived_observed_dose_elapsed_s') is not None:
+                self.recovered_dose['elapsed_s']=value['derived_observed_dose_elapsed_s']
             self.next_seq += 1
             seen.add(seq)
             if time.monotonic()-last_report>=2:
@@ -197,6 +204,12 @@ class RunStore:
             value['total_counts'] += derived['total_counts']
             value['device_elapsed_s'] += derived['device_duration_s']
             value['intervals'] += 1
+            flags=set(derived['quality'])
+            field=('aggregate_device_exposure_s' if flags & {'gap_recovered_aggregate','reconnect_aggregate_continuity_inferred'} else
+                   'normal_device_exposure_s' if flags <= {'normal','final_short_interval'} else 'other_valid_device_exposure_s')
+            value[field]+=derived['device_duration_s']
+        elif self.previous is not None:
+            value['invalid_wall_s']+=max(0.,derived.get('wall_duration_s') or 0.)
         value['mean_spectral_rate_cps'] = value['total_counts']/value['device_elapsed_s'] if value['device_elapsed_s'] else None
         for key in derived['quality']:
             value['quality_counts'][key] = value['quality_counts'].get(key,0)+1
