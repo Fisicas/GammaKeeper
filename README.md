@@ -24,10 +24,13 @@ GammaKeeper (formerly RadiaLog) records a gamma spectrum every few seconds for d
 
 ## Quick start
 
-1. Windows 10/11 with a RadiaCode detector on USB (tested with a RadiaCode 103) and Python 3.12 with PySide6, NumPy and Matplotlib (versions in [`app/requirements-app.txt`](app/requirements-app.txt)).
-2. Rebuild the app-local device libraries once: `python -X utf8 tools\vendor_dependencies.py`.
-3. Close the manufacturer's app (the USB handle is exclusive), then start `app\Launch_GammaKeeper.cmd`, or `python -X utf8 app\gui.py`.
-4. Enter a label, confirm the serial number, interval and duration, and click **Start new recording**. Closing the window does not stop the recording.
+You need Windows 10/11, a RadiaCode detector on USB (tested with a RadiaCode 103), and Python 3.12 with PySide6, NumPy and Matplotlib (versions in [`app/requirements-app.txt`](app/requirements-app.txt)).
+
+**Install (recommended).** Double-click [`tools\install_gammakeeper.cmd`](tools/install_gammakeeper.cmd) in Explorer. It fetches the latest `main` (or the tag you pass), exports a clean copy into `GammaKeeper Releases\` next to the repository, rebuilds the device libraries, runs the full test suite, activates the release only if every test passes, and creates **GammaKeeper** shortcuts on the Desktop and in the Start Menu. Run it again to update: each install sits beside the previous ones, so a recording started by an older build keeps running, and rolling back is one command. The repository's working files are only read. [`tools\uninstall_gammakeeper.cmd`](tools/uninstall_gammakeeper.cmd) removes the shortcuts and leaves releases and data alone.
+
+**Or run from the checkout.** `python -X utf8 tools\vendor_dependencies.py` once, then `app\Launch_GammaKeeper.cmd`.
+
+**Record.** Close the manufacturer's app (the USB handle is exclusive), enter a label, confirm the serial number, interval and duration, and click **Start new recording**. New runs go to `Desktop\Radiacode Data\GammaKeeper Runs` unless you choose another folder (or set `GAMMAKEEPER_DATA_ROOT`). Closing the window does not stop the recording.
 
 The [manual](docs/manual.md) covers operation, data formats, scientific conventions and limits in detail.
 
@@ -47,7 +50,7 @@ The [manual](docs/manual.md) covers operation, data formats, scientific conventi
 |---|---|
 | `app/` | the application: recorder, supervisor, storage, analysis and export modules, the `ui/` window, `tests/`, launcher |
 | `docs/` | manual, topic guides, images, development plan |
-| `tools/` | dependency vendoring, release deployment, identity artwork, git hooks |
+| `tools/` | installer and shortcuts, release deployment, dependency vendoring, identity artwork, privacy audit, git hooks |
 | `history/` | provenance of the imported RadiaLog v0.1–v0.5.1 releases |
 
 ## Status

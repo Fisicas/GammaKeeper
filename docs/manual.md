@@ -85,7 +85,7 @@ The interface adds data ages, supervisor restart count, clock-projection lead, b
 
 ## Start
 
-Double-click `app\Launch_GammaKeeper.cmd` in the repository. In the workspace (`C:\Users\nelso\Desktop\Radiacode Data`), `Open_RadiaLog.cmd` still starts the archived RadiaLog v0.5.1 folder; `Open_GammaKeeper.cmd`, which starts the current installed release, arrives with v0.5.2. The launcher uses the existing science Python; dependencies added for this app are confined to `dependencies`. The shared environment and USB driver were not changed.
+Install with `tools\install_gammakeeper.cmd` (see the README) and use the **GammaKeeper** Desktop or Start Menu shortcut, or double-click `app\Launch_GammaKeeper.cmd` in a checkout. The archived RadiaLog launchers in the workspace still start their original version folders. The launcher uses the existing science Python; dependencies added for this app are confined to `app/dependencies`. The shared environment and USB driver were not changed.
 
 1. Close the manufacturer app and other device clients. The USB handle is exclusive.
 2. Enter the sample/condition label, confirm serial `RC-103-006489`, interval **10 s**, duration **7 days**, and save folder.
