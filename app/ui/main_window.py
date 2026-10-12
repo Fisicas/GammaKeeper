@@ -21,8 +21,9 @@ from ui.theme import BG, PANEL, TEXT, TEAL, STYLESHEET
 
 
 class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
-    def __init__(self, inspect_run=None):
+    def __init__(self, inspect_run=None, read_only=False):
         super().__init__()
+        self.read_only=read_only
         preferences=gui_preferences.read(ROOT)
         if not preferences:
             preferences=gui_preferences.read(ROOT.parent/'radiacode_logger_v05')
@@ -124,6 +125,8 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
             self.days.setValue(values.get('days',7))
             self.folder.setText(values.get('folder',str(DATA_ROOT)))
             self.demo.setChecked(values.get('demo',False))
+            monitor=values.get('monitoring') or {}
+            self.monitor_enabled.setChecked(monitor.get('enabled',True));self.backup_parent.setText(monitor.get('backup_parent',''))
         display_controls.restore(self,preferences.get("display",{}))
         self.restore_view(preferences.get('view',{}))
         self.refresh()
@@ -141,10 +144,14 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self._closing=True
         self.preview_cancel.set()
         self.accumulation_cancel.set()
+        self.science_cancel.set()
+        if self.read_only:
+            event.accept();return
         try:
             setup=dict(label=self.label.text(),serial=self.serial.text(),
                        interval_s=self.interval.value(),days=self.days.value(),
                        folder=self.folder.text(),demo=self.demo.isChecked())
+            setup['monitoring']=dict(enabled=self.monitor_enabled.isChecked(),backup_parent=self.backup_parent.text())
         except ValueError:
             # Invalid unfinished text must neither prevent closing nor overwrite
             # the last valid schedule with a guessed value.

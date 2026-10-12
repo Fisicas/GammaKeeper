@@ -7,6 +7,7 @@ import time
 import numpy as np
 from PySide6 import QtWidgets as Q
 from export_run import readonly
+from ui.stable_text import set_text
 
 
 class SummaryMixin:
@@ -80,6 +81,6 @@ class SummaryMixin:
         free=getattr(self,'_disk_free',0)
         rows += ['',f'Free space on recording volume: {free/1024**3:.2f} GiB',
                  'Recording stops below 256 MiB free; reserve space for exports and backups.']
-        self.summary_view.setPlainText('\n'.join(rows))
+        set_text(self.summary_view,'\n'.join(rows))
         self.audit_button.setEnabled(state['state']=='completed' and not any(j['script']=='completion.py' for j in self.background_jobs))
         self.refresh_events()

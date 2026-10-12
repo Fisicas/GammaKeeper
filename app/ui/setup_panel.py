@@ -2,6 +2,7 @@
 import datetime as dt
 from pathlib import Path
 import subprocess
+import json
 
 from PySide6 import QtCore, QtGui, QtWidgets as Q
 from analysis import timestamp
@@ -44,6 +45,12 @@ class SetupPanelMixin:
         self.days.setSuffix(' days')
         self.folder = Q.QLineEdit(str(DATA_ROOT))
         self.demo = Q.QCheckBox('Simulation mode (no hardware)')
+        self.monitor_enabled=Q.QCheckBox('Monitor after this window closes');self.monitor_enabled.setChecked(True)
+        self.backup_parent=Q.QLineEdit();self.backup_parent.setPlaceholderText('Optional daily backup folder')
+        self.backup_choose=Q.QPushButton('Choose daily backup folder…')
+        self.backup_choose.clicked.connect(self.choose_backup_parent)
+        self.ten_day_preset=Q.QPushButton('10-day qualification • 10 s')
+        self.ten_day_preset.clicked.connect(lambda:(self.days.setValue(10),self.interval.setValue(10)))
         for text, widget in [('Run label', self.label), ('USB serial number', self.serial), ('Spectrum / count interval', self.interval),
                              ('Duration • 0 = continuous', self.days), ('Save runs under', self.folder)]:
             label = Q.QLabel(text)
@@ -55,6 +62,7 @@ class SetupPanelMixin:
         self.choose_button = choose
         settings.addWidget(choose)
         settings.addWidget(self.demo)
+        for widget in (self.ten_day_preset,self.monitor_enabled,self.backup_parent,self.backup_choose):settings.addWidget(widget)
         self.start_button = Q.QPushButton('Start new recording')
         self.start_button.setObjectName('primary')
         self.start_button.clicked.connect(self.start_new)
@@ -76,7 +84,7 @@ class SetupPanelMixin:
         self.setup_button.setEnabled(False)
         settings.addWidget(self.setup_button)
         self.setup_fields = (self.label, self.serial, self.interval, self.days,
-                             self.folder, self.demo, self.choose_button)
+                              self.folder, self.demo, self.choose_button,self.monitor_enabled,self.backup_parent,self.backup_choose,self.ten_day_preset)
         self.export_button = Q.QPushButton('Export CSV + spectra…')
         self.export_button.clicked.connect(self.export)
         settings.addWidget(self.export_button)
@@ -98,11 +106,17 @@ class SetupPanelMixin:
         if path:
             self.folder.setText(path)
 
+    def choose_backup_parent(self):
+        path=Q.QFileDialog.getExistingDirectory(self,'Choose optional daily backup folder',self.backup_parent.text())
+        if path:self.backup_parent.setText(path)
+
     def restore_run_settings(self, force=False):
         if not self.run:
             return
         selected = str(self.run.resolve())
         if force or self.settings_run != selected:
+            self.science_cancel.set();self.science_result=None;self._last_science=-float('inf')
+            self.science_figure.clear();self.science_canvas.draw_idle()
             self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
             self.selected_analysis_row=None
             self._spectrum_key=None
@@ -125,6 +139,9 @@ class SetupPanelMixin:
             self.days.setValue(saved['duration_s'] / 86400)
             self.folder.setText(str(self.run.resolve().parent))
             self.demo.setChecked(saved['mode'] == 'demo')
+            from experiment_metadata import monitoring
+            monitor=monitoring(self.run)
+            self.monitor_enabled.setChecked(monitor['enabled']);self.backup_parent.setText(monitor['backup_parent'])
             self.settings_run = selected
             begin=timestamp(saved['created_utc'])
             end=timestamp(saved['planned_end_utc']) if saved.get('planned_end_utc') else dt.datetime.now(dt.timezone.utc).timestamp()
@@ -146,10 +163,14 @@ class SetupPanelMixin:
 
     def prepare_new(self):
         """Leave a stopped saved run and use its values as a new-run template."""
+        if getattr(self,'read_only',False):return
         if self.active():
             self.fail('Stop the selected recording before setting up a new recording')
             return
         self.run = None
+        self.science_cancel.set();self.science_result=None;self._last_science=-float('inf')
+        self.science_figure.clear();self.science_canvas.draw_idle()
+        self.experiment_overview.setText('Configure a new recording.');self.science_text.clear()
         self.update_time_export()
         self.preview_cancel.set();self.analysis_rows=[];self.preview_key=None;self.preview_summary={}
         self.selected_analysis_row=None;self._spectrum_key=None
@@ -203,6 +224,7 @@ class SetupPanelMixin:
         self.start_button.setEnabled(False)
 
     def start_new(self):
+        if getattr(self,'read_only',False):return
         try:
             if self.settings_run:
                 raise RuntimeError('Choose Set up new recording to edit settings and create a separate run')
@@ -218,6 +240,10 @@ class SetupPanelMixin:
             self.run = Path(self.folder.text()).resolve() / (dt.datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '_' + serial)
             args = ['--run', str(self.run), '--serial', serial, '--interval', str(interval),
                     '--seconds', str(seconds), '--label', self.label.text()]
+            backup=self.backup_parent.text().strip()
+            if backup and not Path(backup).is_dir():raise ValueError('Choose an existing backup parent directory')
+            args += ['--monitor-config',json.dumps(dict(enabled=self.monitor_enabled.isChecked(),notifications=True,
+                backup_parent=str(Path(backup).resolve()) if backup else '',backup_interval_s=86400,disconnect_warn_s=120))]
             if mode == 'demo':
                 args.append('--demo')
             self.launch(args)
@@ -245,9 +271,14 @@ class SetupPanelMixin:
                 and process_alive(self.last_status.get('pid',0)))
 
     def stop_recording(self):
+        if getattr(self,'read_only',False):return
         try:
             if not self.run or not self.last_status.get('boot_id'):
                 return
+            if Q.QMessageBox.question(self,'Stop recording',
+                'Stop the selected acquisition? Saved data will be preserved.\n\n'+self.run_summary.text(),
+                Q.QMessageBox.StandardButton.Yes|Q.QMessageBox.StandardButton.No,
+                Q.QMessageBox.StandardButton.No)!=Q.QMessageBox.StandardButton.Yes:return
             file = Path(self.last_status.get('stop_request') or self.run / f"stop_{self.last_status['boot_id']}.request")
             if file.resolve().parent != self.run.resolve():
                 raise ValueError('Invalid stop-control path')
@@ -273,6 +304,7 @@ class SetupPanelMixin:
             self.refresh()
 
     def resume_run(self):
+        if getattr(self,'read_only',False):return
         try:
             if not self.run or not (self.run / 'manifest.json').exists():
                 raise ValueError('Open a saved run first')
