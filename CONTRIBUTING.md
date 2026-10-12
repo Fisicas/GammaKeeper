@@ -3,7 +3,22 @@
 Agents follow [AGENTS.md](AGENTS.md) as well; this file describes the workflow.
 
 ## Repository layout
-- Application source is at the repository root (the layout inherited from RadiaLog v0.5.1). The planned split of `gui.py`/`gui_analysis.py` into `ui/` modules is the first refactor.
+- Backend modules (recorder, supervisor, storage, device, analysis, exports) are at the repository root, as in RadiaLog v0.5.1. Helpers are started as scripts by path, so they stay there.
+- The window lives in `ui/`, one mixin per concern, composed in `ui/main_window.py`:
+
+  | Module | Content |
+  |---|---|
+  | `main_window.py` | `Window` shell: header, layout, timers, preferences, `main()` |
+  | `setup_panel.py` | new-run form; start/stop/resume/open; saved-settings restore |
+  | `run_status.py` | 1 s refresh: state banner, metric cards, health, clock footer |
+  | `analysis_panel.py` | `AnalysisUI`: builds the tabs from the tab mixins and wires shared signals |
+  | `timeseries_tab.py`, `charts.py` | time series tab, previews, heatmap selection, display scales; `Charts` canvas |
+  | `spectrum_tab.py` | Spectrum / ROI tab and `SpectrumCanvas` |
+  | `summary_tab.py`, `events_tab.py` | run summary; events/logs |
+  | `jobs.py` | export, completion audit, backup and time-resolved jobs |
+  | `tasks.py`, `theme.py`, `paths.py` | background tasks; colors and stylesheet; app root |
+
+  `gui.py` (the launch target) and `gui_analysis.py` re-export the old names for compatibility.
 - `tests/`: unit and synthetic GUI tests; `tests/fixtures/`: byte-exact copies of workspace evidence.
 - `tools/`: `vendor_dependencies.py`, `deploy_release.py`.
 - `docs/plan/`: improvement plans and benchmarks. `history/`: provenance of the v0.1–v0.5.1 import.
