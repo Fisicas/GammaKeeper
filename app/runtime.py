@@ -1,10 +1,19 @@
 """Use the configured science environment for every helper process."""
 import os
+import sys
 from pathlib import Path
 
-# GAMMAKEEPER_SCIENCE_PYTHON is the current name; RADIALOG_SCIENCE_PYTHON is still honored.
+def _running_python():
+    """python.exe beside the interpreter running GammaKeeper (the GUI may run under pythonw.exe)."""
+    here = Path(sys.executable)
+    console = here.with_name('python.exe')
+    return console if console.is_file() else here
+
+
+# GAMMAKEEPER_SCIENCE_PYTHON overrides (RADIALOG_SCIENCE_PYTHON is still honored); by default helpers
+# run with the same interpreter as the GUI.
 PYTHON = Path(os.environ.get('GAMMAKEEPER_SCIENCE_PYTHON') or os.environ.get('RADIALOG_SCIENCE_PYTHON')
-              or r'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe')
+              or _running_python())
 PYTHONW = PYTHON.with_name('pythonw.exe')
 
 def python_command():

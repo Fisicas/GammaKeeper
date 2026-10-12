@@ -1,6 +1,6 @@
 {
   "created_utc": "2026-10-12T14:55:50.129474+00:00",
-  "repository": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\GammaKeeper",
+  "repository": "%USERPROFILE%\\Desktop\\Radiacode Data\\GammaKeeper",
   "rules": {
     "excluded_directories": [
       ".venv",

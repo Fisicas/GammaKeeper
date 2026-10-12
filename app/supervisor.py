@@ -104,7 +104,7 @@ def read_mode(run):
 
 def supervise(arguments, max_restarts=3, stall_timeout=180):
     run = Path(arguments[arguments.index('--run')+1]).resolve()
-    serial = arguments[arguments.index('--serial')+1] if '--serial' in arguments else 'RC-103-006489'
+    serial = arguments[arguments.index('--serial')+1] if '--serial' in arguments else 'UNKNOWN'
     if '--resume' in arguments:
         try:
             require_resume(run)

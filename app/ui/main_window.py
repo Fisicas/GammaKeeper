@@ -119,12 +119,13 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         if not self.run:
             values=preferences.get('setup') or {}
             self.label.setText(values.get('label',''))
-            self.serial.setText(values.get('serial','RC-103-006489'))
+            self.serial.setText(values.get('serial',''))
             self.interval.setValue(values.get('interval_s',10))
             self.days.setValue(values.get('days',7))
             self.folder.setText(values.get('folder',str(DATA_ROOT)))
             self.demo.setChecked(values.get('demo',False))
         display_controls.restore(self,preferences.get("display",{}))
+        self.restore_view(preferences.get('view',{}))
         self.refresh()
 
     def message(self, text):
@@ -148,7 +149,8 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
             # Invalid unfinished text must neither prevent closing nor overwrite
             # the last valid schedule with a guessed value.
             setup=(gui_preferences.read(ROOT) or {}).get('setup',{})
-        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,setup=setup,display=display_controls.preferences(self)))
+        gui_preferences.save(ROOT,dict(run=str(self.run.resolve()) if self.run else None,setup=setup,display=display_controls.preferences(self),
+                                       view=self.view_preferences()))
         event.accept()
 
 

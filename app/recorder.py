@@ -511,7 +511,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', required=True, type=Path)
     parser.add_argument('--resume', action='store_true')
-    parser.add_argument('--serial', default='RC-103-006489')
+    parser.add_argument('--serial', help='detector serial number; required for a new device recording, read from the manifest on resume')
     from time_units import parse_time
     parser.add_argument('--interval', type=parse_time, default=10.)
     parser.add_argument('--seconds', '--duration', type=lambda value: parse_time(value, continuous=True), default=604800.)
@@ -524,6 +524,8 @@ def main():
         validate_schedule(args.interval, args.seconds)
     except ValueError as error:
         parser.error(str(error))
+    if not (args.resume or args.demo or args.serial):
+        parser.error('--serial is required for a new device recording')
     config = None if args.resume else make_config('SIMULATED' if args.demo else args.serial, args.interval, args.seconds,
                                                   'demo' if args.demo else 'device', args.label)
     return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request)

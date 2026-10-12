@@ -52,7 +52,7 @@ def main():
     parser.add_argument('action', choices=['install', 'uninstall'])
     parser.add_argument('--releases', type=Path, default=DEFAULT_RELEASES)
     parser.add_argument('--python', type=Path, default=Path(os.environ.get('GAMMAKEEPER_SCIENCE_PYTHON')
-                        or r'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe'))
+                        or sys.executable))
     parser.add_argument('--desktop', type=Path, help='override the Desktop folder (testing)')
     parser.add_argument('--programs', type=Path, help='override the Start Menu Programs folder (testing)')
     args = parser.parse_args()

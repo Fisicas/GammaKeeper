@@ -1,5 +1,5 @@
 # CI test environment only. Versions match the shared science environment
-# (C:\Users\nelso\.venvs\codex-science-v1\requirements-lock-v1.txt) that runs the app locally.
+# that runs the app locally (its requirements-lock-v1.txt).
 # App-local device dependencies come from dependencies-lock-v01.txt via tools/vendor_dependencies.py.
 PySide6_Essentials==6.11.2
 shiboken6==6.11.2

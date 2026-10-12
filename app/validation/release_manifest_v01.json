@@ -5,7 +5,7 @@
   "tests_passed": true,
   "regression_log": "regression_tests_release_v02.txt",
   "saved_data_render": {
-    "run": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+    "run": "%USERPROFILE%\\Desktop\\Radiacode Data\\radiacode_logger_v04\\runs\\20261008_122840_752326_RC-XXX-XXXXXX",
     "verified_seq": 17881,
     "counts": 40,
     "all_four_axis_combinations_rendered": true,
