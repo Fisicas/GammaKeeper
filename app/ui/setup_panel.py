@@ -61,6 +61,10 @@ class SetupPanelMixin:
         self.backup_parent=Q.QLineEdit();self.backup_parent.setPlaceholderText('Optional daily backup folder')
         self.backup_choose=Q.QPushButton('Choose daily backup folder…')
         self.backup_choose.clicked.connect(self.choose_backup_parent)
+        self.click_sound=Q.QComboBox()
+        for text,value in (('Click sound: leave as set on detector',None),('Click sound: off while recording',False),('Click sound: on while recording',True)):
+            self.click_sound.addItem(text,value)
+        self.click_sound.setToolTip("Changes only the detector's per-particle click; alarm and button sounds are kept.")
         self.ten_day_preset=Q.QPushButton('10-day qualification • 10 s')
         self.ten_day_preset.clicked.connect(lambda:(self.days.setValue(10),self.interval.setValue(10)))
         for text, widget in [('Run label', self.label), ('USB serial number', serial_row), ('Spectrum / count interval', self.interval),
@@ -74,7 +78,7 @@ class SetupPanelMixin:
         self.choose_button = choose
         settings.addWidget(choose)
         settings.addWidget(self.demo)
-        for widget in (self.ten_day_preset,self.monitor_enabled,self.backup_parent,self.backup_choose):settings.addWidget(widget)
+        for widget in (self.ten_day_preset,self.click_sound,self.monitor_enabled,self.backup_parent,self.backup_choose):settings.addWidget(widget)
         self.start_button = Q.QPushButton('Start new recording')
         self.start_button.setObjectName('primary')
         self.start_button.clicked.connect(self.start_new)
@@ -84,6 +88,11 @@ class SetupPanelMixin:
         self.stop_button.clicked.connect(self.stop_recording)
         settings.addWidget(self.start_button)
         settings.addWidget(self.stop_button)
+        self.sound_button = Q.QPushButton('Click sound: unknown')
+        self.sound_button.setToolTip("Turn the detector's click sound on or off during this recording (alarm sounds are kept).")
+        self.sound_button.setEnabled(False)
+        self.sound_button.clicked.connect(self.toggle_click_sound)
+        settings.addWidget(self.sound_button)
         open_button = Q.QPushButton('Open saved run…')
         open_button.clicked.connect(self.open_run)
         settings.addWidget(open_button)
@@ -96,7 +105,7 @@ class SetupPanelMixin:
         self.setup_button.setEnabled(False)
         settings.addWidget(self.setup_button)
         self.setup_fields = (self.label, self.serial, self.interval, self.days,
-                              self.folder, self.demo, self.choose_button, self.detect_button,self.monitor_enabled,self.backup_parent,self.backup_choose,self.ten_day_preset)
+                              self.folder, self.demo, self.choose_button, self.detect_button, self.click_sound,self.monitor_enabled,self.backup_parent,self.backup_choose,self.ten_day_preset)
         self.export_button = Q.QPushButton('Export CSV + spectra…')
         self.export_button.clicked.connect(self.export)
         settings.addWidget(self.export_button)
@@ -260,6 +269,8 @@ class SetupPanelMixin:
             if backup and not Path(backup).is_dir():raise ValueError('Choose an existing backup parent directory')
             args += ['--monitor-config',json.dumps(dict(enabled=self.monitor_enabled.isChecked(),notifications=True,
                 backup_parent=str(Path(backup).resolve()) if backup else '',backup_interval_s=86400,disconnect_warn_s=120))]
+            if self.click_sound.currentData() is not None:
+                args += ['--click-sound', 'on' if self.click_sound.currentData() else 'off']
             if mode == 'demo':
                 args.append('--demo')
             self.launch(args)
@@ -324,6 +335,35 @@ class SetupPanelMixin:
                 'connected, and the gap is recorded.\n\n' + NO_DEVICE_HELP) != Yes:
             return None
         return serial
+
+    def toggle_click_sound(self):
+        """Ask the running recorder to flip the detector's click sound (applied within about a second)."""
+        if getattr(self, 'read_only', False) or not self.run or not self.active():
+            return
+        import json, os, uuid
+        current = (self.last_status.get('device_sound') or {}).get('clicks')
+        desired = not current if current is not None else False
+        request = self.run / 'device_sound_request.json'
+        temporary = request.with_name(request.name + '.' + uuid.uuid4().hex[:8] + '.tmp')
+        try:
+            temporary.write_text(json.dumps(dict(request_id=uuid.uuid4().hex, clicks=desired,
+                                                 utc=dt.datetime.now(dt.timezone.utc).isoformat())), encoding='utf-8')
+            os.replace(temporary, request)
+        except OSError as error:
+            self.fail(f'Click-sound request not written: {error}')
+            return
+        self.sound_button.setText('Click sound: switching ' + ('on' if desired else 'off') + '…')
+        self.message('Requested click sound ' + ('on' if desired else 'off') + '; the recorder applies it within a second')
+
+    def update_sound_button(self, state, active):
+        sound = state.get('device_sound') or {}
+        self.sound_button.setEnabled(bool(active) and not getattr(self, 'read_only', False))
+        if sound.get('error'):
+            self.sound_button.setText('Click sound: change failed (see events)')
+        elif 'clicks' in sound:
+            self.sound_button.setText('Click sound: ' + ('on — turn off' if sound['clicks'] else 'off — turn on'))
+        elif active:
+            self.sound_button.setText('Click sound: toggle')
 
     def active(self):
         if self.run and (self.run/'BACKUP_PLAN.json').exists():return False

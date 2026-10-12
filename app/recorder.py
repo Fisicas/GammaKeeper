@@ -42,6 +42,9 @@ class DemoClient:
         self.info = dict(serial='SIMULATED', firmware='SIMULATED', transport='Synthetic Poisson input')
 
     def request(self, command, timeout=12):
+        if isinstance(command, dict) and command.get('kind') == 'click_sound':
+            self.clicks = bool(command.get('on'))
+            return dict(kind='click_sound', result=dict(requested_clicks=self.clicks, clicks=self.clicks, simulated=True))
         if isinstance(command, dict):
             return dict(result=dict(clock_shift_s=0.))
         now = time.monotonic()
@@ -125,6 +128,10 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
     state = dict(state='starting', run_path=str(Path(path).resolve()), boot_id=boot, pid=os.getpid(), mode=mode,
                  serial=serial, software_version=VERSION, utc=utc_now(), retries=0, system_boot_id=boot_identity())
     watcher = None
+    desired_clicks = None      # None leaves the detector's click sound as it is
+    sound_request_id = None
+    next_sound_check = 0.
+    sound_request = Path(path) / 'device_sound_request.json'
     records = []
     last_rt = None
     last_rare = None
@@ -171,6 +178,12 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                     store.db.execute('PRAGMA busy_timeout=5000')
                 except sqlite3.Error:
                     pass
+    def apply_click_sound(reason):
+        msg = client.request(dict(kind='click_sound', on=desired_clicks), timeout=6)
+        result = dict(msg.get('result') or {}, desired=desired_clicks, reason=reason, utc=utc_now())
+        state['device_sound'] = result
+        store.event('device_sound_failed' if result.get('error') else 'device_sound_changed', result)
+
     def capture_spectrum(final=False, final_timeout=5):
         nonlocal dose_integral, dose_observed_s, dose_elapsed_s, gap, successful_spectra, failure_index, next_spectrum
         msg = client.request('spectrum', timeout=final_timeout if final else 12)
@@ -220,6 +233,11 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
         store.event('session_end_watcher', dict(available=bool(watcher), blocks_normal_restart=bool(watcher)))
         old_dose = store.db.execute("SELECT value FROM state WHERE key='dose_baseline'").fetchone()
         dose_baseline = json.loads(old_dose[0]) if old_dose else None
+        old_sound = store.db.execute("SELECT value FROM state WHERE key='device_click_sound'").fetchone()
+        if old_sound:
+            desired_clicks, sound_request_id = json.loads(old_sound[0]).get('desired'), json.loads(old_sound[0]).get('request_id')
+        else:
+            desired_clicks = config.get('device_click_sound')
         old_reset = store.db.execute("SELECT value FROM state WHERE key='dose_reset_seen'").fetchone()
         dose_reset_seen = bool(json.loads(old_reset[0])) if old_reset else False
         # Recover derived totals from immutable snapshots, including a crash before
@@ -274,6 +292,21 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                         except DeviceFailure as error:
                             store.event('final_read_failed', dict(error=str(error), reason='host_shutdown'))
                     break
+            if now >= next_sound_check:
+                next_sound_check = now + .5
+                try:
+                    request = json.loads(sound_request.read_text(encoding='utf-8')) if sound_request.exists() else None
+                except (OSError, ValueError):
+                    request = None  # partially written; read again next time
+                if isinstance(request, dict) and request.get('request_id') != sound_request_id and isinstance(request.get('clicks'), bool):
+                    desired_clicks, sound_request_id = request['clicks'], request['request_id']
+                    store.set_state('device_click_sound', dict(desired=desired_clicks, request_id=sound_request_id, utc=utc_now()))
+                    store.event('device_sound_requested', dict(clicks=desired_clicks, request_id=sound_request_id))
+                    if client:
+                        try:
+                            apply_click_sound('request')
+                        except DeviceFailure as error:
+                            store.event('device_sound_failed', dict(error=str(error), desired=desired_clicks))
             stop_file = Path(path) / f'stop_{boot}.request'
             if stop_file.exists() or (stop_request and Path(stop_request).exists()) or now >= stop_deadline:
                 outcome = 'completed' if now >= stop_deadline else 'stopped'
@@ -322,6 +355,8 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                     connection_id = uuid.uuid4().hex
                     immutable_json(Path(path) / 'connections' / f'{connection_id}.json', client.info)
                     store.event('connected', dict(connection_id=connection_id, info=client.info))
+                    if desired_clicks is not None:
+                        apply_click_sound('connected')  # keep the chosen click sound across reconnects and resumes
                     # Drop stale estimator values across connections; raw historical batches remain saved.
                     records, last_rt = [], None
                     connected_since = time.monotonic()
@@ -517,6 +552,7 @@ def main():
     parser.add_argument('--test-reconnect-at', type=float, default=None)
     parser.add_argument('--stop-request', type=Path)
     parser.add_argument('--monitor-config', type=json.loads)
+    parser.add_argument('--click-sound', choices=['on', 'off'], help="set the detector's click sound for this recording")
     args = parser.parse_args()
     try:
         validate_schedule(args.interval, args.seconds)
@@ -528,6 +564,8 @@ def main():
                                                   'demo' if args.demo else 'device', args.label)
     if config is not None and args.monitor_config is not None:
         config['monitoring'] = args.monitor_config
+    if config is not None and args.click_sound:
+        config['device_click_sound'] = args.click_sound == 'on'
     return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request)
 
 

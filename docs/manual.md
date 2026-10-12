@@ -117,6 +117,10 @@ Dose-rate bins use time-weighted device estimates with zero-order hold capped at
 
 `poisson_sigma_cps = sqrt(N)/duration` is a counting-only approximation, not a confidence interval or a total uncertainty budget. Device count/dose error percentages and flags remain separately available in raw telemetry. Clock, calibration, dead time and detector systematics are not folded into this sigma.
 
+## Detector click sound
+
+The detector's per-particle click can be set for a recording (**Click sound: off/on while recording** in the new-recording panel) and toggled at any time during it with the **Click sound** button. The recorder applies the change through its own device connection within about a second, logs `device_sound_changed`, and re-applies the chosen setting after every reconnect or resume. Only the click flag of the detector's sound settings is changed: alarm and button sounds keep their current setting, and nothing that affects measurements is written. The value is read back after writing; if the detector does not keep it, the original value is written back and the button reports the failure. With **leave as set on detector** (the default), the detector's sound settings are not touched.
+
 ## Windows restarts and sign-out
 
 While a recording is active, GammaKeeper registers a shutdown reason with Windows. A normal restart, shutdown or sign-out then pauses on Windows' "apps are preventing restart" screen, listing GammaKeeper with *"GammaKeeper is recording spectra. Restarting now interrupts the run…"*. Choose **Cancel** to keep recording, or continue anyway. Forced and critical shutdowns are never blocked.
