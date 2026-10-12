@@ -97,8 +97,9 @@ def clock_measurement():
 
 def versions():
     import platform
+    from build_identity import identity
     out = {'python': platform.python_version(), 'platform': platform.platform(), 'app': VERSION}
-    out.update(python_executable=sys.executable,python_prefix=sys.prefix)
+    out.update(python_executable=sys.executable,python_prefix=sys.prefix, build=identity())
     for name in ['radiacode', 'PySide6', 'numpy', 'matplotlib', 'pyusb', 'libusb-package']:
         try:
             out[name] = importlib.metadata.version(name)
