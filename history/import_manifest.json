@@ -1,0 +1,2306 @@
+{
+  "created_utc": "2026-10-12T14:55:50.129474+00:00",
+  "repository": "C:\\Users\\nelso\\Desktop\\Radiacode Data\\GammaKeeper",
+  "rules": {
+    "excluded_directories": [
+      ".venv",
+      "__pycache__",
+      "cache",
+      "dependencies",
+      "logs",
+      "runs"
+    ],
+    "excluded_files": [
+      "*.sqlite*",
+      "*.pyc",
+      "*.partial",
+      "root export_*.log"
+    ],
+    "validation": "top-level files only; subfolders are run data or temp output"
+  },
+  "versions": [
+    {
+      "tag": "v0.1.0",
+      "folder": "radiacode_logger_v01",
+      "commit": "6b7c2131fa41493fc8d41c716ec7a3aa01d5e19b",
+      "date": "2026-10-06T23:28:03-04:00",
+      "files_verified": 37,
+      "release_manifest": {
+        "status": "no release manifest"
+      },
+      "not_imported": {
+        ".venv/": "excluded directory",
+        "__pycache__/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_2fed29f0ed2646429a550088f2f0f5d8.log": "excluded file",
+        "logs/": "excluded directory",
+        "runs/": "excluded directory",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/live_pilot_v01/": "validation subfolder (run data / temp)",
+        "validation/live_pilot_v02/": "validation subfolder (run data / temp)",
+        "validation/live_pilot_v03/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "6a4fc60facb2040e2384a74bdaa4ff54c0af4b616835873839c78455209d5597",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "3b9af87756a518bc89272fdb71eb3fa92ca841b41dccdfb263b0165f7c849220",
+          "bytes": 3830
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "652dc7d0443375edd99a21d205469a5ee2bbd9b083297616e931e50ccf582bac",
+          "bytes": 9235
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "export_run.py": {
+          "sha256": "14623df8bd28656a354737d7aab2a5ce99c075e39c008d7f02964b9e42719b12",
+          "bytes": 11812
+        },
+        "gui.py": {
+          "sha256": "11805b75fdc6a334f2bc481f0f92006ece1c540948e4c10eff156c18953c21a4",
+          "bytes": 23794
+        },
+        "gui_smoke.py": {
+          "sha256": "28f0bcbd5794bbc3372a36f567cde0effdd3b4311d5cd630b522be5085a5c592",
+          "bytes": 3280
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "phyton.py": {
+          "sha256": "dfe48ed57dad76b89b9785e2ba109d0b1414aaf61686e053d901326e5300ad9f",
+          "bytes": 7203
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "fb053d601133efc5dd3447dcee8a570537cfffdf9b3c1eff165b4a7afcd4de99",
+          "bytes": 11974
+        },
+        "recorder.py": {
+          "sha256": "ca224aa12d91e745094b23fdaaa8148b01c6775be73ca04e36e3a756f34e069b",
+          "bytes": 26607
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "storage.py": {
+          "sha256": "e97db81adbbd2c7be839511d8b8d1049607741256012caf4c0015f71183f381f",
+          "bytes": 7972
+        },
+        "tests/test_core.py": {
+          "sha256": "1a8634f60597bc4dcf51826c77a6d4937e996f55093b25e6ee59107f0904ff4e",
+          "bytes": 11691
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validate_release.py": {
+          "sha256": "26f4992bf720a21af050c3f5624d9f84c828fffe89fc2304ebc3cac704a9e151",
+          "bytes": 3416
+        },
+        "validation/automated_tests_final_v01.txt": {
+          "sha256": "7b89f9596f38e908c72209df3d0de04847a86be592e7548c76d9b1dcc1e0f503",
+          "bytes": 2500
+        },
+        "validation/automated_tests_final_v02.txt": {
+          "sha256": "d3d71820cfd0cd1502a494daf6c41f76775dc90adcdbbf7fdc64003e2b0817de",
+          "bytes": 2652
+        },
+        "validation/automated_tests_final_v03.txt": {
+          "sha256": "330562483659715bb83236c55b235f99c07e5b00111abd9a28a86784e0b57f4a",
+          "bytes": 2811
+        },
+        "validation/automated_tests_v01.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "validation/gui_preview_final_v01.png": {
+          "sha256": "33f26ba9882ee4a00b94d25ed9c9bb40c92c91b00c0c5a7178f52ce5c6d11b8f",
+          "bytes": 129818
+        },
+        "validation/gui_preview_v01.png": {
+          "sha256": "ff04a7b43e284dd99b6f9d11dfcd6bb2514cb9dc2e5e3850d0932390d324dc42",
+          "bytes": 78402
+        },
+        "validation/gui_preview_v02.png": {
+          "sha256": "e21c09d15681563e7ed1e0ba19332dbfe879b66e1a624338928b3847445b62a9",
+          "bytes": 131100
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "cedfb3687616f46055a48ea1e74f0a9b0abef26f72d09d09e95938b7e69d00a2",
+          "bytes": 148521
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "5ae25c0b1ea4c9b0bcc401a34a2bf84a1762138f6a224bad6958ef0ab8a80857",
+          "bytes": 269
+        },
+        "validation/live_pilot_v02_audit.json": {
+          "sha256": "9d5dce4f4530a51bbc24f52bb8846bef7b2f10c82be6ed4e722d14bbda6381eb",
+          "bytes": 8352
+        },
+        "validation/validation_report_v01.json": {
+          "sha256": "5e5496b71a27a9bb8575504816cacea1e607fa5d5fc74ff5d705890eb665ff2b",
+          "bytes": 17544
+        },
+        "validation/validation_report_v02.json": {
+          "sha256": "d946a3798ae839050b89f8e1e8ccefde5e8fbddcf63a924e03eace0b9a83ef16",
+          "bytes": 17656
+        },
+        "validation/validation_report_v03.json": {
+          "sha256": "75987f2e1435734bf5631a9c4ab082ad0cd094fa26db7074546b98e50f89cda8",
+          "bytes": 17656
+        }
+      }
+    },
+    {
+      "tag": "v0.2.0",
+      "folder": "radiacode_logger_v02",
+      "commit": "ebd4cba5469d9613e56436c469e0a83d259f684d",
+      "date": "2026-10-07T10:09:39-04:00",
+      "files_verified": 50,
+      "release_manifest": {
+        "status": "no release manifest"
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_33c09f812c414bf7bfa03fd06bb16ebc.log": "excluded file",
+        "export_71573b72144e4f8a9675715d0013c4f2.log": "excluded file",
+        "logs/": "excluded directory",
+        "runs/": "excluded directory",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/live_fault_pilot_v01/": "validation subfolder (run data / temp)",
+        "validation/live_fault_pilot_v02/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "ae62d261494d90f7c6f2a27f0c7f4d1b74f82193ecb2d42a5fadae15322199d7",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "3b9af87756a518bc89272fdb71eb3fa92ca841b41dccdfb263b0165f7c849220",
+          "bytes": 3830
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "c88fbe767951ad5f4c9b72ba5f1902c5dd29361746a9e9f72b865a8edf7cc53d",
+          "bytes": 8939
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "export_run.py": {
+          "sha256": "43647fafce94dac202397f1e1153313a769d86768a5050f6187133428c1e7793",
+          "bytes": 12080
+        },
+        "gui.py": {
+          "sha256": "2224e569180286825e78206a0a2af2db7e06532ccff7212b4f60f85dbd001f98",
+          "bytes": 26257
+        },
+        "gui_smoke.py": {
+          "sha256": "cc071457323c039aa2b7a3361d2075915bcae7d3fd25f607a13dc3107bf48746",
+          "bytes": 3410
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "f4af8405e97116de14faef7e5ad4ce286c90823c64604d9258af19820ce7e569",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "f28f1b3074bfafea204a5f8d0819ee471f66af0603394cdf515335a9f33ea0a4",
+          "bytes": 14299
+        },
+        "recorder.py": {
+          "sha256": "b8e93b8999028ff104ba5f6f96e22ec194aeb7e3776005a7a372dfd952d02cce",
+          "bytes": 27733
+        },
+        "release_checks.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "c970e83bf378fc4d1302712a255b9cbdd3064b78df90795679cb964540dc2299",
+          "bytes": 3509
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "4587a873f0600096975b75fcb7cc53719ffd9a9054209ceb151d6ad5a33d2f48",
+          "bytes": 1045
+        },
+        "storage.py": {
+          "sha256": "82c3600f629867fdf7e25d890949f59c3ed5219d83839d2e9a57659a6c9e352d",
+          "bytes": 8500
+        },
+        "supervisor.py": {
+          "sha256": "9278169003ed8cb973228a1f85c370b157efb497242bca73eee7fc2d13c64e72",
+          "bytes": 6891
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_reliability.py": {
+          "sha256": "94f155b6e28c63ef7b7d97e4ba3a2f23c6f3b1ac15f808c747612cb46c2f1d64",
+          "bytes": 14181
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "de399ab971a769dcdfbf8208960c1aa4fbd8c12ea8106c2afba0f4210f43913a",
+          "bytes": 148684
+        },
+        "validation/gui_smoke_preview_v02.png": {
+          "sha256": "ed913c50ddeefa863b76f33062b819f9d6569f8e8af91b46b997d728f7416221",
+          "bytes": 149055
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "2538f8cf0183d0d39a4cc530ad1d28e29a57c86290ee9a84719646bb6d2fdd09",
+          "bytes": 269
+        },
+        "validation/gui_smoke_report_v02.json": {
+          "sha256": "b4420c3fdaf37f7547de9dcf1b1536aedc39fb32a012fb4751cde43b810da555",
+          "bytes": 269
+        },
+        "validation/live_fault_pilot_v01.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "validation/live_fault_pilot_v01_report.json": {
+          "sha256": "325a8072f69641d4861cba76b4c1855e9967efdad8476b95f36a5e03b978fcfd",
+          "bytes": 66797
+        },
+        "validation/live_fault_pilot_v02.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "validation/live_fault_pilot_v02_report.json": {
+          "sha256": "74f7d56b514e8454e7d6350e8ef998354a64c23adaf88e8feb8a459e122e59da",
+          "bytes": 64759
+        },
+        "validation/regression_tests_final_v01.txt": {
+          "sha256": "298d9e8cc81bd0827e85d55869b2d0314c0fa99eb8b475a92af09d54d0a0c296",
+          "bytes": 4871
+        },
+        "validation/regression_tests_release_v01.txt": {
+          "sha256": "b68eb22bd9516d21f3b807adcf397d075c7c5a4ddc15ba281943d447adba42f2",
+          "bytes": 5002
+        },
+        "validation/regression_tests_v01.txt": {
+          "sha256": "bd712b9f909a2edf891f19448aff4b7fbb3fda3a407a8814ad4704ac703d6105",
+          "bytes": 4323
+        },
+        "validation/regression_tests_v02.txt": {
+          "sha256": "34f22b0f469d2c758aaa9934a5c816da64758e4e437f440b703ae2b28ace0aea",
+          "bytes": 4718
+        },
+        "validation/release_validation_v01.json": {
+          "sha256": "42e22990bbd5d6c7b33e6a4560ab3a4c7913eb947644a52ff9a6fb4f3b277d3f",
+          "bytes": 4068
+        },
+        "validation/soak_request_20261007_100939.json": {
+          "sha256": "63bbdb42149d7fcb40bfce1ffa7e20f3188e1aeaf96dc602902be50987000003",
+          "bytes": 342
+        },
+        "validation/soak_request_20261007_100939.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f56722ffd2a6862bf98f54f9c019a9a19f4c4cb95e6f7ef6bac5ee47de7db2d2",
+          "bytes": 4241
+        }
+      }
+    },
+    {
+      "tag": "v0.3.0",
+      "folder": "radiacode_logger_v03",
+      "commit": "3aa5535aef0d37c4e4c25a10f0f138321b8f4ebc",
+      "date": "2026-10-07T14:23:03-04:00",
+      "files_verified": 41,
+      "release_manifest": {
+        "status": "no release manifest"
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_c7e7ab2b818142639910d088b8a87b4a.log": "excluded file",
+        "logs/": "excluded directory",
+        "runs/": "excluded directory",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "bae49ea6d1f8943f531fb45069578e38ff129159f6f249f65fd609845b0f2f48",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "3b9af87756a518bc89272fdb71eb3fa92ca841b41dccdfb263b0165f7c849220",
+          "bytes": 3830
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "c88fbe767951ad5f4c9b72ba5f1902c5dd29361746a9e9f72b865a8edf7cc53d",
+          "bytes": 8939
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "export_run.py": {
+          "sha256": "75611dc10988a7d2f58fac36072f585c09dddce2d0cdd7cfa9ccbdfd1b54bcf9",
+          "bytes": 12942
+        },
+        "gui.py": {
+          "sha256": "08699bc170a103a9e7ec1f90427733c03ab00a550929d80df933e271fc4b48c8",
+          "bytes": 29454
+        },
+        "gui_smoke.py": {
+          "sha256": "cc071457323c039aa2b7a3361d2075915bcae7d3fd25f607a13dc3107bf48746",
+          "bytes": 3410
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "f4af8405e97116de14faef7e5ad4ce286c90823c64604d9258af19820ce7e569",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "72a6ad7dd0ad5c36217fbadcd99b566be96267f2f09432e96f3ab2a5bb8d5d4a",
+          "bytes": 15581
+        },
+        "recorder.py": {
+          "sha256": "2b9509b68935e578ce66b9bb02f7f361a7dca88eb124e9cb30f0e230d2f4db79",
+          "bytes": 28418
+        },
+        "release_checks.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "c970e83bf378fc4d1302712a255b9cbdd3064b78df90795679cb964540dc2299",
+          "bytes": 3509
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "4587a873f0600096975b75fcb7cc53719ffd9a9054209ceb151d6ad5a33d2f48",
+          "bytes": 1045
+        },
+        "storage.py": {
+          "sha256": "82c3600f629867fdf7e25d890949f59c3ed5219d83839d2e9a57659a6c9e352d",
+          "bytes": 8500
+        },
+        "supervisor.py": {
+          "sha256": "9278169003ed8cb973228a1f85c370b157efb497242bca73eee7fc2d13c64e72",
+          "bytes": 6891
+        },
+        "telemetry_analysis.py": {
+          "sha256": "b56cfdb3778ba11f890b39ff7b9acdabef9617c2aa0ac16b8e269dd49cf80083",
+          "bytes": 4371
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_reliability.py": {
+          "sha256": "94f155b6e28c63ef7b7d97e4ba3a2f23c6f3b1ac15f808c747612cb46c2f1d64",
+          "bytes": 14181
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validation/change_manifest_v01.json": {
+          "sha256": "d629ceb3ddd0c81c8e80ee034a8bd4e18314503b785ab0bdf9e0db33517af756",
+          "bytes": 2755
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "732e63f23a7b87e464817e3abf410d9708836a9d178428cdcfe24c744dcda171",
+          "bytes": 154153
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "8f68378b57407a3070d881409791636a620e4f6910da023eabdcffe57b0ed294",
+          "bytes": 269
+        },
+        "validation/tests_v01.txt": {
+          "sha256": "3662f5221de6ae737951b1b6d6f0a20579be8884b22d944aa1e1c384c0d6c0dd",
+          "bytes": 5694
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f56722ffd2a6862bf98f54f9c019a9a19f4c4cb95e6f7ef6bac5ee47de7db2d2",
+          "bytes": 4241
+        }
+      }
+    },
+    {
+      "tag": "v0.3.1",
+      "folder": "radiacode_logger_v031",
+      "commit": "56c22d8d02b4bfacc43f7d8aae48260dd86ce634",
+      "date": "2026-10-07T17:59:12-04:00",
+      "files_verified": 44,
+      "release_manifest": {
+        "status": "manifest has no per-file hashes",
+        "manifest": "release_manifest_v01.json"
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_ebebec90042245cbaca87540a4dc4dad.log": "excluded file",
+        "logs/": "excluded directory",
+        "validation/gui_settings_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "5cd7f12b6a0d97fabdd3e45cc2726a24ea4d1d62f4191f48bec73de3ae6c4853",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "3b9af87756a518bc89272fdb71eb3fa92ca841b41dccdfb263b0165f7c849220",
+          "bytes": 3830
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "c88fbe767951ad5f4c9b72ba5f1902c5dd29361746a9e9f72b865a8edf7cc53d",
+          "bytes": 8939
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "export_run.py": {
+          "sha256": "75611dc10988a7d2f58fac36072f585c09dddce2d0cdd7cfa9ccbdfd1b54bcf9",
+          "bytes": 12942
+        },
+        "gui.py": {
+          "sha256": "b57ab5df25830cd0f2a96451b3defb0c3d1521fc9552909269418cb0c79e4b69",
+          "bytes": 34229
+        },
+        "gui_smoke.py": {
+          "sha256": "8cce28ad14672d8f6a4dd4eff953f95cd0720901cbb3d898ff3dca91d641ae87",
+          "bytes": 3776
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "f4af8405e97116de14faef7e5ad4ce286c90823c64604d9258af19820ce7e569",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "6d5c8ec74df689fa6a3aab1a0f62ad5f28280d177caf2b949cdc19db8a103ff4",
+          "bytes": 16913
+        },
+        "recorder.py": {
+          "sha256": "2b9509b68935e578ce66b9bb02f7f361a7dca88eb124e9cb30f0e230d2f4db79",
+          "bytes": 28418
+        },
+        "release_checks.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "run_settings.py": {
+          "sha256": "558c8253e66be891c061bc3ce903ea3f2124f41ec9152dac270ef3c89865e214",
+          "bytes": 2795
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "c970e83bf378fc4d1302712a255b9cbdd3064b78df90795679cb964540dc2299",
+          "bytes": 3509
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "4587a873f0600096975b75fcb7cc53719ffd9a9054209ceb151d6ad5a33d2f48",
+          "bytes": 1045
+        },
+        "storage.py": {
+          "sha256": "82c3600f629867fdf7e25d890949f59c3ed5219d83839d2e9a57659a6c9e352d",
+          "bytes": 8500
+        },
+        "supervisor.py": {
+          "sha256": "9278169003ed8cb973228a1f85c370b157efb497242bca73eee7fc2d13c64e72",
+          "bytes": 6891
+        },
+        "telemetry_analysis.py": {
+          "sha256": "b56cfdb3778ba11f890b39ff7b9acdabef9617c2aa0ac16b8e269dd49cf80083",
+          "bytes": 4371
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_gui_run_settings.py": {
+          "sha256": "ce039d0ccb4ba581ccd43f9d9e7f640a11aa3ee3ece22e8e3a3e4d271b4926bc",
+          "bytes": 4905
+        },
+        "tests/test_reliability.py": {
+          "sha256": "94f155b6e28c63ef7b7d97e4ba3a2f23c6f3b1ac15f808c747612cb46c2f1d64",
+          "bytes": 14181
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validation/gui_integration_v01.txt": {
+          "sha256": "3f2cb1cc8f7a3657af6b946ebfda4257f780409f17f1100088411b7483f69715",
+          "bytes": 350
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "a1104dce865c170224b627d702aff0acd9ea27d33339ed532da57df80ec8462c",
+          "bytes": 163313
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "5875e1c0a986f4d6e0ff322eefe06e2ecf5b983c9df690f1166b15b8af3729e4",
+          "bytes": 311
+        },
+        "validation/release_manifest_v01.json": {
+          "sha256": "4b718ebaf4a98d404a331b491f2259b37afc91a15e179db51d174d47560a2ee8",
+          "bytes": 2583
+        },
+        "validation/tests_v01.txt": {
+          "sha256": "e1f8caba588eb139e878c4a7483876f5e3e526430894ce98ce2b32eb57d67561",
+          "bytes": 6354
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f56722ffd2a6862bf98f54f9c019a9a19f4c4cb95e6f7ef6bac5ee47de7db2d2",
+          "bytes": 4241
+        }
+      }
+    },
+    {
+      "tag": "v0.4.0",
+      "folder": "radiacode_logger_v04",
+      "commit": "8f64dada425e97b83c7311f56509621e85d08b6d",
+      "date": "2026-10-08T11:14:59-04:00",
+      "files_verified": 67,
+      "release_manifest": {
+        "status": "manifest has no per-file hashes",
+        "manifest": "release_manifest_v01.json"
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "cache/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_ba21f5a0d2694afab5cd42baa34ba42c.log": "excluded file",
+        "export_ff980540e9bd494b91098ddaa8b24b53.log": "excluded file",
+        "gui_preferences.sqlite": "excluded file",
+        "logs/": "excluded directory",
+        "runs/": "excluded directory",
+        "validation/analysis_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_settings_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/live_fault_pilot_v01/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)",
+        "validation/upgrade_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "2db6370c0e3eeef0298e400d170ea16d698f041de3b40158d58b0e2f37b8fb50",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "backup_run.py": {
+          "sha256": "c3e51783f309bce35411b89e263c3eba4064d97f9408d974d3b6a2f56aeaba35",
+          "bytes": 5185
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "c3c0da44592893c3daf07bef49d3c1ae87e79107a62a69f8da9cdca09ef4f881",
+          "bytes": 4794
+        },
+        "completion.py": {
+          "sha256": "50e3baddad1399606fe2a59c6cdd5696b0252d4028867336b555723e50447af4",
+          "bytes": 6121
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "5878a9238be0aab2f332b737a6887bab6323749f3c71c8e6dfd3dfafe2acba49",
+          "bytes": 13241
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "diagnostics.py": {
+          "sha256": "c60bc4316e15f948cef23c577d8fa2df01f1287555f5d70fa494e2f81032be23",
+          "bytes": 426
+        },
+        "export_run.py": {
+          "sha256": "ad0997050c3c9a1418d342ce05f619b55480b1d511bccd79f79e5e03007db8f3",
+          "bytes": 13757
+        },
+        "gui.py": {
+          "sha256": "bd271959dafcf145b914737880599ec9881c41e4caf242f9de9b12604c040ab9",
+          "bytes": 40789
+        },
+        "gui_analysis.py": {
+          "sha256": "c6c384554d1d96eae69d18ded8ead63805ed7912c8af86d27faa1d462fd95e7a",
+          "bytes": 22209
+        },
+        "gui_preferences.py": {
+          "sha256": "39ef2a475fb79396f4b651f1c3adf1578fb569b11dd1ec29640c185afb40cb5e",
+          "bytes": 1084
+        },
+        "gui_smoke.py": {
+          "sha256": "697168d819ca157cbce37f31c4f05908c02e06f25871ffeec94028fcf1668cf7",
+          "bytes": 3813
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "53cb596621ab36037076a78137a7d3145e6e8388d547dd4b320148f99b5a8bea",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "preview.py": {
+          "sha256": "3a07760432dffe76ee90c4bca59c999050ca32f8401ec46563df3e9b170a0d6d",
+          "bytes": 9795
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "ccc2708b0940953462ab862c6979d220be4f1c41dc3c89f677bc5b83f78c59e2",
+          "bytes": 19727
+        },
+        "recorder.py": {
+          "sha256": "0870ceb17782f1a70059d3fcf7d85254428d0e1783f66dd0e787f0c25893467c",
+          "bytes": 29607
+        },
+        "recovery_progress.py": {
+          "sha256": "42bf499aeb7809733042e592b4d155068355206c1b690f87c97ea6c595a1bc81",
+          "bytes": 1248
+        },
+        "release_checks.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "run_policy.py": {
+          "sha256": "f86c567bc35290fc6f74b67a42231d8ffeaee64f8914cd97a2a26e8deaaa0594",
+          "bytes": 3343
+        },
+        "run_settings.py": {
+          "sha256": "558c8253e66be891c061bc3ce903ea3f2124f41ec9152dac270ef3c89865e214",
+          "bytes": 2795
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "949884f5d9d028038fcd791936e3df53f3348b0594b8bf874cb4a6d221ddf181",
+          "bytes": 3984
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "e3fbd524b0f5afb95d311010ae533a77811917b5e06345f27947acf06db4abab",
+          "bytes": 1062
+        },
+        "storage.py": {
+          "sha256": "d065512e8335d90f97158312683afa8df88e48e5ce7019724843395dd299ebbb",
+          "bytes": 10693
+        },
+        "supervisor.py": {
+          "sha256": "5d744b53d257abb521b555a3ca92eba9d3d261df51234106c32d99f654578281",
+          "bytes": 11259
+        },
+        "supervisor_store.py": {
+          "sha256": "5486ed673bf3e9e1fcb3af2d885c0d54f9de093e82df81fa50531bb925e9c9a3",
+          "bytes": 1637
+        },
+        "system_time.py": {
+          "sha256": "19e803cea8f1cfcae620fa2b8d2aa88cac6e8cc4d078c4d4ed9e66f025ed6dda",
+          "bytes": 477
+        },
+        "telemetry_analysis.py": {
+          "sha256": "391d01a7c9526b556b2ee2214943f487485461da3d1f1bc5824a62b35f2f7d3e",
+          "bytes": 8000
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_analysis_backup_v04.py": {
+          "sha256": "cbbd73e4b5cfe9f10ffeb79fbe54e066d2550556d2dca363c367a4f2f38e9a39",
+          "bytes": 5491
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_gui_run_settings.py": {
+          "sha256": "b75a58242276c91c7f7851753121531ac09dc879c4d9ab0e886c19146b18331f",
+          "bytes": 5545
+        },
+        "tests/test_reliability.py": {
+          "sha256": "90003eecefc20bf103feed9c83f78a422d6c1507855923a3f9bb7612e515a7c3",
+          "bytes": 14125
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "tests/test_upgrade_v04.py": {
+          "sha256": "a34e05ad9f625070c2551adac3e72ce5092c414c8474d05640a72457d2884bc0",
+          "bytes": 8003
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validation/completed_gui_v01.png": {
+          "sha256": "7a2f1e18ad48dad1de079b5c8375e4692896943db033b45e45e5e1f1004846c4",
+          "bytes": 211602
+        },
+        "validation/full_gui_v01.png": {
+          "sha256": "54ecd907b40f10dc41171910a1e22558e2a2d60ee1b1cd1ffbbf9a43f66bc921",
+          "bytes": 258580
+        },
+        "validation/gui_integration_v01.txt": {
+          "sha256": "4b4b2e3e02842823230fc1faee18fb68847c55825604b3f70d4bd59effe2ca10",
+          "bytes": 349
+        },
+        "validation/gui_integration_v02.txt": {
+          "sha256": "3175786b95ce10b50361293eb059062109a079b7596004deb63032a0afa42531",
+          "bytes": 349
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "c573cf686cd88e358c3d5736bf93ed5196023266d65a34bbcdbbbb8eb2a52074",
+          "bytes": 193547
+        },
+        "validation/gui_smoke_preview_v02.png": {
+          "sha256": "025ea30bbc1d6b7286370601505adc42cfbcfdd120a520318e80a26109405879",
+          "bytes": 190377
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "c21f46b2bc48cc864b95b473fe0cd697bcf16b6ca7ea790e974c6851558fba8b",
+          "bytes": 310
+        },
+        "validation/gui_smoke_report_v02.json": {
+          "sha256": "24c8c47b6db19e71c10794673e033c82779d9e1841283f669de9e3e39df9023a",
+          "bytes": 310
+        },
+        "validation/gui_views_v01.json": {
+          "sha256": "fc33ab28f5e7bb97d33f8d40e9b6654c7bae5383c25fa260a079381a0e811421",
+          "bytes": 712
+        },
+        "validation/live_fault_pilot_v01.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "validation/live_fault_pilot_v01_report.json": {
+          "sha256": "578e15d5bf146e12036e57710213302201b4635caf47ee3b1a1155446371f972",
+          "bytes": 76550
+        },
+        "validation/release_manifest_v01.json": {
+          "sha256": "940467716bb6e0e29381c4fa3b081e4c509eef1c50b5a88d6d773207b44f405a",
+          "bytes": 5660
+        },
+        "validation/spectrum_gui_v01.png": {
+          "sha256": "0d073f3fb17cd621445b75b8fd0222040ad7ff6698a4892bdba974cfeb991423",
+          "bytes": 135399
+        },
+        "validation/summary_gui_v01.png": {
+          "sha256": "c496724a511c7e3dcc34bcee4f5125ceb01ba2bbb7fe7a397bdb64b8a537b775",
+          "bytes": 156246
+        },
+        "validation/tests_v01.txt": {
+          "sha256": "a2d8653f4b2f67b5c5276af1162febca042ebf26e4d088f76defe07fb3b9c1e8",
+          "bytes": 10354
+        },
+        "validation/tests_v02.txt": {
+          "sha256": "36504de23594d879e90d2197c89a70dd22e94d5ce130b22d6bb5ffa19de69cbb",
+          "bytes": 10523
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f33bc4e4f2d185dd22170668ad9830b3ada9c511fe84aaa24a8402483b3093ed",
+          "bytes": 4936
+        }
+      }
+    },
+    {
+      "tag": "v0.4.1",
+      "folder": "radiacode_logger_v041",
+      "commit": "3eebe4c973ab974d06f0b5c4b14e900e1fdcfc32",
+      "date": "2026-10-08T12:50:34-04:00",
+      "files_verified": 60,
+      "release_manifest": {
+        "status": "manifest has no per-file hashes",
+        "manifest": "release_manifest_v01.json"
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "cache/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_e9283bbeb49046719cc08620dbbcbbf3.log": "excluded file",
+        "logs/": "excluded directory",
+        "validation/analysis_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_settings_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/spectrum_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)",
+        "validation/upgrade_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "e06a2cd6113a9570bc247884cc4e7cf086cbfd06f518073f2947e5d09af7d6d1",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "backup_run.py": {
+          "sha256": "c3e51783f309bce35411b89e263c3eba4064d97f9408d974d3b6a2f56aeaba35",
+          "bytes": 5185
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "c3c0da44592893c3daf07bef49d3c1ae87e79107a62a69f8da9cdca09ef4f881",
+          "bytes": 4794
+        },
+        "completion.py": {
+          "sha256": "50e3baddad1399606fe2a59c6cdd5696b0252d4028867336b555723e50447af4",
+          "bytes": 6121
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "5878a9238be0aab2f332b737a6887bab6323749f3c71c8e6dfd3dfafe2acba49",
+          "bytes": 13241
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "diagnostics.py": {
+          "sha256": "c60bc4316e15f948cef23c577d8fa2df01f1287555f5d70fa494e2f81032be23",
+          "bytes": 426
+        },
+        "export_run.py": {
+          "sha256": "ad0997050c3c9a1418d342ce05f619b55480b1d511bccd79f79e5e03007db8f3",
+          "bytes": 13757
+        },
+        "gui.py": {
+          "sha256": "4289f287c3bc2d1b44edfdf9476e5c4a23f8ab3351f69c4122b2fd1f6efec4de",
+          "bytes": 41107
+        },
+        "gui_analysis.py": {
+          "sha256": "1a4b9f897dadb7803d06abf413cf279b4487c90aa1e1f7689824cfee7d40fc3a",
+          "bytes": 27861
+        },
+        "gui_preferences.py": {
+          "sha256": "39ef2a475fb79396f4b651f1c3adf1578fb569b11dd1ec29640c185afb40cb5e",
+          "bytes": 1084
+        },
+        "gui_smoke.py": {
+          "sha256": "697168d819ca157cbce37f31c4f05908c02e06f25871ffeec94028fcf1668cf7",
+          "bytes": 3813
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "53cb596621ab36037076a78137a7d3145e6e8388d547dd4b320148f99b5a8bea",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "preview.py": {
+          "sha256": "3a07760432dffe76ee90c4bca59c999050ca32f8401ec46563df3e9b170a0d6d",
+          "bytes": 9795
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "8219f7f64ae73bf20e652a1bfd31b3ce5e782d50896893418a7f2ba9f4162ebb",
+          "bytes": 20994
+        },
+        "recorder.py": {
+          "sha256": "0870ceb17782f1a70059d3fcf7d85254428d0e1783f66dd0e787f0c25893467c",
+          "bytes": 29607
+        },
+        "recovery_progress.py": {
+          "sha256": "42bf499aeb7809733042e592b4d155068355206c1b690f87c97ea6c595a1bc81",
+          "bytes": 1248
+        },
+        "release_checks.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "run_policy.py": {
+          "sha256": "f86c567bc35290fc6f74b67a42231d8ffeaee64f8914cd97a2a26e8deaaa0594",
+          "bytes": 3343
+        },
+        "run_settings.py": {
+          "sha256": "558c8253e66be891c061bc3ce903ea3f2124f41ec9152dac270ef3c89865e214",
+          "bytes": 2795
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "949884f5d9d028038fcd791936e3df53f3348b0594b8bf874cb4a6d221ddf181",
+          "bytes": 3984
+        },
+        "spectrum_view.py": {
+          "sha256": "d10868cec29179641e287e4ee8ae3ebc229012e90186983753c127b3c2f6f901",
+          "bytes": 1438
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "e3fbd524b0f5afb95d311010ae533a77811917b5e06345f27947acf06db4abab",
+          "bytes": 1062
+        },
+        "storage.py": {
+          "sha256": "d065512e8335d90f97158312683afa8df88e48e5ce7019724843395dd299ebbb",
+          "bytes": 10693
+        },
+        "supervisor.py": {
+          "sha256": "5d744b53d257abb521b555a3ca92eba9d3d261df51234106c32d99f654578281",
+          "bytes": 11259
+        },
+        "supervisor_store.py": {
+          "sha256": "5486ed673bf3e9e1fcb3af2d885c0d54f9de093e82df81fa50531bb925e9c9a3",
+          "bytes": 1637
+        },
+        "system_time.py": {
+          "sha256": "19e803cea8f1cfcae620fa2b8d2aa88cac6e8cc4d078c4d4ed9e66f025ed6dda",
+          "bytes": 477
+        },
+        "telemetry_analysis.py": {
+          "sha256": "391d01a7c9526b556b2ee2214943f487485461da3d1f1bc5824a62b35f2f7d3e",
+          "bytes": 8000
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_analysis_backup_v04.py": {
+          "sha256": "cbbd73e4b5cfe9f10ffeb79fbe54e066d2550556d2dca363c367a4f2f38e9a39",
+          "bytes": 5491
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_gui_run_settings.py": {
+          "sha256": "b75a58242276c91c7f7851753121531ac09dc879c4d9ab0e886c19146b18331f",
+          "bytes": 5545
+        },
+        "tests/test_reliability.py": {
+          "sha256": "90003eecefc20bf103feed9c83f78a422d6c1507855923a3f9bb7612e515a7c3",
+          "bytes": 14125
+        },
+        "tests/test_spectrum_tab.py": {
+          "sha256": "cde67df3ffcdf751d357b05e3ea53863330e01029c8caebfc01b7509ba676342",
+          "bytes": 4398
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "tests/test_upgrade_v04.py": {
+          "sha256": "a34e05ad9f625070c2551adac3e72ce5092c414c8474d05640a72457d2884bc0",
+          "bytes": 8003
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validation/gui_integration_v01.txt": {
+          "sha256": "3040a84dbe6202b189b89a61d179fe4671ab7faaaf20d675ed9c2c9e0d5c338d",
+          "bytes": 350
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "b246c8782fa0ddf10c9cdd2d79a93d88fd66f5a4bd5f40981b90eca6b6a5e4cb",
+          "bytes": 192703
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "7c41ca6c459d0a0bb476e9b056389bc23dd0c8119b2701d13381e05609e74ecb",
+          "bytes": 311
+        },
+        "validation/release_manifest_v01.json": {
+          "sha256": "f84a203b598c096eea4c2917c8f7e1166b1321eeb1b446225793ebe92897eb8e",
+          "bytes": 1763
+        },
+        "validation/spectrum_tab_live_v01.png": {
+          "sha256": "543495162cfb13f3ce854ca182c9f72c376a62f3d818384d925388b2c69c1dff",
+          "bytes": 140785
+        },
+        "validation/spectrum_tab_visual_v01.json": {
+          "sha256": "78eebc43651efa60f9d9ac6a0e4e5280a88345c2a574ec4ef8d3b548258d812a",
+          "bytes": 608
+        },
+        "validation/tests_v01.txt": {
+          "sha256": "6aef3eaf1f9b4264ec90449685bf801622730ad56beda0163d2b6bf21f3484e8",
+          "bytes": 11720
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f33bc4e4f2d185dd22170668ad9830b3ada9c511fe84aaa24a8402483b3093ed",
+          "bytes": 4936
+        }
+      }
+    },
+    {
+      "tag": "v0.4.2",
+      "folder": "radiacode_logger_v042",
+      "commit": "6683b572980600d967bc9664bec1e5bd4bd9d8c2",
+      "date": "2026-10-08T14:11:12-04:00",
+      "files_verified": 66,
+      "release_manifest": {
+        "status": "manifest has no per-file hashes",
+        "manifest": "release_manifest_v01.json"
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "cache/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_61d1c6eb690b4e758a30e318126efaf5.log": "excluded file",
+        "export_ae408ce013ef4e2e8931feec8ce43d0b.log": "excluded file",
+        "gui_preferences.sqlite": "excluded file",
+        "logs/": "excluded directory",
+        "validation/accumulation_temp/": "validation subfolder (run data / temp)",
+        "validation/analysis_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_settings_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/spectrum_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)",
+        "validation/upgrade_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "ec22a5d3bf602d789917ba34226323cd394e41bdc0eb26c7749d2d4e98fb6c0b",
+          "bytes": 5689
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "backup_run.py": {
+          "sha256": "c3e51783f309bce35411b89e263c3eba4064d97f9408d974d3b6a2f56aeaba35",
+          "bytes": 5185
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "c3c0da44592893c3daf07bef49d3c1ae87e79107a62a69f8da9cdca09ef4f881",
+          "bytes": 4794
+        },
+        "completion.py": {
+          "sha256": "50e3baddad1399606fe2a59c6cdd5696b0252d4028867336b555723e50447af4",
+          "bytes": 6121
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "5878a9238be0aab2f332b737a6887bab6323749f3c71c8e6dfd3dfafe2acba49",
+          "bytes": 13241
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "diagnostics.py": {
+          "sha256": "c60bc4316e15f948cef23c577d8fa2df01f1287555f5d70fa494e2f81032be23",
+          "bytes": 426
+        },
+        "export_run.py": {
+          "sha256": "ad0997050c3c9a1418d342ce05f619b55480b1d511bccd79f79e5e03007db8f3",
+          "bytes": 13757
+        },
+        "gui.py": {
+          "sha256": "d8c9fddf34ef48a42b62cec099894ffd74c847cce02ce42451b977e7c4f74ec2",
+          "bytes": 41635
+        },
+        "gui_analysis.py": {
+          "sha256": "b62bd3a21d0adb47579cd39721d291efd5c3dc66f1de678ba2ad9908370f50a3",
+          "bytes": 35170
+        },
+        "gui_preferences.py": {
+          "sha256": "39ef2a475fb79396f4b651f1c3adf1578fb569b11dd1ec29640c185afb40cb5e",
+          "bytes": 1084
+        },
+        "gui_smoke.py": {
+          "sha256": "697168d819ca157cbce37f31c4f05908c02e06f25871ffeec94028fcf1668cf7",
+          "bytes": 3813
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "53cb596621ab36037076a78137a7d3145e6e8388d547dd4b320148f99b5a8bea",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "preview.py": {
+          "sha256": "3a07760432dffe76ee90c4bca59c999050ca32f8401ec46563df3e9b170a0d6d",
+          "bytes": 9795
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "6f83644f3207d7d7ff96cb9627d36dcda90de9d44ddc23190cef1b3368734aae",
+          "bytes": 22693
+        },
+        "recorder.py": {
+          "sha256": "0870ceb17782f1a70059d3fcf7d85254428d0e1783f66dd0e787f0c25893467c",
+          "bytes": 29607
+        },
+        "recovery_progress.py": {
+          "sha256": "42bf499aeb7809733042e592b4d155068355206c1b690f87c97ea6c595a1bc81",
+          "bytes": 1248
+        },
+        "release_checks.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "requirements-app.txt": {
+          "sha256": "5c563b2924a57a64e1788c231ed3bcd193662280a5c38354b76f620ff368da24",
+          "bytes": 172
+        },
+        "run_policy.py": {
+          "sha256": "f86c567bc35290fc6f74b67a42231d8ffeaee64f8914cd97a2a26e8deaaa0594",
+          "bytes": 3343
+        },
+        "run_settings.py": {
+          "sha256": "558c8253e66be891c061bc3ce903ea3f2124f41ec9152dac270ef3c89865e214",
+          "bytes": 2795
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "949884f5d9d028038fcd791936e3df53f3348b0594b8bf874cb4a6d221ddf181",
+          "bytes": 3984
+        },
+        "spectrum_view.py": {
+          "sha256": "e3a4bd94c27b7b7d64f90223dc40665a1e1dbd188f8e4478eeccc765ece7a92e",
+          "bytes": 6777
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "e3fbd524b0f5afb95d311010ae533a77811917b5e06345f27947acf06db4abab",
+          "bytes": 1062
+        },
+        "storage.py": {
+          "sha256": "d065512e8335d90f97158312683afa8df88e48e5ce7019724843395dd299ebbb",
+          "bytes": 10693
+        },
+        "supervisor.py": {
+          "sha256": "5d744b53d257abb521b555a3ca92eba9d3d261df51234106c32d99f654578281",
+          "bytes": 11259
+        },
+        "supervisor_store.py": {
+          "sha256": "5486ed673bf3e9e1fcb3af2d885c0d54f9de093e82df81fa50531bb925e9c9a3",
+          "bytes": 1637
+        },
+        "system_time.py": {
+          "sha256": "19e803cea8f1cfcae620fa2b8d2aa88cac6e8cc4d078c4d4ed9e66f025ed6dda",
+          "bytes": 477
+        },
+        "telemetry_analysis.py": {
+          "sha256": "391d01a7c9526b556b2ee2214943f487485461da3d1f1bc5824a62b35f2f7d3e",
+          "bytes": 8000
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_accumulated_spectrum.py": {
+          "sha256": "8b5ab00c57f6d6e292af5af24f9bdd8067573c1e826ee33d8272aa977a51f397",
+          "bytes": 6158
+        },
+        "tests/test_analysis_backup_v04.py": {
+          "sha256": "cbbd73e4b5cfe9f10ffeb79fbe54e066d2550556d2dca363c367a4f2f38e9a39",
+          "bytes": 5491
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_gui_run_settings.py": {
+          "sha256": "b75a58242276c91c7f7851753121531ac09dc879c4d9ab0e886c19146b18331f",
+          "bytes": 5545
+        },
+        "tests/test_reliability.py": {
+          "sha256": "90003eecefc20bf103feed9c83f78a422d6c1507855923a3f9bb7612e515a7c3",
+          "bytes": 14125
+        },
+        "tests/test_spectrum_tab.py": {
+          "sha256": "da04760038bcdf4fbeb5d763043b6dc02b1ac3ac22aa47f7afd1732c38f92290",
+          "bytes": 4446
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "tests/test_upgrade_v04.py": {
+          "sha256": "a34e05ad9f625070c2551adac3e72ce5092c414c8474d05640a72457d2884bc0",
+          "bytes": 8003
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "validation/accumulated_range_v01.png": {
+          "sha256": "d00297e3be40bb832e5eb6b3701fefebbb87e3a2802f6165f4fdb1dc6d6c7f5a",
+          "bytes": 167846
+        },
+        "validation/accumulated_recording_v01.png": {
+          "sha256": "50f66edea37e35569009ef555e699f742ee6f5e0594d33779c2459d4f5b0c352",
+          "bytes": 158129
+        },
+        "validation/accumulation_visual_v01.json": {
+          "sha256": "c22c2b45eae554b66787c3a86a0aa271b4d35858578957aa26f09c3f46fe6454",
+          "bytes": 1506
+        },
+        "validation/gui_integration_v01.txt": {
+          "sha256": "028102e931bbb66f8ed874d26158f0107e7220ac49cc649058f461ffaab8759d",
+          "bytes": 350
+        },
+        "validation/gui_integration_v02.txt": {
+          "sha256": "f030439e3435affb67ed305b9724dfba5fa17d4a109e6c5ec496da35b12db457",
+          "bytes": 350
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "eb1a586bca61a406709be940ef0abaed2fa1cd75c67a9ab5c521e4572fa8b368",
+          "bytes": 193659
+        },
+        "validation/gui_smoke_preview_v02.png": {
+          "sha256": "ef6848b40314b55f58b8892760e745367d8724ebd7960c3ce79398eea8107fd2",
+          "bytes": 194581
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "6ad0aa1f2e09bad9b19714def813d8bfcfc1715032e7d704c4211080ac9488bd",
+          "bytes": 311
+        },
+        "validation/gui_smoke_report_v02.json": {
+          "sha256": "ef1d5f35de85740747a4e4c0af8ae39b417f034e7f13f87b96ee639fe4ea6f88",
+          "bytes": 311
+        },
+        "validation/release_manifest_v01.json": {
+          "sha256": "6c9abb3bea16bbb50445b6570b331e933b029171c94e7869be45ebdcb784eddf",
+          "bytes": 2787
+        },
+        "validation/tests_v01.txt": {
+          "sha256": "ebbc4ed296520a9dc61ea863b9cb4814db5681faf6f330f02829e3c060516a0e",
+          "bytes": 13097
+        },
+        "validation/tests_v02.txt": {
+          "sha256": "d2e8922c3f2ca546278d8a150c9d4dbd85eddfc9258321c5404d522676411aad",
+          "bytes": 13099
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f33bc4e4f2d185dd22170668ad9830b3ada9c511fe84aaa24a8402483b3093ed",
+          "bytes": 4936
+        }
+      }
+    },
+    {
+      "tag": "v0.5.0",
+      "folder": "radiacode_logger_v05",
+      "commit": "db4d70c58a39d9a282343257f4a6f5e5a8646220",
+      "date": "2026-10-11T15:28:14-04:00",
+      "files_verified": 72,
+      "release_manifest": {
+        "status": "matched",
+        "manifest": "release_manifest_v01.json",
+        "entries": 59
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "cache/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "export_3e2daf50839f4952a27b8f0eac2f5f29.log": "excluded file",
+        "gui_preferences.sqlite": "excluded file",
+        "logs/": "excluded directory",
+        "runs/": "excluded directory",
+        "validation/accumulation_temp/": "validation subfolder (run data / temp)",
+        "validation/analysis_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_settings_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_smoke_runs/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/spectrum_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)",
+        "validation/time_cli_units_v01/": "validation subfolder (run data / temp)",
+        "validation/time_export_temp/": "validation subfolder (run data / temp)",
+        "validation/upgrade_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "304304a9364eec11f7a4911289e63a680de0440d302942429b1500548124c09b",
+          "bytes": 5808
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "backup_run.py": {
+          "sha256": "c3e51783f309bce35411b89e263c3eba4064d97f9408d974d3b6a2f56aeaba35",
+          "bytes": 5185
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "c3c0da44592893c3daf07bef49d3c1ae87e79107a62a69f8da9cdca09ef4f881",
+          "bytes": 4794
+        },
+        "completion.py": {
+          "sha256": "50e3baddad1399606fe2a59c6cdd5696b0252d4028867336b555723e50447af4",
+          "bytes": 6121
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "5878a9238be0aab2f332b737a6887bab6323749f3c71c8e6dfd3dfafe2acba49",
+          "bytes": 13241
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "diagnostics.py": {
+          "sha256": "c60bc4316e15f948cef23c577d8fa2df01f1287555f5d70fa494e2f81032be23",
+          "bytes": 426
+        },
+        "export_run.py": {
+          "sha256": "ad0997050c3c9a1418d342ce05f619b55480b1d511bccd79f79e5e03007db8f3",
+          "bytes": 13757
+        },
+        "gui.py": {
+          "sha256": "f592052d0a1acd697ed82d267042684aef804e242a37937d2a178642548413e1",
+          "bytes": 42552
+        },
+        "gui_analysis.py": {
+          "sha256": "df2a47fa144b432f6430566cf10607007662394238df55c21d3a28dc6ff5739e",
+          "bytes": 36876
+        },
+        "gui_preferences.py": {
+          "sha256": "39ef2a475fb79396f4b651f1c3adf1578fb569b11dd1ec29640c185afb40cb5e",
+          "bytes": 1084
+        },
+        "gui_smoke.py": {
+          "sha256": "697168d819ca157cbce37f31c4f05908c02e06f25871ffeec94028fcf1668cf7",
+          "bytes": 3813
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "53cb596621ab36037076a78137a7d3145e6e8388d547dd4b320148f99b5a8bea",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "preview.py": {
+          "sha256": "3a07760432dffe76ee90c4bca59c999050ca32f8401ec46563df3e9b170a0d6d",
+          "bytes": 9795
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "db287b47fb07cd32dbbe741ffe39508836491bf1714f35515e07abff525e9aaf",
+          "bytes": 24104
+        },
+        "recorder.py": {
+          "sha256": "16b1439f7c59ad713abc5304d9c89752a9bdb29dbeee8a58b77d0baed195a8d6",
+          "bytes": 29733
+        },
+        "recovery_progress.py": {
+          "sha256": "42bf499aeb7809733042e592b4d155068355206c1b690f87c97ea6c595a1bc81",
+          "bytes": 1248
+        },
+        "release_checks.py": {
+          "sha256": "99b442b54b4f31f16466edb86f97838ca69ecde4a8f2c0d760bf9201b34c9f12",
+          "bytes": 3096
+        },
+        "release_checks_legacy_v02.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "release_checks_v05.py": {
+          "sha256": "99b442b54b4f31f16466edb86f97838ca69ecde4a8f2c0d760bf9201b34c9f12",
+          "bytes": 3096
+        },
+        "requirements-app.txt": {
+          "sha256": "c8c7b6b11e69e14efef764b655333c85db200e5d76ed8a50f73c012eec2d96f6",
+          "bytes": 188
+        },
+        "run_policy.py": {
+          "sha256": "a5aa94ea1965441bf1b0ed97ed036880ae0f86bdbf9535c3bbb29fa7fab3d7bb",
+          "bytes": 3415
+        },
+        "run_settings.py": {
+          "sha256": "764d857464cf8e98e8ba071289184f75c2377cc3a4c7ddd747e8365024d20839",
+          "bytes": 2855
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "949884f5d9d028038fcd791936e3df53f3348b0594b8bf874cb4a6d221ddf181",
+          "bytes": 3984
+        },
+        "spectrum_view.py": {
+          "sha256": "e3a4bd94c27b7b7d64f90223dc40665a1e1dbd188f8e4478eeccc765ece7a92e",
+          "bytes": 6777
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "e3fbd524b0f5afb95d311010ae533a77811917b5e06345f27947acf06db4abab",
+          "bytes": 1062
+        },
+        "storage.py": {
+          "sha256": "d065512e8335d90f97158312683afa8df88e48e5ce7019724843395dd299ebbb",
+          "bytes": 10693
+        },
+        "supervisor.py": {
+          "sha256": "477dbefff8122c6fc5b57779e8448d77839b5fffd078e1f267b9802dea0d3bba",
+          "bytes": 11310
+        },
+        "supervisor_store.py": {
+          "sha256": "5486ed673bf3e9e1fcb3af2d885c0d54f9de093e82df81fa50531bb925e9c9a3",
+          "bytes": 1637
+        },
+        "system_time.py": {
+          "sha256": "19e803cea8f1cfcae620fa2b8d2aa88cac6e8cc4d078c4d4ed9e66f025ed6dda",
+          "bytes": 477
+        },
+        "telemetry_analysis.py": {
+          "sha256": "391d01a7c9526b556b2ee2214943f487485461da3d1f1bc5824a62b35f2f7d3e",
+          "bytes": 8000
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_accumulated_spectrum.py": {
+          "sha256": "8b5ab00c57f6d6e292af5af24f9bdd8067573c1e826ee33d8272aa977a51f397",
+          "bytes": 6158
+        },
+        "tests/test_analysis_backup_v04.py": {
+          "sha256": "cbbd73e4b5cfe9f10ffeb79fbe54e066d2550556d2dca363c367a4f2f38e9a39",
+          "bytes": 5491
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_gui_run_settings.py": {
+          "sha256": "b75a58242276c91c7f7851753121531ac09dc879c4d9ab0e886c19146b18331f",
+          "bytes": 5545
+        },
+        "tests/test_reliability.py": {
+          "sha256": "90003eecefc20bf103feed9c83f78a422d6c1507855923a3f9bb7612e515a7c3",
+          "bytes": 14125
+        },
+        "tests/test_spectrum_tab.py": {
+          "sha256": "da04760038bcdf4fbeb5d763043b6dc02b1ac3ac22aa47f7afd1732c38f92290",
+          "bytes": 4446
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "tests/test_time_resolved.py": {
+          "sha256": "72ebc19d7adab77acb2ffcf311aa7de0eecb65962bba901a1f079b4f71e353f6",
+          "bytes": 11576
+        },
+        "tests/test_upgrade_v04.py": {
+          "sha256": "a34e05ad9f625070c2551adac3e72ce5092c414c8474d05640a72457d2884bc0",
+          "bytes": 8003
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "time_export_ui.py": {
+          "sha256": "e0013043ff1d9d5e02ae65d94818797d78d23738081a236e89971c72ece6c993",
+          "bytes": 12063
+        },
+        "time_input.py": {
+          "sha256": "66bd3a37aaa1d83ee277a9f6e065081db139fad953e38886abc0045b78cbca56",
+          "bytes": 3911
+        },
+        "TIME_RESOLVED.md": {
+          "sha256": "92b61bb150e4e1d1c1d7062db892c8fc6e581e0f349fecd05d5589a95896d0a9",
+          "bytes": 9237
+        },
+        "time_resolved.py": {
+          "sha256": "1a35c424d41a8729192fec307e6d6729b4f07144771b61d789baec9a780e9380",
+          "bytes": 19261
+        },
+        "time_units.py": {
+          "sha256": "144f6f7c9e761b24313da36c89e521f42b754216248c035567561db141fe578d",
+          "bytes": 2567
+        },
+        "validation/gui_smoke_preview_v01.png": {
+          "sha256": "cb41375064c48938ef84785869e61e951b3c88a7be2450ca9e5ba90e86542aa0",
+          "bytes": 200673
+        },
+        "validation/gui_smoke_report_v01.json": {
+          "sha256": "a5bb5d93547d6a62cc24bc475910a7a8c2605180090df645be0cf688e08642fa",
+          "bytes": 310
+        },
+        "validation/gui_smoke_v01.log": {
+          "sha256": "4f2047902d00407b077ca61fc1e95bfd4b4647b909a2a0a32153fdd3b1ba2519",
+          "bytes": 349
+        },
+        "validation/regression_tests_release_v01.txt": {
+          "sha256": "f9c2f9e299a15467255b726b20cd799be83b48f8683bda328f53843401171821",
+          "bytes": 17303
+        },
+        "validation/regression_tests_release_v02.txt": {
+          "sha256": "2647c6507bb4765b94fe8d7743445c5ecca374b6a7837ce7f097f1f52c1f7917",
+          "bytes": 17900
+        },
+        "validation/regression_tests_release_v03.txt": {
+          "sha256": "ae8ceb79f7d5c9f7f15305da5737c4a8f85ad98a3da3f5ca4cefa2b1897f0103",
+          "bytes": 17906
+        },
+        "validation/regression_tests_release_v04.txt": {
+          "sha256": "4efba8b3b8c393e2e596fcf6e151b0cf3cab40f05a8c89e5b873dd7ddc42d2c9",
+          "bytes": 17305
+        },
+        "validation/release_manifest_v01.json": {
+          "sha256": "58ce87c4f52fa292649b0d8a78ac70d5c5095e8c8fa8b1893f9cefc9b61ac25a",
+          "bytes": 8764
+        },
+        "validation/suite_first.log": {
+          "sha256": "c90640c5d2186b2ee3b634436f845e84ae9c414e6ca0423b38672d8a574ce50e",
+          "bytes": 22330
+        },
+        "validation/time_cli_units_v01.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f33bc4e4f2d185dd22170668ad9830b3ada9c511fe84aaa24a8402483b3093ed",
+          "bytes": 4936
+        }
+      }
+    },
+    {
+      "tag": "v0.5.1",
+      "folder": "radiacode_logger_v051",
+      "commit": "57cf8cccd2948c2cdd04a6f9cce2ca202b2a493f",
+      "date": "2026-10-11T20:08:28-04:00",
+      "files_verified": 71,
+      "release_manifest": {
+        "status": "matched",
+        "manifest": "release_manifest_v01.json",
+        "entries": 64
+      },
+      "not_imported": {
+        "__pycache__/": "excluded directory",
+        "cache/": "excluded directory",
+        "dependencies/": "excluded directory",
+        "logs/": "excluded directory",
+        "validation/accumulation_temp/": "validation subfolder (run data / temp)",
+        "validation/analysis_temp/": "validation subfolder (run data / temp)",
+        "validation/display_temp/": "validation subfolder (run data / temp)",
+        "validation/gui_settings_temp/": "validation subfolder (run data / temp)",
+        "validation/reliability_temp/": "validation subfolder (run data / temp)",
+        "validation/spectrum_temp/": "validation subfolder (run data / temp)",
+        "validation/telemetry_test_temp/": "validation subfolder (run data / temp)",
+        "validation/test_temp/": "validation subfolder (run data / temp)",
+        "validation/time_export_temp/": "validation subfolder (run data / temp)",
+        "validation/upgrade_temp/": "validation subfolder (run data / temp)"
+      },
+      "files": {
+        "analysis.py": {
+          "sha256": "8235b2e7da79f8554310d0d1dceaff0f9eb937d6cb3fa90b069e9cd6cf7a47c3",
+          "bytes": 5808
+        },
+        "audit_live.py": {
+          "sha256": "02accfd4bbf884e373d3ae28b21acc9329053f0c3558edfc92daa0eed7475481",
+          "bytes": 3501
+        },
+        "backup_run.py": {
+          "sha256": "c3e51783f309bce35411b89e263c3eba4064d97f9408d974d3b6a2f56aeaba35",
+          "bytes": 5185
+        },
+        "bootstrap.py": {
+          "sha256": "f8a8664afe20245258fbb9878708598f2b352c6f4f49b954f1271ecdd2f3b78d",
+          "bytes": 205
+        },
+        "clock_check.py": {
+          "sha256": "c3c0da44592893c3daf07bef49d3c1ae87e79107a62a69f8da9cdca09ef4f881",
+          "bytes": 4794
+        },
+        "completion.py": {
+          "sha256": "50e3baddad1399606fe2a59c6cdd5696b0252d4028867336b555723e50447af4",
+          "bytes": 6121
+        },
+        "dependencies-lock-v01.txt": {
+          "sha256": "9699f134d578c2d3975cb3c6c28ea5797827022971012f64a36cfbda91d6b917",
+          "bytes": 502
+        },
+        "device.py": {
+          "sha256": "5878a9238be0aab2f332b737a6887bab6323749f3c71c8e6dfd3dfafe2acba49",
+          "bytes": 13241
+        },
+        "device_probe_v01.txt": {
+          "sha256": "4f973b11ac4f686c62123aea631855f37180b4f52eff4e3e68e9b9d1c139cfee",
+          "bytes": 14284
+        },
+        "diagnostics.py": {
+          "sha256": "c60bc4316e15f948cef23c577d8fa2df01f1287555f5d70fa494e2f81032be23",
+          "bytes": 426
+        },
+        "display_controls.py": {
+          "sha256": "f85baac9b63ba35ab418c1ce61fbc96d0f8a02467b35f985ac111e6005532115",
+          "bytes": 2363
+        },
+        "DISPLAY_SCALES.md": {
+          "sha256": "5151d5e41b71c0ca29942f789cdec18e534ccc078d20f622141082a28699c98f",
+          "bytes": 2619
+        },
+        "export_run.py": {
+          "sha256": "ad0997050c3c9a1418d342ce05f619b55480b1d511bccd79f79e5e03007db8f3",
+          "bytes": 13757
+        },
+        "gui.py": {
+          "sha256": "efbe18a05b72d34f85ac5b011685d3eae81ca22b09eb589cca428a822d349ec3",
+          "bytes": 44107
+        },
+        "gui_analysis.py": {
+          "sha256": "cffb2f499e7b75e006da9936268b70bd8ed45013b50d775c494582e713d106f6",
+          "bytes": 40967
+        },
+        "gui_preferences.py": {
+          "sha256": "39ef2a475fb79396f4b651f1c3adf1578fb569b11dd1ec29640c185afb40cb5e",
+          "bytes": 1084
+        },
+        "gui_smoke.py": {
+          "sha256": "697168d819ca157cbce37f31c4f05908c02e06f25871ffeec94028fcf1668cf7",
+          "bytes": 3813
+        },
+        "Launch_RadiaLog.cmd": {
+          "sha256": "b1aa3cec0185df37e5db20f7fb943ba9b93cc23548d6f5c29c110b2e4a48c0ab",
+          "bytes": 294
+        },
+        "LICENSE": {
+          "sha256": "0674d5918c393d4bdd8c5ef2a0aa28243eafb1dccf740012213a0d3edd18bb47",
+          "bytes": 1078
+        },
+        "live_fault_pilot.py": {
+          "sha256": "53cb596621ab36037076a78137a7d3145e6e8388d547dd4b320148f99b5a8bea",
+          "bytes": 3875
+        },
+        "overnight_soak.py": {
+          "sha256": "84a14e2840b6f0b9476c5f4036571401cd59a07b1ac83061e0c8608dc826b990",
+          "bytes": 2260
+        },
+        "phyton.py": {
+          "sha256": "8d0b3a394d8aa52985aaa8aa47183d974dbf25e2c23f78eed3c635883c20de73",
+          "bytes": 7741
+        },
+        "plot_scales.py": {
+          "sha256": "15e6ba83040d07c6a6816e8dcf5a9f61213c213bc177267454d8df48d691b1a5",
+          "bytes": 1980
+        },
+        "preview.py": {
+          "sha256": "3a07760432dffe76ee90c4bca59c999050ca32f8401ec46563df3e9b170a0d6d",
+          "bytes": 9795
+        },
+        "probe_device.py": {
+          "sha256": "2f76ed1a4f51ac7fde75e69b6a41bf62d979eb045fccf60d78a6d8178f9d48f6",
+          "bytes": 559
+        },
+        "probe_dose.py": {
+          "sha256": "2b08cebba0b77cca4ebc51fb71167b296b24fe01ca7c26e1cf28ca5c48507511",
+          "bytes": 411
+        },
+        "probe_usb.py": {
+          "sha256": "e35b3c741ae12bdcd2900d1f6bdbd607381c47299f0102e0b30ef8cb6ca8d329",
+          "bytes": 482
+        },
+        "README.md": {
+          "sha256": "aea63d82e1664c1f5709ef38d177f613de6f7488c484c9e202522dee16a3c7da",
+          "bytes": 24776
+        },
+        "recorder.py": {
+          "sha256": "16b1439f7c59ad713abc5304d9c89752a9bdb29dbeee8a58b77d0baed195a8d6",
+          "bytes": 29733
+        },
+        "recovery_progress.py": {
+          "sha256": "42bf499aeb7809733042e592b4d155068355206c1b690f87c97ea6c595a1bc81",
+          "bytes": 1248
+        },
+        "release_checks.py": {
+          "sha256": "6ef59ff408dd7326724f550d7920004d5ea2734fc28518721f9714c5b14d5007",
+          "bytes": 2521
+        },
+        "release_checks_legacy_v02.py": {
+          "sha256": "3174e9f2c420ff2c327677a66f36d3aeee25bee903dcd5647f50e339b45764bc",
+          "bytes": 3094
+        },
+        "release_checks_v05.py": {
+          "sha256": "99b442b54b4f31f16466edb86f97838ca69ecde4a8f2c0d760bf9201b34c9f12",
+          "bytes": 3096
+        },
+        "release_checks_v051.py": {
+          "sha256": "6ef59ff408dd7326724f550d7920004d5ea2734fc28518721f9714c5b14d5007",
+          "bytes": 2521
+        },
+        "requirements-app.txt": {
+          "sha256": "c8c7b6b11e69e14efef764b655333c85db200e5d76ed8a50f73c012eec2d96f6",
+          "bytes": 188
+        },
+        "run_policy.py": {
+          "sha256": "a5aa94ea1965441bf1b0ed97ed036880ae0f86bdbf9535c3bbb29fa7fab3d7bb",
+          "bytes": 3415
+        },
+        "run_settings.py": {
+          "sha256": "764d857464cf8e98e8ba071289184f75c2377cc3a4c7ddd747e8365024d20839",
+          "bytes": 2855
+        },
+        "runtime.py": {
+          "sha256": "5b7b549441b180c65a80bf9c59d83b6f050156b7b8abb419a49503ea54821371",
+          "bytes": 435
+        },
+        "saved_status.py": {
+          "sha256": "949884f5d9d028038fcd791936e3df53f3348b0594b8bf874cb4a6d221ddf181",
+          "bytes": 3984
+        },
+        "spectrum_view.py": {
+          "sha256": "e3a4bd94c27b7b7d64f90223dc40665a1e1dbd188f8e4478eeccc765ece7a92e",
+          "bytes": 6777
+        },
+        "status_cache.py": {
+          "sha256": "79851559988f7e79c3a02b8df2c8cf082b508339b973441538484c31352c1854",
+          "bytes": 3449
+        },
+        "status_observations.py": {
+          "sha256": "e3fbd524b0f5afb95d311010ae533a77811917b5e06345f27947acf06db4abab",
+          "bytes": 1062
+        },
+        "storage.py": {
+          "sha256": "d065512e8335d90f97158312683afa8df88e48e5ce7019724843395dd299ebbb",
+          "bytes": 10693
+        },
+        "supervisor.py": {
+          "sha256": "477dbefff8122c6fc5b57779e8448d77839b5fffd078e1f267b9802dea0d3bba",
+          "bytes": 11310
+        },
+        "supervisor_store.py": {
+          "sha256": "5486ed673bf3e9e1fcb3af2d885c0d54f9de093e82df81fa50531bb925e9c9a3",
+          "bytes": 1637
+        },
+        "system_time.py": {
+          "sha256": "19e803cea8f1cfcae620fa2b8d2aa88cac6e8cc4d078c4d4ed9e66f025ed6dda",
+          "bytes": 477
+        },
+        "telemetry_analysis.py": {
+          "sha256": "391d01a7c9526b556b2ee2214943f487485461da3d1f1bc5824a62b35f2f7d3e",
+          "bytes": 8000
+        },
+        "telemetry_decoder.py": {
+          "sha256": "5f611be75a1c2a704dcadd745465a83ab1b8f8960f4046bc1f009fbaa57b0c03",
+          "bytes": 4941
+        },
+        "tests/test_accumulated_spectrum.py": {
+          "sha256": "8b5ab00c57f6d6e292af5af24f9bdd8067573c1e826ee33d8272aa977a51f397",
+          "bytes": 6158
+        },
+        "tests/test_analysis_backup_v04.py": {
+          "sha256": "cbbd73e4b5cfe9f10ffeb79fbe54e066d2550556d2dca363c367a4f2f38e9a39",
+          "bytes": 5491
+        },
+        "tests/test_core.py": {
+          "sha256": "c9b193ee918861e29cc88f10ec42f36ca81623084fb1dc8f33b8b601ba8c59de",
+          "bytes": 11708
+        },
+        "tests/test_display_scales.py": {
+          "sha256": "c57ad485b878caa3d8f12187e6261196ca2d2bd5dc0db2406072fac911d51716",
+          "bytes": 9685
+        },
+        "tests/test_gui_run_settings.py": {
+          "sha256": "b75a58242276c91c7f7851753121531ac09dc879c4d9ab0e886c19146b18331f",
+          "bytes": 5545
+        },
+        "tests/test_reliability.py": {
+          "sha256": "90003eecefc20bf103feed9c83f78a422d6c1507855923a3f9bb7612e515a7c3",
+          "bytes": 14125
+        },
+        "tests/test_spectrum_tab.py": {
+          "sha256": "da04760038bcdf4fbeb5d763043b6dc02b1ac3ac22aa47f7afd1732c38f92290",
+          "bytes": 4446
+        },
+        "tests/test_telemetry_observations.py": {
+          "sha256": "635c696a1b86564db2ff8a7c57496148d81398a71da57d2e24f37179afc63f83",
+          "bytes": 4168
+        },
+        "tests/test_time_resolved.py": {
+          "sha256": "72ebc19d7adab77acb2ffcf311aa7de0eecb65962bba901a1f079b4f71e353f6",
+          "bytes": 11576
+        },
+        "tests/test_upgrade_v04.py": {
+          "sha256": "a34e05ad9f625070c2551adac3e72ce5092c414c8474d05640a72457d2884bc0",
+          "bytes": 8003
+        },
+        "THIRD_PARTY.md": {
+          "sha256": "36a9d4a0ccb4852375dd59ee9039db9b55595bfce23274c4f6deb2a04cabdcb7",
+          "bytes": 1392
+        },
+        "THIRD_PARTY_LICENSES/radiacode-LICENSE.txt": {
+          "sha256": "998340f6275177218bdb77aadcaf3a364ff723edd943b7bfdf0f62063801ce85",
+          "bytes": 1071
+        },
+        "time_export_ui.py": {
+          "sha256": "e0013043ff1d9d5e02ae65d94818797d78d23738081a236e89971c72ece6c993",
+          "bytes": 12063
+        },
+        "time_input.py": {
+          "sha256": "66bd3a37aaa1d83ee277a9f6e065081db139fad953e38886abc0045b78cbca56",
+          "bytes": 3911
+        },
+        "TIME_RESOLVED.md": {
+          "sha256": "92b61bb150e4e1d1c1d7062db892c8fc6e581e0f349fecd05d5589a95896d0a9",
+          "bytes": 9237
+        },
+        "time_resolved.py": {
+          "sha256": "1a35c424d41a8729192fec307e6d6729b4f07144771b61d789baec9a780e9380",
+          "bytes": 19261
+        },
+        "time_units.py": {
+          "sha256": "144f6f7c9e761b24313da36c89e521f42b754216248c035567561db141fe578d",
+          "bytes": 2567
+        },
+        "validation/display_tests_v01.txt": {
+          "sha256": "ae6345760f8c49c058f9b99a41b62bd5665a5bb41314909bbc8783c2ee598c39",
+          "bytes": 1887
+        },
+        "validation/regression_tests_release_v01.txt": {
+          "sha256": "0d9dec8762897854701d758660b5036e7175bae6f74b13af2db95b8c589adb32",
+          "bytes": 18609
+        },
+        "validation/regression_tests_release_v02.txt": {
+          "sha256": "7cef53696921379315585d46218e294a181cb50f1d798285f304ed3fcb75a584",
+          "bytes": 18788
+        },
+        "validation/release_manifest_v01.json": {
+          "sha256": "8ecb254e464558f291a357ffbf8c6dc6ab86418c19b492d8f6f4cd2844c31705",
+          "bytes": 6993
+        },
+        "winfiles.py": {
+          "sha256": "ccf467c72d366ebf8ecaa24a8c037c4bee96c7588f604390828373a03dc3d4ef",
+          "bytes": 602
+        },
+        "worker_client.py": {
+          "sha256": "f33bc4e4f2d185dd22170668ad9830b3ada9c511fe84aaa24a8402483b3093ed",
+          "bytes": 4936
+        }
+      }
+    }
+  ]
+}

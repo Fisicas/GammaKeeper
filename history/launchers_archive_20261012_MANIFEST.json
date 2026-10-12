@@ -1,0 +1,324 @@
+{
+  "created_utc": "2026-10-12T14:54:30.737639+00:00",
+  "source_folder": "C:\\Users\\nelso\\Desktop\\Radiacode Data",
+  "kept_at_root": [
+    "Open_RadiaLog.cmd"
+  ],
+  "moved": [
+    {
+      "name": "Open_overnight_test_v031.cmd",
+      "original_sha256": "dd0a9ea8ba5e0225d8b1e2056b905ca7fddc2fba7f65af6a2f3284f28cecb663",
+      "original_base64": "QGVjaG8gb2ZmCnNldGxvY2FsCnN0YXJ0ICJSYWRpYUxvZyBjdXJyZW50IHJ1biIgIkM6XFVzZXJzXG5lbHNvXC52ZW52c1xjb2RleC1zY2llbmNlLXYxXFNjcmlwdHNccHl0aG9udy5leGUiIC1YIHV0ZjggIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDMxXGd1aS5weSIgLS1pbnNwZWN0LXJ1biAiJX5kcDByYWRpYWNvZGVfbG9nZ2VyX3YwM1xydW5zXDIwMjYxMDA3XzE2NTcyNl81MzU3NTNfUkMtMTAzLTAwNjQ4OSIK",
+      "original_mtime_utc": "2026-10-07T22:00:03.251227+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "37df3ec5a6fd9c0db8f37275a9c5bf439bbd545b6040fad7a974c69fa6a6fae2",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v031\\gui.py",
+          "exists": true
+        },
+        {
+          "path": "radiacode_logger_v03\\runs\\20261007_165726_535753_RC-103-006489",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_before_v05.cmd",
+      "original_sha256": "a215bf33d44204cb469152a3943f8d70c10a52851f5e0d8e5054cf6ff9b6d654",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0MlxMYXVuY2hfUmFkaWFMb2cuY21kIg0K",
+      "original_mtime_utc": "2026-10-08T18:11:12.870190+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "089961722b16414bebbeba544b8dea75d120c978783d1c8306cb85f558c90c95",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v042\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_before_v051.cmd",
+      "original_sha256": "d877ca9584654749346d262d20ab4f02e70df47b7a4e0b56805d1d8717f770af",
+      "original_base64": "QGVjaG8gb2ZmCmNhbGwgIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDVcTGF1bmNoX1JhZGlhTG9nLmNtZCIK",
+      "original_mtime_utc": "2026-10-11T19:28:14.064637+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "28e2d473d15e1898c36315bb592979e731b46e6df0a4228669d2ab132ac3e577",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v05\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v01.cmd",
+      "original_sha256": "f0f16dd874cd89e58699c175db7a00bdfed3b9b9f000054d16f8878994d80910",
+      "original_base64": "QGVjaG8gb2ZmCmNhbGwgIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDFcTGF1bmNoX1JhZGlhTG9nLmNtZCIK",
+      "original_mtime_utc": "2026-10-07T14:07:58.961576+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "42282349d5303bc3f2525de7d90b68711b9b19a97402dc94975bb4e12aa0e1eb",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v01\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v02.cmd",
+      "original_sha256": "da723be46a0f5d63507ee369f70d8fe5e700224cedc068e4f752f626cf605558",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjAyXExhdW5jaF9SYWRpYUxvZy5jbWQiDQo=",
+      "original_mtime_utc": "2026-10-07T14:07:58.962535+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "85b2a16316ea86174da8617f7ac13f9a8b3a127a927a1208410ad3f3fc8b6056",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v02\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v02_preserved.cmd",
+      "original_sha256": "da723be46a0f5d63507ee369f70d8fe5e700224cedc068e4f752f626cf605558",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjAyXExhdW5jaF9SYWRpYUxvZy5jbWQiDQo=",
+      "original_mtime_utc": "2026-10-07T18:23:03.097754+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "85b2a16316ea86174da8617f7ac13f9a8b3a127a927a1208410ad3f3fc8b6056",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v02\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v03.cmd",
+      "original_sha256": "7210662d8c159370cf09f2f9e1d208f54c7350e03ab422279fa1d1f29e2c2087",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjAzXExhdW5jaF9SYWRpYUxvZy5jbWQiDQo=",
+      "original_mtime_utc": "2026-10-07T18:23:03.104480+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "1aaf9d63a9f2e73905fb80ac8c66e87aaad2bc77db74145651033a6c33768f18",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v03\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v031.cmd",
+      "original_sha256": "8454af1a1a3d14f908683fdc5497781174ee5e22510cef8b7d1c426c9ccd51da",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjAzMVxMYXVuY2hfUmFkaWFMb2cuY21kIg0K",
+      "original_mtime_utc": "2026-10-07T21:59:12.377574+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "5866999d9d4d2ce6a5fd5493502a81e9471a30fda504ed1b1b065d7a8d0a502d",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v031\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v031_preserved.cmd",
+      "original_sha256": "8454af1a1a3d14f908683fdc5497781174ee5e22510cef8b7d1c426c9ccd51da",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjAzMVxMYXVuY2hfUmFkaWFMb2cuY21kIg0K",
+      "original_mtime_utc": "2026-10-07T21:59:12.378747+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "5866999d9d4d2ce6a5fd5493502a81e9471a30fda504ed1b1b065d7a8d0a502d",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v031\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v03_0_preserved.cmd",
+      "original_sha256": "7210662d8c159370cf09f2f9e1d208f54c7350e03ab422279fa1d1f29e2c2087",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjAzXExhdW5jaF9SYWRpYUxvZy5jbWQiDQo=",
+      "original_mtime_utc": "2026-10-07T18:23:03.098280+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "1aaf9d63a9f2e73905fb80ac8c66e87aaad2bc77db74145651033a6c33768f18",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v03\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v04.cmd",
+      "original_sha256": "3658a9c3c851eb3a52e04e1fe2a4c2f9daef10b71b81ea2209f77602f2be7cb0",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0XExhdW5jaF9SYWRpYUxvZy5jbWQiDQo=",
+      "original_mtime_utc": "2026-10-08T15:14:59.514264+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "2dc0114707c026b3147759c1be3f5b8909d82fa915527bebd8ae05a989dac38f",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v04\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v041.cmd",
+      "original_sha256": "d8cdebcc0fb48486f70dba3d7270c3843a9c9f55dcf45dbf1e0691f024405960",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0MVxMYXVuY2hfUmFkaWFMb2cuY21kIg0K",
+      "original_mtime_utc": "2026-10-08T16:50:34.435867+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "68b9f62c6559fc27346ad9994306418b9bfcda2b0845b6880ef54ff4e41705b9",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v041\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v041_preserved.cmd",
+      "original_sha256": "d8cdebcc0fb48486f70dba3d7270c3843a9c9f55dcf45dbf1e0691f024405960",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0MVxMYXVuY2hfUmFkaWFMb2cuY21kIg0K",
+      "original_mtime_utc": "2026-10-08T16:50:34.435867+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "68b9f62c6559fc27346ad9994306418b9bfcda2b0845b6880ef54ff4e41705b9",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v041\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v042.cmd",
+      "original_sha256": "a215bf33d44204cb469152a3943f8d70c10a52851f5e0d8e5054cf6ff9b6d654",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0MlxMYXVuY2hfUmFkaWFMb2cuY21kIg0K",
+      "original_mtime_utc": "2026-10-08T18:11:12.870190+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "089961722b16414bebbeba544b8dea75d120c978783d1c8306cb85f558c90c95",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v042\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v04_preserved.cmd",
+      "original_sha256": "3658a9c3c851eb3a52e04e1fe2a4c2f9daef10b71b81ea2209f77602f2be7cb0",
+      "original_base64": "QGVjaG8gb2ZmDQpjYWxsICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0XExhdW5jaF9SYWRpYUxvZy5jbWQiDQo=",
+      "original_mtime_utc": "2026-10-08T15:14:59.515266+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "2dc0114707c026b3147759c1be3f5b8909d82fa915527bebd8ae05a989dac38f",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v04\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v05.cmd",
+      "original_sha256": "d877ca9584654749346d262d20ab4f02e70df47b7a4e0b56805d1d8717f770af",
+      "original_base64": "QGVjaG8gb2ZmCmNhbGwgIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDVcTGF1bmNoX1JhZGlhTG9nLmNtZCIK",
+      "original_mtime_utc": "2026-10-11T19:23:33.815404+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "28e2d473d15e1898c36315bb592979e731b46e6df0a4228669d2ab132ac3e577",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v05\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_RadiaLog_v051.cmd",
+      "original_sha256": "ec4434790fa02541ae9a1f35a7f10e30921855ff7860799504362979f6276cc1",
+      "original_base64": "QGVjaG8gb2ZmCmNhbGwgIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDUxXExhdW5jaF9SYWRpYUxvZy5jbWQiCg==",
+      "original_mtime_utc": "2026-10-12T00:06:44.410153+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "b39f286b39b9f21a58431b212ed7f1bf216a55a3fbd685f83d37b9035d0c0f5a",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v051\\Launch_RadiaLog.cmd",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_test2_v041.cmd",
+      "original_sha256": "b4a4848f72172c2c70f0efa81ea0b4350f12dc311712fbe8e7f31d9051484de9",
+      "original_base64": "QGVjaG8gb2ZmCnNldGxvY2FsCnN0YXJ0ICJSYWRpYUxvZyBjdXJyZW50IHRlc3QgMiIgIkM6XFVzZXJzXG5lbHNvXC52ZW52c1xjb2RleC1zY2llbmNlLXYxXFNjcmlwdHNccHl0aG9udy5leGUiIC1YIHV0ZjggIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDQxXGd1aS5weSIgLS1pbnNwZWN0LXJ1biAiJX5kcDByYWRpYWNvZGVfbG9nZ2VyX3YwNFxydW5zXDIwMjYxMDA4XzEyMjg0MF83NTIzMjZfUkMtMTAzLTAwNjQ4OSIK",
+      "original_mtime_utc": "2026-10-08T16:50:29.773722+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "414d235e62325fbcea72a8b4492cfd5004b7189a3b9f883b8b9228ef6039bbf8",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v041\\gui.py",
+          "exists": true
+        },
+        {
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_test2_v042.cmd",
+      "original_sha256": "ed964d90766821537d323e795ea7cb9cc5ae0aa6aa8eb4b83d01c83bbb48a337",
+      "original_base64": "QGVjaG8gb2ZmCnNldGxvY2FsCnN0YXJ0ICJSYWRpYUxvZyBjdXJyZW50IHRlc3QgMiIgIkM6XFVzZXJzXG5lbHNvXC52ZW52c1xjb2RleC1zY2llbmNlLXYxXFNjcmlwdHNccHl0aG9udy5leGUiIC1YIHV0ZjggIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDQyXGd1aS5weSIgLS1pbnNwZWN0LXJ1biAiJX5kcDByYWRpYWNvZGVfbG9nZ2VyX3YwNFxydW5zXDIwMjYxMDA4XzEyMjg0MF83NTIzMjZfUkMtMTAzLTAwNjQ4OSIK",
+      "original_mtime_utc": "2026-10-08T18:11:08.094595+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "b1387d43fe2e7cc2cd9c242cd9abd15b94ae74c24df6512f7716569b83ae9caa",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v042\\gui.py",
+          "exists": true
+        },
+        {
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_test2_v05.cmd",
+      "original_sha256": "6d3f86c085db4ca7388035c2893d0be61297bcab3efe776f9940b8269e160785",
+      "original_base64": "QGVjaG8gb2ZmCnNldGxvY2FsCnNldCAiUkFESUFMT0dfUFlUSE9OPUM6XFVzZXJzXG5lbHNvXC52ZW52c1xjb2RleC1zY2llbmNlLXYxXFNjcmlwdHNccHl0aG9udy5leGUiCnN0YXJ0ICJSYWRpYUxvZyB0ZXN0IDIiICIlUkFESUFMT0dfUFlUSE9OJSIgLVggdXRmOCAiJX5kcDByYWRpYWNvZGVfbG9nZ2VyX3YwNVxndWkucHkiIC0taW5zcGVjdC1ydW4gIiV+ZHAwcmFkaWFjb2RlX2xvZ2dlcl92MDRccnVuc1wyMDI2MTAwOF8xMjI4NDBfNzUyMzI2X1JDLTEwMy0wMDY0ODkiCg==",
+      "original_mtime_utc": "2026-10-11T19:23:34.058503+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "9c625350e110b4e5f156d73eda60c5552326ccf558cae4f7048c4f7f81429381",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v05\\gui.py",
+          "exists": true
+        },
+        {
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "name": "Open_test2_v051.cmd",
+      "original_sha256": "b259dfa55de48eea9d7b62cdfd585a3f22dd56304f63b846b99edfe323a4bbd5",
+      "original_base64": "QGVjaG8gb2ZmCnNldGxvY2FsCnNldCAiUkFESUFMT0dfUFlUSE9OPUM6XFVzZXJzXG5lbHNvXC52ZW52c1xjb2RleC1zY2llbmNlLXYxXFNjcmlwdHNccHl0aG9udy5leGUiCnN0YXJ0ICJSYWRpYUxvZyB0ZXN0IDIiICIlUkFESUFMT0dfUFlUSE9OJSIgLVggdXRmOCAiJX5kcDByYWRpYWNvZGVfbG9nZ2VyX3YwNTFcZ3VpLnB5IiAtLWluc3BlY3QtcnVuICIlfmRwMHJhZGlhY29kZV9sb2dnZXJfdjA0XHJ1bnNcMjAyNjEwMDhfMTIyODQwXzc1MjMyNl9SQy0xMDMtMDA2NDg5Igo=",
+      "original_mtime_utc": "2026-10-12T00:06:44.648140+00:00",
+      "edit": "replace every \"%~dp0\" with \"%~dp0..\\\"; no other change",
+      "new_sha256": "8cb0918bb6c3dd70a79f3cc3bddf623ab4400d34dcd4c656057e51590fb19960",
+      "targets_checked": [
+        {
+          "path": "radiacode_logger_v051\\gui.py",
+          "exists": true
+        },
+        {
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "exists": true
+        }
+      ]
+    }
+  ],
+  "restore": "write base64-decoded original_base64 back to the workspace root under its name"
+}
