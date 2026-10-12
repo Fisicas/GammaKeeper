@@ -1,0 +1,437 @@
+{
+ "radialog": [
+  {
+   "description": "Official code for the Paper \"RaDialog: A Large Vision-Language Model for Radiology Report Generation and Conversational Assistance\"",
+   "fullName": "ChantalMP/RaDialog",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 122,
+   "updatedAt": "2026-09-27T05:43:12Z"
+  },
+  {
+   "description": "LLaVa Version of RaDialog",
+   "fullName": "ChantalMP/RaDialog_v2",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 26,
+   "updatedAt": "2026-02-11T00:18:48Z"
+  },
+  {
+   "description": "Radiation logger with support for Radmon.",
+   "fullName": "LauraRozier/RadiaLog",
+   "isArchived": false,
+   "language": "Pascal",
+   "stargazersCount": 5,
+   "updatedAt": "2026-09-06T08:12:04Z"
+  },
+  {
+   "description": "",
+   "fullName": "ryan-durbin/RadiaLog",
+   "isArchived": false,
+   "language": "C++",
+   "stargazersCount": 8,
+   "updatedAt": "2026-09-20T23:02:44Z"
+  },
+  {
+   "description": "Coding challenges for Radialogica",
+   "fullName": "vjchen/radialogica",
+   "isArchived": false,
+   "language": "PHP",
+   "stargazersCount": 0,
+   "updatedAt": "2016-05-23T17:01:03Z"
+  },
+  {
+   "description": "",
+   "fullName": "RajanEmbetter/RadiaLogo",
+   "isArchived": false,
+   "language": "",
+   "stargazersCount": 0,
+   "updatedAt": "2024-10-12T10:38:22Z"
+  },
+  {
+   "description": "",
+   "fullName": "Korotovsky-Taras/radialogica",
+   "isArchived": false,
+   "language": "Handlebars",
+   "stargazersCount": 0,
+   "updatedAt": "2024-12-19T13:54:21Z"
+  },
+  {
+   "description": "",
+   "fullName": "abidsabir1234/Radialogy-Assistant",
+   "isArchived": false,
+   "language": "HTML",
+   "stargazersCount": 0,
+   "updatedAt": "2026-10-12T10:47:41Z"
+  },
+  {
+   "description": "Radialogica Coding Problems - Python",
+   "fullName": "shawneegao/radialogica_coding_problems",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 0,
+   "updatedAt": "2016-03-03T16:01:45Z"
+  },
+  {
+   "description": "RADIOLOGIE",
+   "fullName": "abdibouh1/MY-FIRST-PROJET-IN-JAVA-RADIALOGIE-",
+   "isArchived": false,
+   "language": "Java",
+   "stargazersCount": 0,
+   "updatedAt": "2019-06-09T23:19:47Z"
+  },
+  {
+   "description": "",
+   "fullName": "youssef-Inflaixus/RaDialog_v2_modified",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 0,
+   "updatedAt": "2025-05-15T10:37:21Z"
+  }
+ ],
+ "RadiaLog in:name": [
+  {
+   "description": "Official code for the Paper \"RaDialog: A Large Vision-Language Model for Radiology Report Generation and Conversational Assistance\"",
+   "fullName": "ChantalMP/RaDialog",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 122,
+   "updatedAt": "2026-09-27T05:43:12Z"
+  },
+  {
+   "description": "LLaVa Version of RaDialog",
+   "fullName": "ChantalMP/RaDialog_v2",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 26,
+   "updatedAt": "2026-02-11T00:18:48Z"
+  },
+  {
+   "description": "Radiation logger with support for Radmon.",
+   "fullName": "LauraRozier/RadiaLog",
+   "isArchived": false,
+   "language": "Pascal",
+   "stargazersCount": 5,
+   "updatedAt": "2026-09-06T08:12:04Z"
+  },
+  {
+   "description": "",
+   "fullName": "ryan-durbin/RadiaLog",
+   "isArchived": false,
+   "language": "C++",
+   "stargazersCount": 8,
+   "updatedAt": "2026-09-20T23:02:44Z"
+  },
+  {
+   "description": "Coding challenges for Radialogica",
+   "fullName": "vjchen/radialogica",
+   "isArchived": false,
+   "language": "PHP",
+   "stargazersCount": 0,
+   "updatedAt": "2016-05-23T17:01:03Z"
+  },
+  {
+   "description": "",
+   "fullName": "RajanEmbetter/RadiaLogo",
+   "isArchived": false,
+   "language": "",
+   "stargazersCount": 0,
+   "updatedAt": "2024-10-12T10:38:22Z"
+  },
+  {
+   "description": "",
+   "fullName": "Korotovsky-Taras/radialogica",
+   "isArchived": false,
+   "language": "Handlebars",
+   "stargazersCount": 0,
+   "updatedAt": "2024-12-19T13:54:21Z"
+  },
+  {
+   "description": "",
+   "fullName": "abidsabir1234/Radialogy-Assistant",
+   "isArchived": false,
+   "language": "HTML",
+   "stargazersCount": 0,
+   "updatedAt": "2026-10-12T10:47:41Z"
+  },
+  {
+   "description": "Radialogica Coding Problems - Python",
+   "fullName": "shawneegao/radialogica_coding_problems",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 0,
+   "updatedAt": "2016-03-03T16:01:45Z"
+  },
+  {
+   "description": "RADIOLOGIE",
+   "fullName": "abdibouh1/MY-FIRST-PROJET-IN-JAVA-RADIALOGIE-",
+   "isArchived": false,
+   "language": "Java",
+   "stargazersCount": 0,
+   "updatedAt": "2019-06-09T23:19:47Z"
+  },
+  {
+   "description": "",
+   "fullName": "youssef-Inflaixus/RaDialog_v2_modified",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 0,
+   "updatedAt": "2025-05-15T10:37:21Z"
+  }
+ ],
+ "radiacode": [
+  {
+   "description": " Control RadiaCode-10x radiation detectors via Python. Collect real-time measurements, analyze spectra, and manage device settings over USB or Bluetooth.",
+   "fullName": "cdump/radiacode",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 243,
+   "updatedAt": "2026-10-10T12:20:51Z"
+  },
+  {
+   "description": "A comprehensive Arduino library in C++ for interfacing with RadiaCode radiation detection devices via Bluetooth Low Energy (BLE).",
+   "fullName": "mkgeiger/RadiaCode",
+   "isArchived": false,
+   "language": "C++",
+   "stargazersCount": 20,
+   "updatedAt": "2026-10-07T04:18:02Z"
+  },
+  {
+   "description": "Integrate RadiaCode 101 radiation sensor to Home Assiatant",
+   "fullName": "vooon/hass-radiacode",
+   "isArchived": true,
+   "language": "Python",
+   "stargazersCount": 13,
+   "updatedAt": "2026-08-10T19:02:55Z"
+  },
+  {
+   "description": "This python script generates a heatmap overlay with open street maps, folium and pandas for the radiacode 101 gamma spectrometer dosimiter",
+   "fullName": "igmrlm/RadiacodeMapGenerator",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 16,
+   "updatedAt": "2026-09-21T23:34:07Z"
+  },
+  {
+   "description": "Auxiliary tools for working with radiacode devices ",
+   "fullName": "ckuethe/radiacode-tools",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 30,
+   "updatedAt": "2026-10-12T14:18:17Z"
+  },
+  {
+   "description": "A custom Home Assistant integration for RadiaCode radiation detectors via Bluetooth Low Energy.  Connects wirelessly using HA's built-in Bluetooth stack.",
+   "fullName": "303Bryan/ha-radiacode",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 21,
+   "updatedAt": "2026-10-12T03:17:09Z"
+  },
+  {
+   "description": "Connect to RadiaCode devices with your browser",
+   "fullName": "bsharper/radiacode.js",
+   "isArchived": false,
+   "language": "HTML",
+   "stargazersCount": 12,
+   "updatedAt": "2026-07-11T21:48:59Z"
+  },
+  {
+   "description": "Open-source Android companion app for RadiaCode radiation detectors with real-time BLE monitoring, customizable widgets, smart alerts, and isotope identification.",
+   "fullName": "darkmatter2222/Open-RadiaCode-Android",
+   "isArchived": false,
+   "language": "Kotlin",
+   "stargazersCount": 10,
+   "updatedAt": "2026-10-10T14:35:21Z"
+  },
+  {
+   "description": "Radiacode CsI(Tl) scintillator crystal digital twin - Geant4 Application",
+   "fullName": "lucamors/G4Radiacode",
+   "isArchived": false,
+   "language": "C++",
+   "stargazersCount": 9,
+   "updatedAt": "2026-05-04T04:49:03Z"
+  },
+  {
+   "description": "A Homebridge plugin for the Radiascan Radiacode 101 dosimeter",
+   "fullName": "ninjas28/homebridge-radiacode",
+   "isArchived": false,
+   "language": "TypeScript",
+   "stargazersCount": 6,
+   "updatedAt": "2026-03-17T06:35:51Z"
+  },
+  {
+   "description": "Converts exported CSV files by the RadiaCode-101 pocket gamma spectrometer into XML.",
+   "fullName": "medienlampe/RadiaCodeCSVConverter",
+   "isArchived": true,
+   "language": "JavaScript",
+   "stargazersCount": 6,
+   "updatedAt": "2025-12-04T21:32:10Z"
+  },
+  {
+   "description": "Software tooling used to interact with radiacode devices to enable device discovery and spectrum creation and analisys",
+   "fullName": "ngxyzaudax/radiacode-toolkit",
+   "isArchived": false,
+   "language": "Rust",
+   "stargazersCount": 5,
+   "updatedAt": "2026-08-30T14:23:08Z"
+  },
+  {
+   "description": "Script to compile several radiacode files to a single comprehensive map",
+   "fullName": "Iver-Iscariot/Radiacode-map-plotter",
+   "isArchived": false,
+   "language": "HTML",
+   "stargazersCount": 5,
+   "updatedAt": "2025-12-04T21:32:21Z"
+  },
+  {
+   "description": "",
+   "fullName": "pabell/RadiacodeUtilities",
+   "isArchived": false,
+   "language": "HTML",
+   "stargazersCount": 2,
+   "updatedAt": "2025-12-04T21:32:27Z"
+  },
+  {
+   "description": "",
+   "fullName": "newenclave/RadiaCodeDataGN",
+   "isArchived": false,
+   "language": "",
+   "stargazersCount": 3,
+   "updatedAt": "2023-06-26T04:47:37Z"
+  },
+  {
+   "description": "A micropython controller to handle automated RadiaCode 10X operation",
+   "fullName": "ASU-ASCEND/Pico-RadiaCode-Controller",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 3,
+   "updatedAt": "2026-04-22T13:16:30Z"
+  },
+  {
+   "description": "Tools for RadiaCode file manipulation",
+   "fullName": "matusm/At.Matus.Instruments.RadiaCode",
+   "isArchived": false,
+   "language": "C#",
+   "stargazersCount": 2,
+   "updatedAt": "2026-05-21T09:00:06Z"
+  },
+  {
+   "description": "Laborotary works with Radiacode spectrometer",
+   "fullName": "aleksha/rcode-lab",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 2,
+   "updatedAt": "2025-12-04T21:33:17Z"
+  },
+  {
+   "description": "[Mirror] Utilities and documentation for devices commonly released by Phyton / \u0424\u0438\u0442\u043e\u043d, AlmaCode, AngioCode, RadiaCode",
+   "fullName": "WeebDataHoarder/PhytonUtils",
+   "isArchived": false,
+   "language": "Go",
+   "stargazersCount": 3,
+   "updatedAt": "2025-12-26T18:29:35Z"
+  },
+  {
+   "description": "",
+   "fullName": "darkmatter2222/radiacode_spectrogram_analyizer",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 2,
+   "updatedAt": "2026-09-13T16:53:34Z"
+  },
+  {
+   "description": "A tool made to quickly remove multiple sequential points from a Radiacode .rctrk track file.",
+   "fullName": "drive-c/rctrk_track_fixer",
+   "isArchived": false,
+   "language": "HTML",
+   "stargazersCount": 5,
+   "updatedAt": "2026-05-22T15:14:33Z"
+  },
+  {
+   "description": "External Radiacode display for CheapYellowDisplay",
+   "fullName": "Liptoon/RadiacodeCYD",
+   "isArchived": false,
+   "language": "C++",
+   "stargazersCount": 1,
+   "updatedAt": "2026-07-14T15:35:32Z"
+  },
+  {
+   "description": "Code for control and read Radiacode detectors",
+   "fullName": "fermintm/RADIACODETAB5",
+   "isArchived": false,
+   "language": "C",
+   "stargazersCount": 0,
+   "updatedAt": "2026-08-25T20:24:00Z"
+  },
+  {
+   "description": "Using cdump/radiacode and flet with this repository you can build a simple app to catch radiacode-102 data ,send it to ibercivis DB and show the user a simple app with the values obtained.",
+   "fullName": "JustoDario/gamma-radiation-uploader",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 5,
+   "updatedAt": "2025-12-04T21:33:02Z"
+  },
+  {
+   "description": "",
+   "fullName": "MatildaLawton/radiacode",
+   "isArchived": false,
+   "language": "",
+   "stargazersCount": 0,
+   "updatedAt": "2025-07-29T02:59:35Z"
+  },
+  {
+   "description": "",
+   "fullName": "farkasnir69-creator/radiacode",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 0,
+   "updatedAt": "2026-10-04T01:36:20Z"
+  },
+  {
+   "description": "Home assistant app to send Radiacode measurements to an MQTT broker.",
+   "fullName": "haberda/radiacode2mqtt",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 1,
+   "updatedAt": "2026-09-22T13:46:39Z"
+  },
+  {
+   "description": "",
+   "fullName": "usenix17/radiacode",
+   "isArchived": false,
+   "language": "JavaScript",
+   "stargazersCount": 0,
+   "updatedAt": "2026-03-14T01:35:03Z"
+  },
+  {
+   "description": "Code repository for the Hamadohri IEEE Nuclear Instrumentation School in Japan",
+   "fullName": "mpurschke/radiacode",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 0,
+   "updatedAt": "2026-07-20T19:43:09Z"
+  },
+  {
+   "description": "radiacode Geant4 simulations",
+   "fullName": "rcochrane55/radiacode-sims",
+   "isArchived": false,
+   "language": "C++",
+   "stargazersCount": 1,
+   "updatedAt": "2026-10-03T18:38:38Z"
+  }
+ ],
+ "radiacode logger": [],
+ "radiacode spectrogram": [
+  {
+   "description": "",
+   "fullName": "darkmatter2222/radiacode_spectrogram_analyizer",
+   "isArchived": false,
+   "language": "Python",
+   "stargazersCount": 2,
+   "updatedAt": "2026-09-13T16:53:34Z"
+  }
+ ],
+ "radiacode spectrum recorder": [],
+ "radiacode data logger": []
+}

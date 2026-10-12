@@ -1,0 +1,12 @@
+{
+ "v03_recent_preview_s": 0.2760524000041187,
+ "v03_full_preview_uncached_s": 8.078139999997802,
+ "v03_full_rows": 578,
+ "v04_full_preview_uncached_s": 116.83216429999447,
+ "v04_resume_scan_equivalent_s": 9.181044999990263,
+ "v04_resume_scan_files": 17882,
+ "v04_cold_telemetry_replay_s": 4.735314799996559,
+ "v04_replay_ticks": 36,
+ "v04_replay_worst_tick_s": 0.1531303000083426,
+ "done": true
+}

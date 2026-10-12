@@ -1,0 +1,8 @@
+{
+ "note": "Resume-check cost breakdown, test 2 run (v04, 17,882 spectra, mean 9.5 KiB/file). Native Windows, science venv, warm file cache, single measurement, 2026-10-12. Read-only.",
+ "list_sort_s": 0.08, "read_s": 2.09, "sha256_s": 0.37, "json_parse_s": 1.79, "reconstruct_s": 4.50,
+ "pass1_total_s": 8.83, "pass1_ms_per_file": 0.494,
+ "pass2_dose_rebuild_s": 3.88, "pass2_ms_per_file": 0.217,
+ "extrapolated_warm_both_passes_s": {"7d_10s": 43, "7d_5s": 86, "14d_10s": 86, "7d_1s": 430},
+ "cold_cache_after_reboot": "not measured"
+}

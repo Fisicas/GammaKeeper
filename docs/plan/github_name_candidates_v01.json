@@ -1,0 +1,102 @@
+{
+ "GammaLedger": [
+  {
+   "description": "Master your trading performance by analyzing results, tracking portfolio dynamics, and optimizing options strategies for continuous improvement.",
+   "fullName": "r-brown/GammaLedger",
+   "stargazersCount": 23
+  }
+ ],
+ "SpectraVigil": [],
+ "GammaChron": [],
+ "SpecChron": [],
+ "GammaVigil": [],
+ "Spectrolog": [
+  {
+   "description": "Images to audio files with corresponding spectrograms encoder.",
+   "fullName": "solusipse/spectrology",
+   "stargazersCount": 279
+  },
+  {
+   "description": "UGen graph functions made spectrograms",
+   "fullName": "LukasNowok/spectrology",
+   "stargazersCount": 3
+  },
+  {
+   "description": "",
+   "fullName": "pluckas/spectrolog-support",
+   "stargazersCount": 0
+  },
+  {
+   "description": "Logo files for Spectro Cloud",
+   "fullName": "Eciton82/SpectroLogo",
+   "stargazersCount": 0
+  }
+ ],
+ "GammaWatch": [
+  {
+   "description": "Monitoring Radiation in the Portuguese Environment ",
+   "fullName": "FuryCode-bit/GammaWatch",
+   "stargazersCount": 1
+  }
+ ],
+ "ChronoSpec": [
+  {
+   "description": "",
+   "fullName": "madhavpoddar2005/ChronoSpec",
+   "stargazersCount": 0
+  },
+  {
+   "description": "",
+   "fullName": "kaikaiying/ChronoSpec",
+   "stargazersCount": 0
+  },
+  {
+   "description": "A productivity tracking app I wrote in Spring 2015 for my app development class using MeteorJS.",
+   "fullName": "rcoppy/Chronospect",
+   "stargazersCount": 0
+  },
+  {
+   "description": "A simple LED matrix clock built with arduino (or at least it will be some day)",
+   "fullName": "apparentlymart/chronospeck",
+   "stargazersCount": 0
+  },
+  {
+   "description": "Financial Time-Series Forecasting & Analytics Engine",
+   "fullName": "gabsgj/ChronoSpectra",
+   "stargazersCount": 0
+  },
+  {
+   "description": "Website",
+   "fullName": "ChronoSpect/ChronoSpect",
+   "stargazersCount": 0
+  },
+  {
+   "description": "",
+   "fullName": "shijianus/ChronoSpect",
+   "stargazersCount": 1
+  },
+  {
+   "description": "Codebase for iOS Chronospect Social App",
+   "fullName": "anoadragon453/Chronospect-iOS",
+   "stargazersCount": 0
+  },
+  {
+   "description": "ChronoSpectrum Engine \u2014 laboratorio interactivo de procesamiento de se\u00f1ales en im\u00e1genes y video: magnificaci\u00f3n de movimiento euleriana, limpieza espectral 2D-FFT y correlaci\u00f3n de fase sub-p\u00edxel, con backend FastAPI + WebSocket y frontend React/Vite en tiempo real.",
+   "fullName": "ingDan7/ChronoSpectrum-Engine",
+   "stargazersCount": 0
+  },
+  {
+   "description": "",
+   "fullName": "chronospectersystems/chronospectersystems.github.io",
+   "stargazersCount": 0
+  }
+ ],
+ "GammaKeeper": [],
+ "SpectraLedger": [
+  {
+   "description": "SPECTRALEDGER  -  Autonomous 5G Spectrum Arbitrage & Enterprise Bandwidth Clearinghouse",
+   "fullName": "Alwintamilselvan/VINHACK_IC741_SPECTRALEDGER",
+   "stargazersCount": 0
+  }
+ ]
+}
