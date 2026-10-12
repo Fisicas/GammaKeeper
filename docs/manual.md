@@ -1,4 +1,4 @@
-# GammaKeeper
+# GammaKeeper manual and release notes
 
 GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCode detectors over USB on Windows, for unattended multi-day experiments such as sealed-canister radon measurements on activated charcoal. It keeps immutable, hash-verified raw spectra, a crash-safe journal, SNTP-referenced timing, automatic reconnect with flagged gap aggregates, and resumable schedules. It is independent community software, not affiliated with RadiaCode / Scan-Electronics.
 
