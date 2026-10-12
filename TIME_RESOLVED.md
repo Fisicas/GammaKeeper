@@ -1,4 +1,6 @@
-# Time input and time-resolved spectra — RadiaLog 0.5.0
+# Time input and time-resolved spectra — GammaKeeper
+
+Introduced in RadiaLog 0.5.0.
 
 ## Recording schedule
 

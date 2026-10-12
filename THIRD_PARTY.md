@@ -1,6 +1,6 @@
-# Third-party dependencies
+# Third-party dependencies — GammaKeeper
 
-This folder contains application-local `radiacode` 0.4.0 and its installed dependencies. Their original license/metadata files are retained under `dependencies/*dist-info`. The shared environment supplies PySide6 6.11.2, NumPy 2.5.3 and Matplotlib 3.11.2; it was not modified. The local installed-version list is in `dependencies-lock-v01.txt`.
+The `dependencies` folder contains application-local `radiacode` 0.4.0 and its installed dependencies. Their original license/metadata files are retained under `dependencies/*dist-info`. The shared environment supplies PySide6 6.11.2, NumPy 2.5.3 and Matplotlib 3.11.2; it was not modified. The local installed-version list is in `dependencies-lock-v01.txt`.
 
 - radiacode: https://github.com/cdump/radiacode — MIT; protocol client/decoders.
 - pyusb: https://github.com/pyusb/pyusb — BSD; installed dependency, unused by Phyton transport.

@@ -1,4 +1,6 @@
-# Linear and logarithmic views — RadiaLog 0.5.1
+# Linear and logarithmic views — GammaKeeper
+
+Introduced in RadiaLog 0.5.1.
 
 In **Spectrum / ROI**, choose **Energy axis** and **Counts axis** independently. All four combinations are available: linear/linear, log/linear, linear/log and log/log. The controls apply to the latest interval, selected interval/group, accumulated recording and accumulated UTC collection range.
 
@@ -10,6 +12,6 @@ Zero/nonpositive values cannot be represented on logarithmic axes. They are hidd
 
 An all-zero log spectrum shows an explanation and a positive display domain, without inventing counts. The navigation toolbar resets its Home history when scales change so it cannot restore incompatible linear limits onto a log axis. A single saved time interval uses its actual start/end as the time-axis extent.
 
-Scale toggles redraw already displayed data. They do not connect to the device, restart acquisition or trigger another accumulated-spectrum reconstruction. Close the old GUI and reopen with the workspace's `Open_RadiaLog.cmd` or `Open_RadiaLog_v051.cmd`; closing the GUI does not stop its independent recorder. The initial new-release launch can read the previous release's GUI preferences, preserving the last selected recording or setup.
+Scale toggles redraw already displayed data. They do not connect to the device, restart acquisition or trigger another accumulated-spectrum reconstruction. Close the old GUI and reopen it (see **Start** in the README); closing the GUI does not stop its independent recorder. The initial new-release launch can read the previous release's GUI preferences, preserving the last selected recording or setup.
 
 Validation evidence is in `validation/release_manifest_v*.json` and `../display_scales_20261011_v01`. Original v0.5.0 source and all raw recordings remain preserved. Saved-run renders are owned Qt-widget snapshots, not automated control of an existing desktop window.

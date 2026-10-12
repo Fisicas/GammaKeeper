@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import time
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
-os.environ['RADIALOG_TEST_MODE']='1'
+os.environ['GAMMAKEEPER_TEST_MODE']='1'
 from PySide6 import QtWidgets as Q, QtCore, QtGui
 from gui import Window, ROOT
 from storage import immutable_json

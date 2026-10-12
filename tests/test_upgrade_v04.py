@@ -1,5 +1,5 @@
 import os
-os.environ['RADIALOG_TEST_MODE']='1'
+os.environ['GAMMAKEEPER_TEST_MODE']='1'
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))

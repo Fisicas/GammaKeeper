@@ -27,7 +27,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
             preferences=gui_preferences.read(ROOT.parent/'radiacode_logger_v05')
         remembered=preferences.get('run')
         if inspect_run is None and remembered and (Path(remembered)/'manifest.json').exists():inspect_run=remembered
-        self.setWindowTitle(f'RadiaLog {VERSION} — experiment recorder')
+        self.setWindowTitle(f'GammaKeeper {VERSION} — experiment recorder')
         self.resize(1500, 980)
         self.run = Path(inspect_run) if inspect_run else None
         self.recorder = None
@@ -48,7 +48,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         layout = Q.QVBoxLayout(main)
         layout.setContentsMargins(24, 18, 24, 18)
         header = Q.QHBoxLayout()
-        title = Q.QLabel('RadiaLog')
+        title = Q.QLabel('GammaKeeper')
         title.setObjectName('title')
         header.addWidget(title)
         subtitle = Q.QLabel('Spectra, counts and dose • durable experiment logging')
@@ -131,7 +131,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
 
     def fail(self, error):
         self.message(str(error))
-        Q.QMessageBox.warning(self, 'RadiaLog', str(error))
+        Q.QMessageBox.warning(self, 'GammaKeeper', str(error))
 
     def closeEvent(self, event):
         # Recorder has its own process and saved control/status files; window closure

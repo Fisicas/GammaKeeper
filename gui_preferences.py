@@ -5,8 +5,13 @@ import sqlite3
 from pathlib import Path
 
 
+def test_mode():
+    # GAMMAKEEPER_TEST_MODE is the current name; RADIALOG_TEST_MODE is still honored.
+    return '1' in (os.environ.get('GAMMAKEEPER_TEST_MODE'), os.environ.get('RADIALOG_TEST_MODE'))
+
+
 def read(root):
-    if os.environ.get('RADIALOG_TEST_MODE')=='1':return {}
+    if test_mode():return {}
     file=Path(root)/'gui_preferences.sqlite'
     if not file.exists():return {}
     try:
@@ -19,7 +24,7 @@ def read(root):
 
 
 def save(root,value):
-    if os.environ.get('RADIALOG_TEST_MODE')=='1':return
+    if test_mode():return
     try:
         db=sqlite3.connect(Path(root)/'gui_preferences.sqlite',timeout=.05)
         try:

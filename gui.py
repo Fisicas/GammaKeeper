@@ -1,4 +1,4 @@
-"""Compatibility entry point for the RadiaLog/GammaKeeper window.
+"""Compatibility entry point for the GammaKeeper window.
 
 The window now lives in ui/. Launchers start this file, and tests and gui_smoke.py
 import these names from it."""

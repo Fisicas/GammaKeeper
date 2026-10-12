@@ -247,7 +247,7 @@ class SetupPanelMixin:
             if file.resolve().parent != self.run.resolve():
                 raise ValueError('Invalid stop-control path')
             if not file.exists():
-                file.write_text('Stop requested from RadiaLog GUI\n', encoding='utf-8')
+                file.write_text('Stop requested from GammaKeeper GUI\n', encoding='utf-8')
             self.message('Stop requested; waiting for the recorder to save and close')
             self.stop_button.setEnabled(False)
         except Exception as error:
@@ -260,7 +260,7 @@ class SetupPanelMixin:
         path = Q.QFileDialog.getExistingDirectory(self, 'Select a run containing manifest.json', str(ROOT / 'runs'))
         if path:
             if not (Path(path) / 'manifest.json').exists():
-                self.fail('Selected folder is not a RadiaLog run')
+                self.fail('Selected folder is not a recorded run (no manifest.json)')
                 return
             self.run = Path(path)
             self.last_seq = None

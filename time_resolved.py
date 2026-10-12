@@ -273,7 +273,7 @@ def export_series(run, target=None, mode='native', width_s=None, step_s=None, nu
         rcspg = None
         if not overlapping:
             rcspg = stem + '.rcspg'
-            payload = rcspg_payload(rows, counts, segment[0]['calibration'], config, config['label'] or 'RadiaLog time-resolved spectra')
+            payload = rcspg_payload(rows, counts, segment[0]['calibration'], config, config['label'] or 'GammaKeeper time-resolved spectra')
             (target / rcspg).write_text(json.dumps(payload, separators=(',', ':')), encoding='utf-8')
             _, restored = read_rcspg(target / rcspg)
             if not np.array_equal(restored, counts):

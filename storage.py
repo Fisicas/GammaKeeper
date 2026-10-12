@@ -53,6 +53,7 @@ class DeviceMutex:
         self.api.CreateMutexW.restype = w.HANDLE
         self.api.ReleaseMutex.argtypes = [w.HANDLE]
         self.api.CloseHandle.argtypes = [w.HANDLE]
+        # Mutex name shared with RadiaLog v0.1-v0.5.1 so old and new releases exclude each other; never rename.
         self.handle = self.api.CreateMutexW(None, True, 'Local\\RadiaLog_' + serial.replace('\\', '_'))
         err = ctypes.get_last_error()
         if not self.handle:
@@ -60,7 +61,7 @@ class DeviceMutex:
         if err == 183:
             self.api.CloseHandle(self.handle)
             self.handle = None
-            raise RuntimeError('Another RadiaLog recorder already owns this serial number')
+            raise RuntimeError('Another GammaKeeper or RadiaLog recorder already owns this serial number')
 
     def close(self):
         if self.handle:
