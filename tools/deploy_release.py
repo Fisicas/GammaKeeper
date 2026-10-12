@@ -14,7 +14,7 @@ using an older one. ``current.txt`` is written only with --activate, and only
 when the tests ran and passed.
 
 Usage:
-    python -X utf8 tools/deploy_release.py TAG [--compare-folder DIR] [--activate]
+    python -X utf8 tools/deploy_release.py TAG_OR_BRANCH [--compare-folder DIR] [--activate]
     python -X utf8 tools/deploy_release.py TAG --skip-tests "reason recorded in DEPLOYMENT.json"
 """
 import argparse
@@ -95,27 +95,81 @@ def run_tests(staging, python):
     return dict(passed=result.returncode == 0, summary=summary, tail=result.stderr.splitlines()[-30:])
 
 
+LAUNCHER = r'''"""Start the active GammaKeeper release (written by tools/deploy_release.py; do not edit).
+
+Desktop and Start Menu shortcuts run this file with pythonw.exe, so they never change when
+another release is activated: current.txt names the release folder to start.
+"""
+import ctypes
+import subprocess
+import sys
+from pathlib import Path
+
+here = Path(__file__).resolve().parent
+try:
+    release = here / (here / 'current.txt').read_text(encoding='ascii').strip()
+    app = release / 'app' if (release / 'app' / 'gui.py').is_file() else release
+    if not (app / 'gui.py').is_file():
+        raise FileNotFoundError(app / 'gui.py')
+    subprocess.Popen([sys.executable, '-X', 'utf8', str(app / 'gui.py'), *sys.argv[1:]], cwd=app)
+except (OSError, ValueError) as error:
+    ctypes.windll.user32.MessageBoxW(None, f'No active GammaKeeper release could be started:\n{error}\n\n'
+                                     'Run tools\\install_gammakeeper.cmd from the repository.', 'GammaKeeper', 0x10)
+'''
+
+
+def release_name(ref, commit):
+    """Tags keep their name; anything else (a branch) becomes <branch>-<short commit>."""
+    tagged = subprocess.run(['git', '-C', str(REPO), 'rev-parse', '--verify', '--quiet', f'refs/tags/{ref}'],
+                            capture_output=True).returncode == 0
+    if tagged:
+        return ref
+    return ''.join(c if c.isalnum() or c in '.-_' else '-' for c in ref.split('/')[-1]) + '-' + commit[:7]
+
+
+def activate(releases, name):
+    """Point current.txt at a release and refresh the stable launcher and icon beside it."""
+    current = releases / 'current.txt'
+    temporary = current.with_suffix('.tmp')
+    temporary.write_text(name + '\n', encoding='ascii')
+    os.replace(temporary, current)
+    (releases / 'GammaKeeper.pyw').write_text(LAUNCHER, encoding='utf-8', newline='\n')
+    icon = app_root(releases / name) / 'ui' / 'resources' / 'gammakeeper.ico'
+    if icon.is_file():
+        shutil.copyfile(icon, releases / 'gammakeeper.ico')
+    print(f'activated: {current} -> {name}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('tag')
+    parser.add_argument('ref', help='tag (installed under its name) or branch such as origin/main (installed as <branch>-<commit>)')
     parser.add_argument('--releases', type=Path, default=DEFAULT_RELEASES)
     parser.add_argument('--python', type=Path, default=SCIENCE_PYTHON)
     parser.add_argument('--compare-folder', type=Path)
     parser.add_argument('--skip-tests', metavar='REASON')
-    parser.add_argument('--activate', action='store_true', help='point releases/current.txt at this tag')
+    parser.add_argument('--activate', action='store_true', help='point releases/current.txt at this release')
     args = parser.parse_args()
     if args.activate and args.skip_tests:
         raise SystemExit('--activate requires the tests to run and pass')
-    commit = git('rev-parse', f'{args.tag}^{{commit}}').decode().strip()
-    dest = args.releases / args.tag
-    staging = args.releases / (args.tag + '.partial')
+    commit = git('rev-parse', f'{args.ref}^{{commit}}').decode().strip()
+    name = release_name(args.ref, commit)
+    dest = args.releases / name
+    staging = args.releases / (name + '.partial')
     if dest.exists():
-        raise SystemExit(f'{dest} already exists; releases are never replaced')
+        previous = json.loads((dest / 'DEPLOYMENT.json').read_text(encoding='utf-8'))
+        if previous.get('commit') != commit:
+            raise SystemExit(f'{dest} already exists for another commit; releases are never replaced')
+        if args.activate and not previous.get('tests', {}).get('passed'):
+            raise SystemExit(f'{dest} is installed but its tests did not run and pass; not activating it')
+        print(f'{name} ({commit[:10]}) is already installed at {dest}')
+        if args.activate:
+            activate(args.releases, name)
+        return 0
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
-    blobs = export(args.tag, staging)
-    record = dict(tag=args.tag, commit=commit, created_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
+    blobs = export(args.ref, staging)
+    record = dict(tag=name, ref=args.ref, commit=commit, created_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
                   source_repository=str(REPO), files=len(blobs),
                   file_sha256={p: sha256((staging / p).read_bytes()) for p in sorted(blobs)})
     if args.compare_folder:
@@ -131,13 +185,9 @@ def main():
     with open(staging / 'DEPLOYMENT.json', 'x', encoding='utf-8') as out:
         json.dump(record, out, indent=2)
     staging.rename(dest)
-    print(f'installed {args.tag} ({commit[:10]}) at {dest}')
+    print(f'installed {name} ({commit[:10]}) at {dest}')
     if args.activate:
-        current = args.releases / 'current.txt'
-        temporary = current.with_suffix('.tmp')
-        temporary.write_text(args.tag + '\n', encoding='ascii')
-        os.replace(temporary, current)
-        print(f'activated: {current} -> {args.tag}')
+        activate(args.releases, name)
     return 0
 
 
