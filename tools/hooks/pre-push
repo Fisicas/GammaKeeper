@@ -1,0 +1,32 @@
+#!/bin/sh
+# GammaKeeper pre-push hook (plan D41). GitHub Free cannot protect branches of a
+# private repository, so this hook refuses direct pushes to main and runs the
+# test suite before any other push. Merge into main through a pull request.
+#
+# Install once per clone (repo-local):  git config core.hooksPath tools/hooks
+# Approved exception for main:          GAMMAKEEPER_ALLOW_MAIN_PUSH=1 git push ...
+
+zero=0000000000000000000000000000000000000000
+pushing=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ] && [ "$GAMMAKEEPER_ALLOW_MAIN_PUSH" != "1" ]; then
+        echo "pre-push: direct pushes to main are refused; push a branch and open a pull request." >&2
+        exit 1
+    fi
+    [ "$local_sha" != "$zero" ] && pushing=1
+done
+[ "$pushing" = "1" ] || exit 0
+
+root=$(git rev-parse --show-toplevel)
+python="${RADIALOG_SCIENCE_PYTHON:-C:/Users/nelso/.venvs/codex-science-v1/Scripts/python.exe}"
+if [ ! -d "$root/dependencies" ]; then
+    echo "pre-push: dependencies/ is missing; run: \"$python\" -X utf8 tools/vendor_dependencies.py" >&2
+    exit 1
+fi
+mkdir -p "$root/logs"
+echo "pre-push: running the test suite (about a minute)..." >&2
+cd "$root" && "$python" -X utf8 -m unittest discover -s tests >"$root/logs/pre-push-tests.log" 2>&1
+status=$?
+tail -n 3 "$root/logs/pre-push-tests.log" >&2
+[ $status -eq 0 ] || echo "pre-push: tests failed; full output in logs/pre-push-tests.log" >&2
+exit $status

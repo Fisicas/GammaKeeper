@@ -7,7 +7,7 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Send commands to a physical device, or start a recorder against one. Hardware-in-the-loop checks are run by Michael only.
 - Create scheduled tasks, change the registry or other Windows settings, or install anything into the shared science environment (`C:\Users\nelso\.venvs\codex-science-v1`).
 - Rename internal identifiers that old releases share: the mutex names `Local\RadiaLog_<serial>` and `…_supervisor`, run-folder layout, manifest/journal field names and schema values.
-- Rewrite pushed history, force-push, or commit directly to `main`.
+- Rewrite pushed history, force-push, commit directly to `main`, or bypass the pre-push hook (`--no-verify`, `GAMMAKEEPER_ALLOW_MAIN_PUSH`). GitHub Free gives this private repository no branch protection; the hook in `tools/hooks/` (installed with `git config core.hooksPath tools/hooks`) is the only guard.
 
 ## Always
 - Work on one branch per work item (`feat/…`, `fix/…`, `docs/…`), in your own git worktree, so parallel agents never share a working copy.
