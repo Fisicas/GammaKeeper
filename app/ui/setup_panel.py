@@ -10,7 +10,7 @@ from winfiles import process_alive
 from run_settings import load_run_settings, run_summary
 from run_policy import require_resume
 from time_input import TimeInput
-from ui.paths import ROOT
+from ui.paths import DATA_ROOT, ROOT
 
 
 class SettingsSpinBox(Q.QDoubleSpinBox):
@@ -41,7 +41,7 @@ class SetupPanelMixin:
         self.days.setDecimals(9)
         self.days.setValue(7)
         self.days.setSuffix(' days')
-        self.folder = Q.QLineEdit(str(ROOT / 'runs'))
+        self.folder = Q.QLineEdit(str(DATA_ROOT))
         self.demo = Q.QCheckBox('Simulation mode (no hardware)')
         for text, widget in [('Run label', self.label), ('USB serial number', self.serial), ('Spectrum / count interval', self.interval),
                              ('Duration • 0 = continuous', self.days), ('Save runs under', self.folder)]:
@@ -257,7 +257,7 @@ class SetupPanelMixin:
         if self.active():
             self.fail('Stop the selected recording before switching runs; reopen this window to monitor another run')
             return
-        path = Q.QFileDialog.getExistingDirectory(self, 'Select a run containing manifest.json', str(ROOT / 'runs'))
+        path = Q.QFileDialog.getExistingDirectory(self, 'Select a run containing manifest.json', str(DATA_ROOT))
         if path:
             if not (Path(path) / 'manifest.json').exists():
                 self.fail('Selected folder is not a recorded run (no manifest.json)')

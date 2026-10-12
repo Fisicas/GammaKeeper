@@ -13,7 +13,7 @@ import gui_preferences
 import display_controls
 from ui.analysis_panel import AnalysisUI
 from ui.charts import Charts
-from ui.paths import ROOT
+from ui.paths import DATA_ROOT, ROOT
 from ui.run_status import RunStatusMixin
 from ui.setup_panel import SetupPanelMixin
 from ui.splash import SplashScreen, app_icon, set_app_user_model_id
@@ -122,7 +122,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
             self.serial.setText(values.get('serial','RC-103-006489'))
             self.interval.setValue(values.get('interval_s',10))
             self.days.setValue(values.get('days',7))
-            self.folder.setText(values.get('folder',str(ROOT/'runs')))
+            self.folder.setText(values.get('folder',str(DATA_ROOT)))
             self.demo.setChecked(values.get('demo',False))
         display_controls.restore(self,preferences.get("display",{}))
         self.refresh()
