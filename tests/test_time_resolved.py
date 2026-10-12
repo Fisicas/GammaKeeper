@@ -16,6 +16,7 @@ from PySide6 import QtWidgets as Q
 from time_units import parse_time
 from time_input import TimeInput
 from time_resolved import export_series, group_indices, read_rcspg, load_segments
+from analysis import VERSION
 from run_policy import validate_schedule
 from recorder import make_config
 from storage import RunStore
@@ -188,6 +189,14 @@ class SpectralSeries(unittest.TestCase):
         self.assertEqual(arrays['counts'].shape, (7, 3))
         book.close()
         arrays.close()
+
+    def test_report_records_current_software_version(self):
+        target, report, arrays = self.output(self.run_data())
+        arrays.close()
+        self.assertEqual(report['software_version'], VERSION)
+        complete = json.loads((target/'COMPLETE.json').read_text(encoding='utf-8'))
+        self.assertEqual(complete['software_version'], VERSION)
+        self.assertEqual(complete['schema'], 'radialog-time-resolved-v1')
 
     def test_hash_corruption_fails_without_complete_output(self):
         run = self.run_data()

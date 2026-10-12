@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 import uuid
 import numpy as np
-from analysis import reconstruct, midpoint, timestamp
+from analysis import reconstruct, midpoint, timestamp, VERSION
 from export_run import readonly
 from time_units import parse_time
 
@@ -215,7 +215,7 @@ def export_series(run, target=None, mode='native', width_s=None, step_s=None, nu
     target = Path(target).resolve() if target else Path(run) / ('time_resolved_' + dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ'))
     target.mkdir(parents=True, exist_ok=False)
     overlapping = mode == 'sliding' and step < width
-    report = dict(schema='radialog-time-resolved-v1', software_version='0.5.0', source_run=str(Path(run).resolve()),
+    report = dict(schema='radialog-time-resolved-v1', software_version=VERSION, source_run=str(Path(run).resolve()),
                   source_manifest=config, source=source, mode=mode, requested_width_s=width_s, requested_step_s=step_s,
                   requested_number=number if mode == 'number' else None, start_utc=iso(start) if start is not None else None,
                   end_utc=iso(end) if end is not None else None, selected_epoch=epoch, time_zero_utc=iso(zero),
