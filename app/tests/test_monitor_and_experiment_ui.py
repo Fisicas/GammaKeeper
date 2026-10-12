@@ -75,6 +75,17 @@ class MonitorAndUI(unittest.TestCase):
             window.preview_pool.waitForDone(10000);window.accumulation_pool.waitForDone(10000);window.science_pool.waitForDone(10000)
             window.timer.stop();window.notes_timer.stop();window.close();self.app.processEvents()
 
+    def test_science_task_runs_when_started_by_qt(self):
+        # The GUI path: Qt calls the task's run(); an attribute named run would shadow it.
+        import threading
+        from PySide6 import QtCore
+        from ui.experiment_tab import ScienceTask
+        run=self.data();messages=[]
+        task=ScienceTask(run,3.0,threading.Event());task.setAutoDelete(False)
+        task.signals.done.connect(messages.append,QtCore.Qt.ConnectionType.DirectConnection)
+        pool=QtCore.QThreadPool();pool.start(task);self.assertTrue(pool.waitForDone(30000))
+        self.assertEqual(len(messages),1)
+        self.assertIsNone(messages[0]['error']);self.assertIsNotNone(messages[0]['result'])
     def test_background_link_negative_net_and_shared_variance_are_explicit(self):
         run=self.data();background=self.root/'background'
         store=RunStore(background,make_config('BACKGROUND',10,0,'demo','synthetic background'))

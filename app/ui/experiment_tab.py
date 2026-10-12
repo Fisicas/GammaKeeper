@@ -24,10 +24,11 @@ class ScienceSignals(QtCore.QObject):
 
 class ScienceTask(QtCore.QRunnable):
     def __init__(self,run,cutoff,cancel):
-        super().__init__();self.run=run;self.cutoff=cutoff;self.cancel=cancel;self.signals=ScienceSignals()
+        # Not self.run: that attribute would shadow QRunnable.run(), so Qt could never start the task.
+        super().__init__();self.run_path=run;self.cutoff=cutoff;self.cancel=cancel;self.signals=ScienceSignals()
     def run(self):
-        try:message=dict(run=str(self.run),result=progress(self.run,ROOT/'cache'/'scientific',self.cutoff,self.cancel.is_set),error=None)
-        except Exception as error:message=dict(run=str(self.run),result=None,error=str(error))
+        try:message=dict(run=str(self.run_path),result=progress(self.run_path,ROOT/'cache'/'scientific',self.cutoff,self.cancel.is_set),error=None)
+        except Exception as error:message=dict(run=str(self.run_path),result=None,error=str(error))
         self.signals.done.emit(message)
 
 
