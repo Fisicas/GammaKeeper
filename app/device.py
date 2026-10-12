@@ -166,7 +166,8 @@ class ReadoutDevice(RadiaCode):
                    COMMAND.RD_VIRT_STRING, COMMAND.RD_VIRT_SFR, COMMAND.RD_VIRT_SFR_BATCH,
                    COMMAND.SET_TIME, COMMAND.SET_EXCHANGE}
         if reqtype == COMMAND.WR_VIRT_SFR:
-            if args != struct.pack('<II', int(VSFR.DEVICE_TIME), 0) and (self._permitted_write is None or args != self._permitted_write):
+            permitted = getattr(self, '_permitted_write', None)  # absent means nothing extra is permitted
+            if args != struct.pack('<II', int(VSFR.DEVICE_TIME), 0) and (permitted is None or args != permitted):
                 raise PermissionError('Only exchange timebase initialization and the click-sound flag may be written')
         elif reqtype not in allowed:
             raise PermissionError(f'Blocked device command {reqtype}')
