@@ -16,3 +16,5 @@ def data_root(environ=os.environ):
 
 
 DATA_ROOT = data_root()
+# GUI preferences live beside the data, so upgrades and side-by-side releases share them.
+SETTINGS_DIR = DATA_ROOT / '_settings'
