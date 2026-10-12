@@ -194,6 +194,15 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                     # Recorder sees the same stable stop file across restarts.
                     state['status'] = 'stopping'
                 time.sleep(.2)
+            if watcher and not host_ending:
+                # The recorder can finish its shutdown before this loop's next poll; read what arrived meanwhile.
+                for kind,details in watcher.drain():
+                    shutdown_requested_at = (time.monotonic() if kind=='host_shutdown_requested' else
+                                             None if kind=='host_shutdown_cancelled' else shutdown_requested_at)
+                    save_health(run,state,diagnostic(kind,role='supervisor',**details))
+                host_ending = watcher.ending.is_set()
+            if not host_ending and (inspect_run(run)[0] or {}).get('status')=='interrupted_by_shutdown':
+                host_ending = True  # the recorder itself saw the session end
             if not host_ending and shutdown_requested_at is not None and time.monotonic()-shutdown_requested_at<60:
                 host_ending = True  # the recorder ended during a sign-out/restart; do not restart it
             if host_ending:
