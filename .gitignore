@@ -14,7 +14,7 @@ __pycache__/
 export_*/
 export_*.log
 completion_*/
-validation/*/
+app/validation/*/
 gui_preferences.sqlite
 
 # Rebuilt from dependencies-lock-v01.txt by tools/vendor_dependencies.py

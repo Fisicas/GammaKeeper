@@ -19,14 +19,14 @@ done
 
 root=$(git rev-parse --show-toplevel)
 python="${GAMMAKEEPER_SCIENCE_PYTHON:-${RADIALOG_SCIENCE_PYTHON:-C:/Users/nelso/.venvs/codex-science-v1/Scripts/python.exe}}"
-if [ ! -d "$root/dependencies" ]; then
-    echo "pre-push: dependencies/ is missing; run: \"$python\" -X utf8 tools/vendor_dependencies.py" >&2
+if [ ! -d "$root/app/dependencies" ]; then
+    echo "pre-push: app/dependencies/ is missing; run: \"$python\" -X utf8 tools/vendor_dependencies.py" >&2
     exit 1
 fi
-mkdir -p "$root/logs"
+mkdir -p "$root/app/logs"
 echo "pre-push: running the test suite (about a minute)..." >&2
-cd "$root" && "$python" -X utf8 -m unittest discover -s tests >"$root/logs/pre-push-tests.log" 2>&1
+cd "$root" && "$python" -X utf8 -m unittest discover -s app/tests >"$root/app/logs/pre-push-tests.log" 2>&1
 status=$?
-tail -n 3 "$root/logs/pre-push-tests.log" >&2
-[ $status -eq 0 ] || echo "pre-push: tests failed; full output in logs/pre-push-tests.log" >&2
+tail -n 3 "$root/app/logs/pre-push-tests.log" >&2
+[ $status -eq 0 ] || echo "pre-push: tests failed; full output in app/logs/pre-push-tests.log" >&2
 exit $status

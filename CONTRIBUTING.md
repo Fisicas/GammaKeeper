@@ -3,8 +3,9 @@
 Agents follow [AGENTS.md](AGENTS.md) as well; this file describes the workflow.
 
 ## Repository layout
-- Backend modules (recorder, supervisor, storage, device, analysis, exports) are at the repository root, as in RadiaLog v0.5.1. Helpers are started as scripts by path, so they stay there.
-- The window lives in `ui/`, one mixin per concern, composed in `ui/main_window.py`:
+- The repository root holds only documentation and project files. The whole application lives in `app/`, laid out exactly as a RadiaLog release folder was: its modules import each other by name and start helpers as scripts by path, so they move together.
+- Backend modules (recorder, supervisor, storage, device, analysis, exports) are at the top of `app/`.
+- The window lives in `app/ui/`, one mixin per concern, composed in `app/ui/main_window.py`:
 
   | Module | Content |
   |---|---|
@@ -19,15 +20,15 @@ Agents follow [AGENTS.md](AGENTS.md) as well; this file describes the workflow.
   | `tasks.py`, `theme.py`, `paths.py` | background tasks; colors and stylesheet; app root |
 
   `gui.py` (the launch target) and `gui_analysis.py` re-export the old names for compatibility.
-- `tests/`: unit and synthetic GUI tests; `tests/fixtures/`: byte-exact copies of workspace evidence.
+- `app/tests/`: unit and synthetic GUI tests; `app/tests/fixtures/`: byte-exact copies of workspace evidence. `app/validation/`: release evidence.
 - `tools/`: `vendor_dependencies.py`, `deploy_release.py`.
-- `docs/plan/`: improvement plans and benchmarks. `history/`: provenance of the v0.1–v0.5.1 import.
+- `docs/`: the manual (`manual.md`, including release notes), topic guides and images; `docs/plan/`: improvement plans and benchmarks. `history/`: provenance of the v0.1–v0.5.1 import.
 - Tags `v0.1.0`…`v0.5.1` are the imported RadiaLog releases, each byte-identical to its `radiacode_logger_v0*` folder. Those folders stay in the workspace as the archive.
 
 ## Workflow
 1. Branch from `main` per work item, preferably in a separate worktree: `git worktree add ..\gk-feat-x -b feat/x`.
-2. Once per clone: rebuild `dependencies/` (`tools\vendor_dependencies.py`) and install the pre-push hook (`git config core.hooksPath tools/hooks`). The repository is private on GitHub Free, which offers no branch protection there, so the hook stands in for it: it refuses direct pushes to `main` and runs the suite before every other push.
-3. Run the suite (`python -X utf8 -m unittest discover -s tests`); CI runs the same suite on `windows-latest` for every pull request.
+2. Once per clone: rebuild `app/dependencies/` (`tools\vendor_dependencies.py`) and install the pre-push hook (`git config core.hooksPath tools/hooks`). The repository is private on GitHub Free, which offers no branch protection there, so the hook stands in for it: it refuses direct pushes to `main` and runs the suite before every other push.
+3. Run the suite (`python -X utf8 -m unittest discover -s app\tests`); CI runs the same suite on `windows-latest` for every pull request.
 4. Open a pull request into `main`; merge only with a green suite.
 
 ## Releases

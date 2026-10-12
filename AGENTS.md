@@ -15,7 +15,7 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Run the full suite before proposing a merge:
   ```powershell
   & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 tools\vendor_dependencies.py   # once per checkout
-  & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s tests
+  & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s app	ests
   ```
 - Use `GAMMAKEEPER_SCIENCE_PYTHON` / `GAMMAKEEPER_TEST_MODE` in new code and docs; the `RADIALOG_*` names remain only as fallbacks.
 - State in every pull request: the files changed, the tests run and their result, and any assumptions or untested paths.
@@ -23,4 +23,4 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 
 ## Windows notes
 - Processes started inside a packaged app (such as the Claude desktop app) have new `%LOCALAPPDATA%` folders redirected into the package's private cache. Don't store anything there that the user's own launchers must find; releases go to `Radiacode Data\GammaKeeper Releases\` (`tools/deploy_release.py`).
-- Use the science interpreter with `-X utf8`. App-only dependencies live in `dependencies/`, rebuilt from `dependencies-lock-v01.txt`.
+- Use the science interpreter with `-X utf8`. The application lives in `app/` (modules, `ui/`, `tests/`, launcher); app-only dependencies live in `app/dependencies/`, rebuilt from `app/dependencies-lock-v01.txt`. Keep the repository root for documentation and project files.
