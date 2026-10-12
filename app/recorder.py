@@ -266,6 +266,8 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
                 for kind, details in watcher.drain():
                     store.event(kind, details)
                 if watcher.ending.is_set():
+                    for kind, details in watcher.drain():  # notifications queued just before the flag
+                        store.event(kind, details)
                     # Windows is ending the session: a short final interval within the budget, then a
                     # resumable 'interrupted_by_shutdown' state. Counts accrued while off are kept by the device.
                     outcome = 'interrupted_by_shutdown'

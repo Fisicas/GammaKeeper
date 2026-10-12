@@ -159,6 +159,8 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                                                  None if kind=='host_shutdown_cancelled' else shutdown_requested_at)
                         save_health(run,state,diagnostic(kind,role='supervisor',**details))
                     if watcher.ending.is_set():
+                        for kind,details in watcher.drain():  # notifications queued just before the flag
+                            save_health(run,state,diagnostic(kind,role='supervisor',**details))
                         host_ending = True
                         break
                 if now-last_persist >= 2:
