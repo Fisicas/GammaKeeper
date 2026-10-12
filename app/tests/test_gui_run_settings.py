@@ -29,7 +29,7 @@ class SavedRunSettings(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=self.test_root)
         self.root = Path(self.temp.name)
         self.windows = []
-        self.saved = dict(label='overnight test', serial='RC-103-006489', mode='device',
+        self.saved = dict(label='overnight test', serial='RC-000-000000', mode='device',
                           interval_s=5., duration_s=51840.,
                           created_utc='2026-10-07T20:57:26.945286+00:00',
                           planned_end_utc='2026-10-08T11:21:26.945286+00:00')

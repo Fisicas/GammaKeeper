@@ -1,6 +1,6 @@
 {
   "created_utc": "2026-10-12T14:54:30.737639+00:00",
-  "source_folder": "C:\\Users\\nelso\\Desktop\\Radiacode Data",
+  "source_folder": "%USERPROFILE%\\Desktop\\Radiacode Data",
   "kept_at_root": [
     "Open_RadiaLog.cmd"
   ],
@@ -18,7 +18,7 @@
           "exists": true
         },
         {
-          "path": "radiacode_logger_v03\\runs\\20261007_165726_535753_RC-103-006489",
+          "path": "radiacode_logger_v03\\runs\\20261007_165726_535753_RC-XXX-XXXXXX",
           "exists": true
         }
       ]
@@ -260,7 +260,7 @@
           "exists": true
         },
         {
-          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-XXX-XXXXXX",
           "exists": true
         }
       ]
@@ -278,7 +278,7 @@
           "exists": true
         },
         {
-          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-XXX-XXXXXX",
           "exists": true
         }
       ]
@@ -296,7 +296,7 @@
           "exists": true
         },
         {
-          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-XXX-XXXXXX",
           "exists": true
         }
       ]
@@ -314,7 +314,7 @@
           "exists": true
         },
         {
-          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-103-006489",
+          "path": "radiacode_logger_v04\\runs\\20261008_122840_752326_RC-XXX-XXXXXX",
           "exists": true
         }
       ]

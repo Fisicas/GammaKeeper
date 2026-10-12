@@ -10,6 +10,13 @@ from plot_scales import apply_scale,display_values,intensity_norm
 from ui.theme import BG, PANEL, TEXT, MUTED, TEAL, GOLD
 
 
+def time_format(span_days, show_dates=False):
+    """Tick label format for a time span (days): seconds for short windows, dates for long ones."""
+    if span_days > 1.5 or (show_dates and span_days > .5):
+        return '%m-%d %H:%M'
+    return '%H:%M:%S' if span_days <= 15 / 1440 else '%H:%M'
+
+
 class Charts(FigureCanvasQTAgg):
     def __init__(self):
         self.figure = Figure(figsize=(10, 7), facecolor=BG, layout='constrained')
@@ -23,6 +30,7 @@ class Charts(FigureCanvasQTAgg):
         self.color_percentile=99.5
         self.local_time=False
         self.show_dates=False
+        self.colormap='viridis'
         self.roi=None
         self.annotations=[]  # (utc seconds, kind, text) from the run's notes
         self.energy_scale='linear';self.counts_scale='linear';self.intensity_scale='log'
@@ -85,6 +93,7 @@ class Charts(FigureCanvasQTAgg):
             coverage = tb.get('coverage_fraction', 0)
             dose_rates.append(tb.get('dose_rate_uSv_h') if coverage >= .999 and is_normal else np.nan)
             filtered.append(tb.get('device_count_rate_cps') if coverage >= .999 and is_normal else np.nan)
+        span = (ends[-1] - starts[0]) if ends else 0.
         prefix = 'SIMULATED • ' if mode == 'demo' else ''
         self.spg.set_title(prefix + 'Spectrogram • '+self.display_label+' • gaps left blank', loc='left')
         if ends and np.all(np.diff(energy) > 0):
@@ -93,15 +102,16 @@ class Charts(FigureCanvasQTAgg):
             values,norm=intensity_norm(values,self.intensity_scale,self.color_percentile)
             if self.energy_scale=='log':
                 values=np.ma.masked_where(np.broadcast_to(energy[:-1]<=0,values.shape),values)
-            cmap = __import__('matplotlib').colormaps['magma'].with_extremes(bad=PANEL)
+            cmap = __import__('matplotlib').colormaps[self.colormap].with_extremes(bad=PANEL)
             mesh = self.spg.pcolormesh(energy, yedges, values,
                                      cmap=cmap, norm=norm, shading='flat', rasterized=True)
             self.colorbar = self.figure.colorbar(mesh, ax=self.spg, pad=.02, fraction=.025)
             self.colorbar.set_label('counts/s/channel • '+self.intensity_scale, color=MUTED, fontsize=8)
-            self.colorbar.ax.tick_params(colors=MUTED, labelsize=8)
+            # which='both': log color scales label minor ticks (2x10^-1, 3x10^-1, ...) too.
+            self.colorbar.ax.tick_params(which='both', colors=MUTED, labelsize=8)
             self.spg.invert_yaxis()
-            self.spg.yaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S', tz=dt.timezone.utc))
-            if self.show_dates:self.spg.yaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M',tz=dt.timezone.utc))
+            self.spg.yaxis.set_major_locator(mdates.AutoDateLocator(tz=dt.timezone.utc, minticks=3, maxticks=8))
+            self.spg.yaxis.set_major_formatter(mdates.DateFormatter(time_format(span, self.show_dates), tz=dt.timezone.utc))
             self.count.plot(ends, display_values(rates,self.counts_scale=='log'), color=TEAL, linewidth=1.4,
                             marker='.' if self.counts_scale=='log' else None,markersize=3,label='Spectrum differences')
             self.count.plot(ends, display_values(filtered,self.counts_scale=='log'), color=MUTED, linewidth=1., linestyle='--', label='Device estimator')
@@ -114,17 +124,18 @@ class Charts(FigureCanvasQTAgg):
         self.spg.set_ylabel('UTC • time increases downward')
         if self.local_time:
             self.spg.set_ylabel('Local time • UTC offset shown • time increases downward')
-            self.spg.yaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime('%H:%M:%S %z')))
+            local_format = time_format(span, self.show_dates) + ' %z'
+            self.spg.yaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime(local_format)))
         self.count.set_title('Counts over time', loc='left')
         self.count.set_ylabel('cps')
         self.dose.set_title('Device dose-rate mean over time', loc='left')
         self.dose.set_ylabel('µSv/h')
         for ax in [self.count, self.dose]:
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M', tz=dt.timezone.utc))
-            if self.show_dates:ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M',tz=dt.timezone.utc))
+            ax.xaxis.set_major_locator(mdates.AutoDateLocator(tz=dt.timezone.utc, minticks=3, maxticks=7))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter(time_format(span, self.show_dates), tz=dt.timezone.utc))
             ax.set_xlabel('UTC')
             if self.local_time:
-                ax.xaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime('%H:%M %z')))
+                ax.xaxis.set_major_formatter(FuncFormatter(lambda value,pos:mdates.num2date(value,dt.timezone.utc).astimezone().strftime(local_format)))
                 ax.set_xlabel('Local time • original timestamps are UTC')
             ax.grid(alpha=.12, color=MUTED)
             if len(ends)==1:ax.set_xlim(starts[0],ends[0])

@@ -10,7 +10,7 @@ v08 is written as the **current specification**: decisions, verified state, requ
 
 ## 1. Purpose and scientific requirements
 
-**Measurement (D33):** sealed-canister decay of radon (Rn-222) adsorbed on activated charcoal, recorded as time-resolved gamma spectra with a RadiaCode 103 (RC-103-006489, 1,024 channels).
+**Measurement (D33):** sealed-canister decay of radon (Rn-222) adsorbed on activated charcoal, recorded as time-resolved gamma spectra with a RadiaCode 103 (RC-XXX-XXXXXX, 1,024 channels).
 
 | Nuclide | Half-life | Lines used (keV) | Role |
 |---|---|---|---|
@@ -34,7 +34,7 @@ v08 is written as the **current specification**: decisions, verified state, requ
 | R5 | **Gain and temperature QC**: hourly peak positions of 609 keV and K-40 1461 keV against device temperature (already recorded in `RareData`). | CsI(Tl) gain drifts with temperature; fixed energy windows over days need checking. In a sealed canister, temperature also shifts Rn between the charcoal bed and headspace, which changes counting efficiency. |
 | R6 | **Energy-window panel** with net rates and a running half-life readout for sealed runs; rigorous fitting offline. | Fast sanity check during a run; the fit stays outside the acquisition app. |
 | R7 | **Export option that keeps gap aggregates** as variable-width bins, for bin-integrated model fitting. | The time-resolved export currently drops recovered aggregates as segment breaks. |
-| R8 | **Run data live in `C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper Runs\` (D34)**, never inside a release folder. | v0.5.1 defaults new runs to `<release>\runs` (`gui.py` lines 255, 364, 541). |
+| R8 | **Run data live in `%USERPROFILE%\Desktop\Radiacode Data\GammaKeeper Runs\` (D34)**, never inside a release folder. | v0.5.1 defaults new runs to `<release>\runs` (`gui.py` lines 255, 364, 541). |
 | R9 | **Physical qualification**: a sealed-charcoal run whose fitted half-life must return 3.82 d within its uncertainty. | Checks timing, gap handling, gain stability and seal integrity (a leak shortens the apparent half-life) end to end. |
 
 **Radon preset (D35):** default duration **3 days**, editable. 3 d covers 0.78 half-lives, which suits an activity measurement with decay correction. For the R9 half-life qualification, set the run to 10–14 d (2.6–3.7 half-lives). The preset's spectrum interval is open (§8 item 1).
@@ -65,7 +65,7 @@ v08 is written as the **current specification**: decisions, verified state, requ
 | D18 | Test 2 and the v0.2 soak are marked Ended from the Runs tab (raw data untouched). |
 | D19 | No second RadiaCode: multi-device stays "backend-capable, not qualified". |
 | D20 | Private git repository, one launcher, split the two large window files, to let agents work in parallel. |
-| D21 | Repository at `C:\Users\nelso\Desktop\Radiacode Data\GammaKeeper`. |
+| D21 | Repository at `%USERPROFILE%\Desktop\Radiacode Data\GammaKeeper`. |
 | D22 | Vendored dependencies rebuilt by script from the lock file, not committed. |
 | D23 | v0.1–v0.5.1 imported as tagged history. |
 | D24 | GitHub owner Fisicas, private, created empty (name: see D30). |

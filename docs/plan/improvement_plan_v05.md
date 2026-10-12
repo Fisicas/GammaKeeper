@@ -27,7 +27,7 @@ Evidence: `benchmark_results_v01.json` (preview/replay timings), `benchmark_resu
 | D18 | Test 2 and the v0.2 soak: **mark as Ended** (`ended_by_user` event; raw data untouched) once the Runs tab exists. | §3.7; done by the user from the Runs tab, not by a script. |
 | D19 | **No second RadiaCode** available. | Multi-device recording is described as "backend-capable, not qualified". It is tested only with synthetic serials, and the GUI states this. |
 | D20 | Move to a **private git repository**, one launcher, and split the two large window files. The aim is to let several agents work in parallel. | New §3.9; first step in §5. |
-| D21 | Repository location: **`C:\Users\nelso\Desktop\Radiacode Data\RadiaLog`**. | §3.11. |
+| D21 | Repository location: **`%USERPROFILE%\Desktop\Radiacode Data\RadiaLog`**. | §3.11. |
 | D22 | Vendored dependencies are **rebuilt by script** from the lock file, not committed. | §3.9, §3.11 step 6. |
 | D23 | **Import v0.1–v0.5.1 as tagged history.** | §3.11 step 4. |
 | D24 | GitHub owner **Fisicas**, repository **RadiaLog**, **Private**, created empty (no README, .gitignore or license). This matches the form Michael prepared. | §3.10, §3.11 step 9. |
@@ -212,7 +212,7 @@ Either option is a per-user Windows change. It will be proposed with exact entri
 
 **What the current code does (verified by reading it, not tested with two devices):**
 - **Per-device exclusivity already exists at the lowest level.** Each recorder takes a Windows mutex named `Local\RadiaLog_<serial>`, and each supervisor takes `…_<serial>_supervisor`. The name is identical in every version from v0.1 to v0.5.1. The USB transport opens the device whose path contains that serial (`phyton.py`), and its handle is exclusive.
-- **Recording from different RadiaCodes at the same time is therefore possible in the backend**: different serials, different mutexes, different run folders. It has **never been tested with two physical devices**; only one device (RC-103-006489) has been used.
+- **Recording from different RadiaCodes at the same time is therefore possible in the backend**: different serials, different mutexes, different run folders. It has **never been tested with two physical devices**; only one device (RC-XXX-XXXXXX) has been used.
 - **The GUI does not support it and gives poor feedback:**
   - One window follows one run, and *Open saved run* is refused while that run is active.
   - *Start new recording* checks only the run currently selected in that window, not other runs on the same serial.
@@ -335,7 +335,7 @@ Raw scientific data never enter git.
 - The original folders stay in place, unchanged, as the archive. Mark them read-only only with your approval.
 
 **Hosting:**
-- Step 1: a local repository, e.g. `C:\Users\nelso\Desktop\Radiacode Data\RadiaLog` or another path you choose.
+- Step 1: a local repository, e.g. `%USERPROFILE%\Desktop\Radiacode Data\RadiaLog` or another path you choose.
 - Step 2: a **private** GitHub remote. This needs your explicit approval and your account. **Nothing is pushed until you approve.**
 - This repository is separate from the flight-data repository already being staged.
 
@@ -475,7 +475,7 @@ The following are unchanged; see v01 for evidence and detail:
 **Remaining before Step 0 can start:**
 1. **Commit identity** (repo-local only):
    - Name, e.g. "Michael R. Nelson".
-   - Email: the private GitHub no-reply address for `Fisicas` (proposed; keeps addresses out of history), `nelsondirect@gmail.com`, or a GSU address.
+   - Email: the private GitHub no-reply address for `Fisicas` (proposed; keeps addresses out of history), a personal address, or a university address.
 2. **License holder line:** keep "RadiaLog contributors", or change it to e.g. "Michael R. Nelson"? A change would be a normal reviewed commit after the import, not a rewrite of history.
 3. **Approval to execute Step 0, runbook steps 1–8** (local only). Step 9 (GitHub creation and push) is approved separately.
 4. **Optional:** update Git for Windows from 2.45.1. This is your action; it is not required.

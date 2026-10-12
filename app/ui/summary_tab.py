@@ -17,7 +17,7 @@ class SummaryMixin:
     def refresh_analysis_status(self,state,active,coverage):
         self.refresh_spectrum()
         self.poll_background_jobs()
-        summary=state.get('acquisition_summary') or (self.preview_summary if self.view_mode.currentIndex()==1 else {})
+        summary=state.get('acquisition_summary') or (self.preview_summary if self.view_mode.currentData()=='full' else {})
         if not summary and state.get('last_snapshot') and (state.get('last_interval') or {}).get('epoch',0)==0:
             db=readonly(self.run/'run.sqlite')
             try:
