@@ -74,3 +74,20 @@ class MonitorAndUI(unittest.TestCase):
             window._closing=True;window.preview_cancel.set();window.accumulation_cancel.set();window.science_cancel.set()
             window.preview_pool.waitForDone(10000);window.accumulation_pool.waitForDone(10000);window.science_pool.waitForDone(10000)
             window.timer.stop();window.notes_timer.stop();window.close();self.app.processEvents()
+
+    def test_background_link_negative_net_and_shared_variance_are_explicit(self):
+        run=self.data();background=self.root/'background'
+        store=RunStore(background,make_config('BACKGROUND',10,0,'demo','synthetic background'))
+        for i in range(4):store.append_snapshot(snapshot(i*10,[100+2*i]*1024))
+        store.close()
+        save_sheet(background,1,dict(sample_id='BG',geometry='same documented fixture'))
+        save_sheet(run,1,dict(sample_id='sample',geometry='same documented fixture',background_path=str(background)))
+        result=progress(run);row=result['rows'][0];bg=result['background'];name='Pb-214 352 region'
+        self.assertTrue(bg['geometry_documented_match'])
+        self.assertLess(row['net_rate_cps'][name],0)
+        variance=row['window_counts'][name]/row['device_exposure_s']**2+bg['window_counts'][name]/bg['device_exposure_s']**2
+        self.assertAlmostEqual(row['net_poisson_sigma_cps'][name]**2,variance)
+        self.assertAlmostEqual(row['shared_background_variance_cps2'][name],bg['window_counts'][name]/bg['device_exposure_s']**2)
+        config=json.loads((background/'manifest.json').read_text());config['label']='changed'
+        (background/'manifest.json').write_text(json.dumps(config))
+        with self.assertRaisesRegex(ValueError,'background manifest changed'):progress(run)
