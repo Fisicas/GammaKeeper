@@ -32,7 +32,8 @@ Agents follow [AGENTS.md](AGENTS.md) as well; this file describes the workflow.
 4. Open a pull request into `main`; merge only with a green suite.
 
 ## Releases
-- A release is an annotated tag (`v0.5.2`, …). Install it side by side with `python -X utf8 tools\deploy_release.py <tag> --activate`; this exports the tag to `Radiacode Data\GammaKeeper Releases\<tag>\`, vendors dependencies, runs the tests in a throwaway copy, and only then points `current.txt` at it.
+- A release is an annotated tag (`v0.5.2`, …). Install it side by side with `python -X utf8 tools\deploy_release.py <tag> --activate`; this exports the tag to `Radiacode Data\GammaKeeper Releases\<tag>\`, vendors dependencies, runs the tests in a throwaway copy, and only then points `current.txt` at it. A branch such as `origin/main` installs as `<branch>-<commit>` for testing.
+- Activation also writes the stable launcher `GammaKeeper.pyw` and `gammakeeper.ico` beside `current.txt`; the Desktop and Start Menu shortcuts (`tools\shortcuts.py`, normally via `tools\install_gammakeeper.cmd`) point at that launcher, so they never change between releases. Create shortcuts from Explorer, not from a packaged app such as the Claude desktop app, whose AppData writes may be redirected.
 - Installed releases are never replaced or deleted by the tool, so a recorder from an older release keeps running. Rolling back means activating an older tag.
 - Run data never live inside a release folder.
 
