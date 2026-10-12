@@ -113,6 +113,14 @@ Dose-rate bins use time-weighted device estimates with zero-order hold capped at
 
 `poisson_sigma_cps = sqrt(N)/duration` is a counting-only approximation, not a confidence interval or a total uncertainty budget. Device count/dose error percentages and flags remain separately available in raw telemetry. Clock, calibration, dead time and detector systematics are not folded into this sigma.
 
+## Windows restarts and sign-out
+
+While a recording is active, GammaKeeper registers a shutdown reason with Windows. A normal restart, shutdown or sign-out then pauses on Windows' "apps are preventing restart" screen, listing GammaKeeper with *"GammaKeeper is recording spectra. Restarting now interrupts the run…"*. Choose **Cancel** to keep recording, or continue anyway. Forced and critical shutdowns are never blocked.
+
+When the session really ends, the recorder takes a short final spectrum (within about two seconds), records `host_shutdown`, and marks the run **interrupted by Windows shutdown**; the supervisor neither restarts nor kills it. After signing in again, open GammaKeeper: the run shows *INTERRUPTED BY WINDOWS SHUTDOWN — resume available* while its schedule is open. **Resume** verifies the saved data and continues; the device kept accumulating while the computer was off, so those counts become one flagged aggregate interval across the gap (as with a USB reconnect). If Windows restarts without any warning (power loss, crash), the run shows *INTERRUPTED BY WINDOWS RESTART (no warning received)* and resumes the same way. Runs record the Windows boot ID, so a reused process ID after a restart never makes a stopped run look active.
+
+For long experiments, pause Windows Update for the run's duration, keep the computer on mains power with sleep disabled, and resume promptly after any interruption.
+
 ## Time and reconnection
 
 Scheduling uses monotonic deadlines rather than sleeping 10 seconds after a read. A separate USB worker has bounded operation deadlines; the recorder can terminate a stalled worker and reopen the transport. Acquisition and durable storage do not depend on GUI redraws.
