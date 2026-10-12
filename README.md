@@ -1,4 +1,14 @@
-# RadiaLog 0.5.1
+# GammaKeeper
+
+GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCode detectors over USB on Windows, for unattended multi-day experiments such as sealed-canister radon measurements on activated charcoal. It keeps immutable, hash-verified raw spectra, a crash-safe journal, SNTP-referenced timing, automatic reconnect with flagged gap aggregates, and resumable schedules. It is independent community software, not affiliated with RadiaCode / Scan-Electronics.
+
+## Name and compatibility
+
+- Releases v0.1–v0.5.1 were published as **RadiaLog**. Their folders, launchers and recorded runs keep that name, and the release notes below describe them as they were.
+- Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
+- Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
+
+## Release notes (current code: 0.5.1)
 
 ## Linear and logarithmic display
 
@@ -41,7 +51,7 @@ The time-series tab offers recent/full/custom UTC windows, epoch selection, UTC/
 
 Completed runs automatically launch a detached, low-priority validation/export job. Acquisition completion is preserved if optional export fails. **Create verified backup** copies a consistent journal horizon and verifies copied hashes. **Resume interrupted backup** continues that same horizon without overwriting changed files. Backup snapshots can be inspected but cannot be resumed as recordings. Optional derived caches/checkpoints accelerate reopened analysis; cache age/source-check time is labeled and full integrity validation remains separate.
 
-Use the workspace's `Open_RadiaLog.cmd` or `Open_RadiaLog_v051.cmd` for this release. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.5.1; GUI closure does not stop acquisition. Current regressions are under `validation`; display renders are in `../display_scales_20261011_v01`, and earlier saved-run export evidence remains in `../time_units_export_20261011_v01`. See [DISPLAY_SCALES.md](DISPLAY_SCALES.md) for display semantics. Earlier connected-device pilot evidence remains in the original version directories. The historical sections below describe earlier releases and their checks.
+Start the release as described under **Start** below. Previous versions and launchers are preserved. Close an older GUI and reopen to use v0.5.1; GUI closure does not stop acquisition. Current regressions are under `validation`; display renders are in `../display_scales_20261011_v01`, and earlier saved-run export evidence remains in `../time_units_export_20261011_v01`. See [DISPLAY_SCALES.md](DISPLAY_SCALES.md) for display semantics. Earlier connected-device pilot evidence remains in the original version directories. The historical sections below describe earlier releases and their checks.
 
 ## Saved-run settings correction
 
@@ -73,7 +83,7 @@ The interface adds data ages, supervisor restart count, clock-projection lead, b
 
 ## Start
 
-Double-click `Open_RadiaLog.cmd` in `C:\Users\nelso\Desktop\Radiacode Data`, or `Launch_RadiaLog.cmd` in this folder. The launcher uses the existing science Python; dependencies added for this app are confined to `dependencies`. The shared environment and USB driver were not changed.
+Double-click `Launch_GammaKeeper.cmd` in this folder. In the workspace (`C:\Users\nelso\Desktop\Radiacode Data`), `Open_RadiaLog.cmd` still starts the archived RadiaLog v0.5.1 folder; `Open_GammaKeeper.cmd`, which starts the current installed release, arrives with v0.5.2. The launcher uses the existing science Python; dependencies added for this app are confined to `dependencies`. The shared environment and USB driver were not changed.
 
 1. Close the manufacturer app and other device clients. The USB handle is exclusive.
 2. Enter the sample/condition label, confirm serial `RC-103-006489`, interval **10 s**, duration **7 days**, and save folder.

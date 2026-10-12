@@ -4,7 +4,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bootstrap
 import os
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
-os.environ['RADIALOG_TEST_MODE'] = '1'
+os.environ['GAMMAKEEPER_TEST_MODE'] = '1'
 import datetime as dt
 import hashlib
 import json

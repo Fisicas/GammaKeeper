@@ -1,6 +1,6 @@
 """GUI-scale regression: transformations must not change scientific data."""
 import os
-os.environ['QT_QPA_PLATFORM']='offscreen';os.environ['RADIALOG_TEST_MODE']='1'
+os.environ['QT_QPA_PLATFORM']='offscreen';os.environ['GAMMAKEEPER_TEST_MODE']='1'
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))

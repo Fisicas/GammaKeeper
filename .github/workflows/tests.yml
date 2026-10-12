@@ -31,5 +31,5 @@ jobs:
         shell: pwsh
         run: |
           # Helper processes use runtime.PYTHON; point it at the runner's interpreter.
-          $env:RADIALOG_SCIENCE_PYTHON = Join-Path $env:pythonLocation 'python.exe'
+          $env:GAMMAKEEPER_SCIENCE_PYTHON = Join-Path $env:pythonLocation 'python.exe'
           python -X utf8 -m unittest discover -s tests -v

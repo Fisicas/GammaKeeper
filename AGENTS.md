@@ -17,6 +17,7 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
   & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 tools\vendor_dependencies.py   # once per checkout
   & 'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe' -X utf8 -m unittest discover -s tests
   ```
+- Use `GAMMAKEEPER_SCIENCE_PYTHON` / `GAMMAKEEPER_TEST_MODE` in new code and docs; the `RADIALOG_*` names remain only as fallbacks.
 - State in every pull request: the files changed, the tests run and their result, and any assumptions or untested paths.
 - Keep acquisition rules intact unless the work item is explicitly about them: raw records stay immutable, counts are integer channel differences, no smoothing/resampling/background subtraction in recorded data, verify before acquiring on resume.
 

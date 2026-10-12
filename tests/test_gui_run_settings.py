@@ -1,6 +1,6 @@
 """Regression checks for saved-run identity, schedule and GUI reopening."""
 import os
-os.environ['RADIALOG_TEST_MODE']='1'
+os.environ['GAMMAKEEPER_TEST_MODE']='1'
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 import sys
 from pathlib import Path

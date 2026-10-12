@@ -2,7 +2,9 @@
 import os
 from pathlib import Path
 
-PYTHON = Path(os.environ.get('RADIALOG_SCIENCE_PYTHON', r'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe'))
+# GAMMAKEEPER_SCIENCE_PYTHON is the current name; RADIALOG_SCIENCE_PYTHON is still honored.
+PYTHON = Path(os.environ.get('GAMMAKEEPER_SCIENCE_PYTHON') or os.environ.get('RADIALOG_SCIENCE_PYTHON')
+              or r'C:\Users\nelso\.venvs\codex-science-v1\Scripts\python.exe')
 PYTHONW = PYTHON.with_name('pythonw.exe')
 
 def python_command():
