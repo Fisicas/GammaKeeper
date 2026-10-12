@@ -12,6 +12,7 @@ from export_run import export_run, readonly
 from storage import immutable_json
 from analysis import VERSION
 from run_quality import assess
+from backup_run import digest
 
 
 def seal(run, target):
@@ -83,7 +84,7 @@ def seal(run, target):
             assessment = assess(config, rows_for_assessment(), quality, events, 0.)
             assessment['telemetry'] = dict(dose_time_coverage=coverage, status='covered' if coverage>=.999 else 'partial')
         device_elapsed = assessment['spectra']['device_exposure_s']
-        hashes = {file.relative_to(target).as_posix():hashlib.sha256(file.read_bytes()).hexdigest()
+        hashes = {file.relative_to(target).as_posix():digest(file)
                   for file in target.rglob('*') if file.is_file()
                   and not file.name.endswith(('-wal','-shm'))}
         verdict = dict(schema=1,software_version=VERSION,passed=True,source_run=str(run),

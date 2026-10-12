@@ -40,6 +40,13 @@ def install_time_export(window):
     window.export_latest = Q.QCheckBox('Through latest saved spectrum')
     window.export_latest.setChecked(True)
     window.export_custom_zero = Q.QCheckBox('Use an explicit experiment time zero')
+    window.export_zero_source = Q.QComboBox()
+    for label, value in (('Seal time when available (default)', 'auto'),
+                         ('Current seal annotation (required)', 'seal'),
+                         ('First included acquisition interval', 'acquisition')):
+        window.export_zero_source.addItem(label, value)
+    window.export_keep_aggregates = Q.QCheckBox('Keep recovered aggregates as variable-width observations')
+    window.export_keep_aggregates.setToolTip('Never splits counts into invented time bins. Requires bin-integrated fitting.')
     window.export_time_zero = Q.QDateTimeEdit()
     window.export_time_zero.setDisplayFormat('yyyy-MM-dd HH:mm:ss.zzz')
     window.export_time_zero.setTimeZone(QtCore.QTimeZone(0))
@@ -70,6 +77,8 @@ def install_time_export(window):
     form.addRow('UTC end', window.export_until)
     form.addRow(window.export_latest)
     form.addRow(window.export_custom_zero)
+    form.addRow('Time-zero evidence', window.export_zero_source)
+    form.addRow(window.export_keep_aggregates)
     zero_row = Q.QHBoxLayout()
     zero_row.addWidget(window.export_time_zero, 1)
     window.export_use_seal = Q.QPushButton('Use seal time')
@@ -115,7 +124,7 @@ def install_time_export(window):
         window.export_from.setEnabled(window.export_range.isChecked())
         window.export_until.setEnabled(window.export_range.isChecked() and not window.export_latest.isChecked())
         window.export_latest.setEnabled(window.export_range.isChecked())
-        window.export_time_zero.setEnabled(window.export_custom_zero.isChecked())
+        window.export_time_zero.setEnabled(window.export_custom_zero.isChecked() and window.export_zero_source.currentData()!='seal')
         for control in (window.export_energy_min, window.export_energy_max):
             control.setEnabled(window.export_energy_range.isChecked())
         try:
@@ -138,7 +147,23 @@ def install_time_export(window):
                 note += 'Requires one contiguous segment; bins may contain different numbers of intervals. '
             elif mode == 'width':
                 note += 'The final bin may be shorter; its exposure is preserved. '
-            note += 'Resets, reconnect aggregates and suspect timing are separated and listed in exclusions.'
+            import annotations
+            current = annotations.seal(annotations.load(window.run))
+            zero_basis = window.export_zero_source.currentData()
+            if window.export_custom_zero.isChecked() and zero_basis!='seal': zero_basis = 'custom UTC'
+            note += ('Recovered aggregates are isolated variable-width observations. ' if window.export_keep_aggregates.isChecked()
+                     else 'Recovered aggregates remain in the exclusions file. ')
+            if window.export_keep_aggregates.isChecked() and mode=='sliding':
+                raise ValueError('Use original or nonoverlapping bins to retain recovered aggregates.')
+            if zero_basis in ('auto','seal') and current:
+                note += f"Time zero: seal note {current['id']} at {annotations.iso(current['utc'])} UTC. "
+            elif zero_basis=='seal':
+                raise ValueError('No seal annotation; record the sealing event in Notes first.')
+            elif zero_basis=='auto':
+                note += 'No seal annotation: acquisition start will be used; it is not experimental sealing. '
+            else:
+                note += 'Time zero: '+zero_basis+'. '
+            note += 'Resets and suspect timing remain explicitly excluded.'
             window.export_note.setText(note)
             window.export_series_button.setEnabled(not any(job['script']=='time_resolved.py' and job['process'].poll() is None for job in window.background_jobs))
         except (ValueError, OSError, KeyError, TypeError) as error:
@@ -153,6 +178,10 @@ def install_time_export(window):
             saved = load_run_settings(window.run)
             mode = window.export_mode.currentData()
             extra = ['--mode', mode]
+            custom_zero = window.export_custom_zero.isChecked() and window.export_zero_source.currentData()!='seal'
+            extra += ['--time-zero-basis', 'custom' if custom_zero else window.export_zero_source.currentData()]
+            if window.export_keep_aggregates.isChecked():
+                extra += ['--keep-aggregates']
             if mode in ('width', 'sliding'):
                 width = window.export_width.seconds()
                 aligned_count(width, saved['interval_s'], 'Width')
@@ -177,7 +206,7 @@ def install_time_export(window):
                 extra += ['--epoch', str(window.export_epoch.value())]
             if window.export_xlsx.isChecked():
                 extra += ['--xlsx']
-            if window.export_custom_zero.isChecked():
+            if custom_zero:
                 extra += ['--time-zero-utc', str(window.export_time_zero.dateTime().toMSecsSinceEpoch() / 1000)]
             if window.export_energy_range.isChecked():
                 lo, hi = window.export_energy_min.value(), window.export_energy_max.value()
@@ -199,7 +228,8 @@ def install_time_export(window):
         except Exception as error:
             window.fail(error)
 
-    for control in (window.export_mode, window.export_range, window.export_latest, window.export_energy_range, window.export_custom_zero):
+    for control in (window.export_mode, window.export_range, window.export_latest, window.export_energy_range,
+                    window.export_custom_zero, window.export_zero_source, window.export_keep_aggregates):
         signal = control.currentIndexChanged if isinstance(control, Q.QComboBox) else control.toggled
         signal.connect(update)
     for control in (window.export_width, window.export_step):
@@ -225,5 +255,6 @@ def use_seal_time(window):
         window.fail('No seal time recorded for this run; mark it in the Notes tab first')
         return
     window.export_custom_zero.setChecked(True)
+    window.export_zero_source.setCurrentIndex(window.export_zero_source.findData('seal'))
     window.export_time_zero.setDateTime(QtCore.QDateTime.fromMSecsSinceEpoch(int(round(current['utc'] * 1000)), QtCore.QTimeZone(0)))
     window.message(f"Time zero set to the seal time {annotations.iso(current['utc'])} UTC")

@@ -14,6 +14,7 @@ from analysis import reconstruct, midpoint, VERSION, DOSE_R_TO_USV, timestamp
 from storage import immutable_json
 import annotations
 from telemetry_analysis import read_observations,ObservationIndex
+from journal_observations import JournalObservationIndex
 
 
 def readonly(path):
@@ -37,7 +38,7 @@ def export_run(run, target=None, with_npz=True):
     check = db.execute('PRAGMA quick_check').fetchone()[0]
     if check != 'ok':
         raise ValueError(f'SQLite integrity check failed: {check}')
-    observations=ObservationIndex(read_observations(db))
+    observations=JournalObservationIndex(db)
     observed_total=0.;observed_seconds=0.;elapsed_seconds=0.
     fields = ['seq', 'start_utc', 'end_utc', 'epoch', 'quality', 'nominal_time_bin',
               'device_duration_s', 'wall_duration_s', 'total_counts', 'spectral_count_rate_cps',
