@@ -2,6 +2,7 @@
 import datetime as dt
 import sqlite3
 import threading
+import time
 
 import numpy as np
 from PySide6 import QtCore, QtWidgets as Q
@@ -62,6 +63,8 @@ class TimeSeriesMixin:
         if not self.run or not (self.run/'run.sqlite').exists() or self._closing:
             return
         if not force and not self.follow_live.isChecked():return
+        if not force and self.view_mode.currentData()=='full' and time.monotonic()-getattr(self,'_last_preview_request',-float('inf'))<60:
+            return
         if self.preview_busy:
             if force:
                 self.preview_cancel.set();self.preview_pending=True
@@ -94,6 +97,7 @@ class TimeSeriesMixin:
             key=(str(self.run.resolve()),repr(view),self.view_epoch.currentData(),head)
             if key==self.preview_key and not force:return
             self.preview_cancel=threading.Event();self.preview_busy=True
+            self._last_preview_request=time.monotonic()
             self._preview_forced=force
             task=PreviewTask(self.run,view,self.view_epoch.currentData(),key,self.preview_cancel,self.analysis_root/'cache'/'previews')
             self._preview_task=task
@@ -114,8 +118,8 @@ class TimeSeriesMixin:
         result=message['result']
         if result is None:return
         self.preview_key=message['key'];self.analysis_rows=result['rows'];self.preview_summary=result['summary']
-        self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • {result['aggregation']} recorded intervals / group"
-        kind='Cached preview' if result.get('cached') else 'Verified raw reconstruction'
+        self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • up to {result['aggregation']} recorded intervals / group"
+        kind='Cached prefix + verified new intervals' if result.get('cached') else 'Verified raw reconstruction'
         self.preview_note.setText(f"{kind} through spectrum {result['head']:,}; source check {result['source_verified_utc']}. "
                                   'Groups sum counts / device seconds; gaps remain blank. Full integrity audit is separate. Click a heatmap interval to inspect its spectrum.')
         if self.follow_live.isChecked() or self._preview_forced:self.redraw_analysis()
