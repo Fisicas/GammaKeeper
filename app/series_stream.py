@@ -230,7 +230,8 @@ def export_stream(run,target=None,mode='native',width_s=None,step_s=None,number=
                     lo,hi=group_rows[0]['_first_id'],group_rows[-1]['_last_id']
                     unique,used=db.execute('SELECT coalesce(sum(total),0),count(*) FROM bins WHERE id>=? AND id<=?',(lo,hi)).fetchone()
                     report['segments'].append(dict(stem=stem,epoch=ep,source_segment=index,part=part,bins=len(group_rows),
-                        source_intervals=length,intervals_used=used,unused_sliding_tail_intervals=length-(hi-first+1) if part==0 else None,
+                        source_intervals=length,intervals_used=used,
+                        unused_sliding_tail_intervals=length-(((length-width)//step)*step+width) if mode=='sliding' else 0,
                         calibration_keV=calibration,rcspg=rcspg,matrix_channel_selection=channels[select].tolist(),
                         output_sum_counts=int(counts.sum()),unique_source_counts=unique,
                         start_utc=group_rows[0]['start_utc'],end_utc=group_rows[-1]['end_utc']))
