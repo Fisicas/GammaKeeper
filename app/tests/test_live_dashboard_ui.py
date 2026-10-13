@@ -124,6 +124,43 @@ class LiveDashboardPlots(unittest.TestCase):
                 window.close()
                 self.app.processEvents()
 
+    def test_rendering_status_does_not_reflow_dashboard_plots(self):
+        with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
+            run=Path(scratch)/'empty-read-only-run'
+            run.mkdir()
+            window=Window(run,read_only=True)
+            window.timer.stop()
+            window.resize(1400,900)
+            window.show()
+            self.app.processEvents()
+            try:
+                self.assertIs(window.plot_render_status.parentWidget(),window.plot_refresh.parentWidget())
+                self.assertTrue(window.plot_render_status.isHidden())
+                self.assertEqual(window.plot_render_status.height(),24)
+                charts_geometry=window.charts.geometry()
+                toolbar_geometry=window.chart_toolbar.geometry()
+                refresh_geometry=window.plot_refresh.geometry()
+
+                window.preview_busy=True
+                window.update_plot_render_status()
+                self.app.processEvents()
+                self.assertFalse(window.plot_render_status.isHidden())
+                self.assertIn('Rendering spectrogram',window.plot_render_status.text())
+                self.assertEqual(window.charts.geometry(),charts_geometry)
+                self.assertEqual(window.chart_toolbar.geometry(),toolbar_geometry)
+                self.assertEqual(window.plot_refresh.geometry(),refresh_geometry)
+
+                window.preview_busy=False
+                window.update_plot_render_status()
+                self.app.processEvents()
+                self.assertTrue(window.plot_render_status.isHidden())
+                self.assertEqual(window.charts.geometry(),charts_geometry)
+                self.assertEqual(window.chart_toolbar.geometry(),toolbar_geometry)
+                self.assertEqual(window.plot_refresh.geometry(),refresh_geometry)
+            finally:
+                window.close()
+                self.app.processEvents()
+
     def test_recording_shell_hides_setup_and_diagnostics_behind_controls(self):
         with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
             run = Path(scratch) / 'empty-read-only-run'

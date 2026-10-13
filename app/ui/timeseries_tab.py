@@ -30,7 +30,15 @@ class TimeSeriesMixin:
         self.plot_options=Q.QFrame();self.plot_options.setObjectName('panel')
         options_layout=Q.QVBoxLayout(self.plot_options);options_layout.setContentsMargins(8,8,8,8)
         self.plot_refresh=Q.QPushButton('Refresh plots');self.plot_refresh.clicked.connect(self.refresh_live_plots)
-        actions.addWidget(self.plot_options_button);actions.addStretch();actions.addWidget(self.plot_refresh)
+        self.plot_render_status=Q.QLabel('')
+        self.plot_render_status.setAccessibleName('Plot rendering status')
+        self.plot_render_status.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.plot_render_status.setFixedSize(520,24)
+        self.plot_render_status.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        self.plot_render_status.setStyleSheet(f'color: {GOLD}; font-weight: 600;')
+        self.plot_render_status.setVisible(False)
+        actions.addWidget(self.plot_options_button);actions.addStretch()
+        actions.addWidget(self.plot_render_status);actions.addWidget(self.plot_refresh)
         layout.addLayout(actions)
         layout.addWidget(self.plot_options)
         self.plot_options.setVisible(False)
@@ -71,14 +79,8 @@ class TimeSeriesMixin:
         self.plot_cadence=Q.QLabel('Acquisition interval: waiting for run settings · displayed grouping: waiting for plot data')
         self.plot_cadence.setObjectName('muted')
         layout.addWidget(self.plot_cadence)
-        self.plot_render_status=Q.QLabel('')
-        self.plot_render_status.setWordWrap(True)
-        self.plot_render_status.setTextFormat(QtCore.Qt.TextFormat.PlainText)
-        self.plot_render_status.setStyleSheet(f'color: {GOLD}; font-weight: 600;')
-        self.plot_render_status.setVisible(False)
         self.plot_preview_error=''
         self.plot_accumulation_error=''
-        layout.addWidget(self.plot_render_status)
         legend=Q.QHBoxLayout();legend.setSpacing(18)
         self.series_buttons={}
         for key,label,color,dashed in (
@@ -121,7 +123,10 @@ class TimeSeriesMixin:
             messages.append(self.plot_preview_error)
         if self.plot_accumulation_error:
             messages.append(self.plot_accumulation_error)
-        self.plot_render_status.setText('  ·  '.join(messages))
+        status='  ·  '.join(messages)
+        self.plot_render_status.setToolTip(status)
+        self.plot_render_status.setText(self.plot_render_status.fontMetrics().elidedText(
+            status,QtCore.Qt.TextElideMode.ElideRight,self.plot_render_status.width()-8))
         self.plot_render_status.setVisible(bool(messages))
 
     def request_preview(self,force=False):

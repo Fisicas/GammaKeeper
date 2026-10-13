@@ -8,7 +8,11 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
 - Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
 
-## Release notes (current code: 0.7.1)
+## Release notes (current code: 0.7.2)
+
+## Stable live-plot rendering status (0.7.2)
+
+Dashboard rendering progress and errors now appear beside **Refresh plots** in the fixed top control row. The status is a single line; longer messages are shortened in the row and remain available as a tooltip. Showing or clearing the status does not move the plots. This is a display-only change and does not alter acquisition or recorded data. GUI geometry was checked using synthetic data; no physical device was used.
 
 ## Live plot rendering and countdown correction (0.7.1)
 
