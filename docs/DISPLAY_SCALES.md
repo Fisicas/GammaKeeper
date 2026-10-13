@@ -4,7 +4,7 @@ Introduced in RadiaLog 0.5.1.
 
 In **Spectrum / ROI**, choose **Energy axis** and **Counts axis** independently. All four combinations are available: linear/linear, log/linear, linear/log and log/log. The controls apply to the latest interval, selected interval/group, accumulated recording and accumulated UTC collection range.
 
-The corresponding **Energy axis** and **Count-rate axis** controls in **Time series** are linked. The separate **Spectrogram intensity** selector changes only the heatmap color scale. Its default remains logarithmic, while energy and count axes default to linear. Dose retains its existing linear scale. The GUI remembers these choices when closed and reopened.
+The dashboard's **Energy axis** and **Spectrum counts** controls are linked to the corresponding controls in **Spectrum / ROI**. The independent **Count-rate axis** controls only the time-series count-rate graph and defaults to linear. **Spectrogram intensity** changes only the heatmap color scale. Energy, spectrum counts and spectrogram intensity default to logarithmic display; dose retains its existing linear scale. The GUI remembers these choices when closed and reopened.
 
 These are display coordinates, not transformations of the scientific records. Original calibrated energies remain in keV, channel counts remain integers, count rates remain cps, and ROI boundaries/sums and numerical exports are unchanged. Log spectra use small markers so isolated nonzero channels remain visible rather than disappearing between masked zero channels.
 

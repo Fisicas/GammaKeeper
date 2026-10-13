@@ -64,7 +64,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.settings_toggle.toggled.connect(self._set_setup_visible)
         header.addWidget(self.settings_toggle)
         self.back_live_button=Q.QToolButton();self.back_live_button.setText('Live plots')
-        self.back_live_button.setEnabled(False);self.back_live_button.clicked.connect(lambda:self.tabs.setCurrentIndex(0))
+        self.back_live_button.clicked.connect(self.return_to_live_plots)
         header.addWidget(self.back_live_button)
         self.more_button=Q.QToolButton();self.more_button.setText('More')
         self.more_menu=Q.QMenu(self.more_button);self.more_button.setMenu(self.more_menu)
@@ -152,7 +152,8 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         for index in range(1,self.tabs.count()):
             action=self.more_menu.addAction(self.tabs.tabText(index))
             action.triggered.connect(lambda checked=False,page=index:self.tabs.setCurrentIndex(page))
-        self.tabs.currentChanged.connect(lambda index:self.back_live_button.setEnabled(index!=0))
+        self.tabs.currentChanged.connect(self._update_live_plots_button)
+        self._update_live_plots_button()
         self._layout_run=object()
         self.fullscreen_shortcut=QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_F11),self)
         self.fullscreen_shortcut.activated.connect(self.toggle_fullscreen)
@@ -181,6 +182,19 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
     def _set_setup_visible(self, shown):
         self.setup_scroll.setVisible(shown)
         self.settings_toggle.setText('Hide setup' if shown else 'Run setup')
+
+    def _update_live_plots_button(self, index=None):
+        on_dashboard=self.tabs.currentIndex()==0
+        self.back_live_button.setText('Refresh plots' if on_dashboard else 'Live plots')
+        self.back_live_button.setToolTip('Rebuild the live plots from saved records' if on_dashboard
+                                         else 'Return to the live plots dashboard')
+        self.back_live_button.setEnabled(True)
+
+    def return_to_live_plots(self):
+        if self.tabs.currentIndex()==0:
+            self.refresh_live_plots()
+        else:
+            self.tabs.setCurrentIndex(0)
 
     def _sync_recording_layout(self):
         selected=str(self.run.resolve()) if self.run else None

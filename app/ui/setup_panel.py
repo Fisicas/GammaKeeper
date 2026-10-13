@@ -142,6 +142,9 @@ class SetupPanelMixin:
             self.dashboard_accumulation_cancel.set();self.dashboard_accumulation_key=None
             self.dashboard_accumulation_engine=None;self.dashboard_accumulation_row=None
             self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
+            self.dashboard_accumulation_progress_text=''
+            self.plot_preview_error='';self.plot_accumulation_error=''
+            self.update_plot_render_status()
             self.charts.set_accumulated(None)
             self.selected_analysis_row=None
             self._spectrum_key=None
@@ -204,6 +207,9 @@ class SetupPanelMixin:
         self.dashboard_accumulation_cancel.set();self.dashboard_accumulation_key=None
         self.dashboard_accumulation_engine=None;self.dashboard_accumulation_row=None
         self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
+        self.dashboard_accumulation_progress_text=''
+        self.plot_preview_error='';self.plot_accumulation_error=''
+        self.update_plot_render_status()
         self.spectrum_canvas.empty('Start a new recording or open a saved run to view interval spectra.')
         self.recorder = None
         self.last_status = {}

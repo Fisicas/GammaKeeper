@@ -69,7 +69,28 @@ class SavedRunSettings(unittest.TestCase):
         self.assertFalse(window.start_button.isEnabled())
         self.assertIn('Duration: 14 h 24 min', window.run_summary.text())
         self.assertIn('Planned end:', window.run_summary.text())
+        window.restore_run_settings()
+        window._update_live_context({},True)
+        self.assertNotRegex(window.run_context.text(),r'\d+\.\d+ s remaining')
         self.assertEqual(before, hashlib.sha256((run / 'manifest.json').read_bytes()).hexdigest())
+
+    def test_live_countdown_rounds_up_to_whole_seconds(self):
+        run=self.make_run('countdown',self.saved)
+        window=self.window(run)
+        window.restore_run_settings()
+        fixed_now=dt.datetime(2026,10,13,12,0,0,tzinfo=dt.timezone.utc)
+        window.run_settings=dict(window.run_settings,
+                                 planned_end_utc=(fixed_now+dt.timedelta(seconds=1.1)).isoformat())
+
+        class FixedDateTime(dt.datetime):
+            @classmethod
+            def now(cls,tz=None):
+                return fixed_now if tz else fixed_now.replace(tzinfo=None)
+
+        with patch('ui.run_status.dt.datetime',FixedDateTime):
+            window._update_live_context({},True)
+        self.assertIn('2 s remaining',window.run_context.text())
+        self.assertNotRegex(window.run_context.text(),r'\d+\.\d+ s remaining')
 
     def test_resume_retains_original_end_instead_of_restarting_duration(self):
         run = self.make_run('resume', self.saved)

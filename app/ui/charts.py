@@ -36,8 +36,9 @@ class Charts(FigureCanvasQTAgg):
         self.colormap = 'viridis'
         self.roi = None
         self.annotations = []  # (utc seconds, kind, text) from the run's notes
-        self.energy_scale = 'linear'
+        self.energy_scale = 'log'
         self.counts_scale = 'linear'
+        self.spectrum_counts_scale = 'log'
         self.intensity_scale = 'log'
         self.scale_note = ''
         self.accumulated_row = None
@@ -82,7 +83,7 @@ class Charts(FigureCanvasQTAgg):
         self.dose.set_ylabel('Dose rate (µSv/h)', color=GOLD)
         apply_scale(self.spg, 'x', self.energy_scale)
         apply_scale(self.accum, 'x', self.energy_scale)
-        apply_scale(self.accum, 'y', self.counts_scale)
+        apply_scale(self.accum, 'y', self.spectrum_counts_scale)
         apply_scale(self.count, 'y', self.counts_scale)
         self.draw_idle()
 
@@ -130,21 +131,26 @@ class Charts(FigureCanvasQTAgg):
             ax.text(.5, .5, message, transform=ax.transAxes,
                     ha='center', va='center', color=MUTED, wrap=True)
             apply_scale(ax, 'x', self.energy_scale)
-            apply_scale(ax, 'y', self.counts_scale)
+            apply_scale(ax, 'y', self.spectrum_counts_scale)
             return
         _utc, _epochs, data, snapshot = row
         counts = data.get('counts_delta')
         if counts is None:
+            calibration = snapshot['spectrum']['calibration_keV']
+            channels = np.arange(len(snapshot['spectrum']['counts']))
+            energy = calibration[0] + calibration[1] * channels + calibration[2] * channels**2
             ax.set_title('Accumulated spectrum', loc='left')
             ax.text(.5, .5, 'No complete recorded intervals yet', transform=ax.transAxes,
                     ha='center', va='center', color=MUTED)
+            apply_scale(ax, 'x', self.energy_scale, energy)
+            apply_scale(ax, 'y', self.spectrum_counts_scale)
             return
         counts = np.asarray(counts, dtype=np.int64)
         calibration = snapshot['spectrum']['calibration_keV']
         channels = np.arange(len(counts))
         energy = calibration[0] + calibration[1] * channels + calibration[2] * channels**2
         shown_energy = display_values(energy, self.energy_scale == 'log')
-        shown_counts = display_values(counts, self.counts_scale == 'log')
+        shown_counts = display_values(counts, self.spectrum_counts_scale == 'log')
         if self.energy_scale == 'log':
             shown_counts = np.ma.masked_where(energy <= 0, shown_counts)
         if len(counts) > 1:
@@ -172,7 +178,7 @@ class Charts(FigureCanvasQTAgg):
                 ax.axvspan(shown_lower, upper, color=GOLD, alpha=.14)
             ax.set_title(label + suffix + f' • ROI {selected:,} counts', loc='left')
         apply_scale(ax, 'x', self.energy_scale, energy)
-        apply_scale(ax, 'y', self.counts_scale, counts)
+        apply_scale(ax, 'y', self.spectrum_counts_scale, counts)
 
     def show_rows(self, rows, last_snapshot, mode):
         if self.colorbar:
@@ -282,8 +288,6 @@ class Charts(FigureCanvasQTAgg):
         if len(ends) == 1:
             self.count.set_xlim(starts[0], ends[0])
         apply_scale(self.spg, 'x', self.energy_scale, energy)
-        apply_scale(self.accum, 'x', self.energy_scale)
-        apply_scale(self.accum, 'y', self.counts_scale)
         apply_scale(self.count, 'y', self.counts_scale, [*rates, *filtered, *roi_rates])
         if self.counts_scale == 'log' and ends and not display_values([*rates, *filtered, *roi_rates], True).count():
             self.count.text(.5, .5, 'No positive count rates\nChoose Linear to display zeros',

@@ -8,7 +8,15 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
 - Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
 
-## Release notes (current code: 0.7.0)
+## Release notes (current code: 0.7.1)
+
+## Live plot rendering and countdown correction (0.7.1)
+
+The accumulated spectrum now retains its calibrated energy and count limits through every live redraw; a redundant log-scale reset had temporarily narrowed the view to the first channels while a later repaint restored it. Energy, accumulated-spectrum counts, and spectrogram intensity default to logarithmic display, while the count-rate time series defaults to linear. The spectrum and count-rate scales are independent, and all scale changes remain display-only.
+
+The dashboard shows a short progress message while its spectrogram, rate plots, or accumulated spectrum are rebuilt from saved records. The header action now refreshes plots when already on the dashboard and returns to the dashboard from other pages. Remaining time displays in whole seconds, rounded upward; saved durations and acquisition timing retain their stored precision.
+
+Validation is synthetic GUI/regression testing only. No active RadiaCode acquisition was interrupted or used for hardware-in-the-loop verification.
 
 ## Plot-first live dashboard (0.7.0)
 
@@ -22,7 +30,7 @@ Paths beginning with `../` in these notes are relative to the original `radiacod
 
 ## Linear and logarithmic display
 
-Use the independent **Energy axis** and **Counts axis** selectors in **Spectrum / ROI**. Their linked controls also change the spectrogram energy axis and time-series count-rate axis. **Spectrogram intensity** independently selects linear or logarithmic colors. Choices are remembered on GUI reopening. Log views hide nonpositive values without adding pseudocounts; Linear shows measured zeros. Raw spectra, calibrated energies, ROI sums and scientific exports are unchanged. Acquisition and reconstruction rules are retained.
+Use the **Energy axis**, **Spectrum counts**, and **Spectrogram intensity** selectors in the dashboard plot options. The Spectrum / ROI page links the energy and spectrum-count selectors to these dashboard controls. The time-series **Count-rate axis** remains independent and defaults to Linear. Choices are remembered on GUI reopening. Log views hide nonpositive values without adding pseudocounts; Linear shows measured zeros. Raw spectra, calibrated energies, ROI sums and scientific exports are unchanged. Acquisition and reconstruction rules are retained.
 
 
 ## Flexible time input and time-resolved export

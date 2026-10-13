@@ -5,6 +5,7 @@ import bootstrap
 import datetime as dt
 import json
 import os
+import signal
 import sqlite3
 import struct
 import subprocess
@@ -259,8 +260,9 @@ class Reliability(unittest.TestCase):
             first = wait_until(running)
             # Actual recorder PID, not an unrelated Python process or venv redirector.
             killed_pid = first['pid']
-            subprocess.run(['taskkill','/PID',str(killed_pid),'/T','/F'],check=True,
-                           stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW)
+            # Terminate only the synthetic recorder child directly. This avoids a
+            # taskkill subprocess and still exercises the supervisor restart path.
+            os.kill(killed_pid,signal.SIGTERM)
             def restarted():
                 s = running()
                 return s if s and s['pid']!=killed_pid and s['supervisor']['restarts']>=1 and s.get('snapshots',0)>=5 else None

@@ -153,8 +153,11 @@ class ClickSoundGuiTests(unittest.TestCase):
         from PySide6 import QtWidgets as Q
         from gui import Window
         app = Q.QApplication.instance() or Q.QApplication([])
-        with tempfile.TemporaryDirectory() as folder:
-            window = Window()
+        temp_root=ROOT/'validation'/'click_sound_temp'
+        temp_root.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_root) as folder:
+            # An explicit nonexistent test path prevents reopening any saved user run.
+            window = Window(Path(folder)/'unopened-test-run')
             try:
                 window.run = Path(folder)
                 window.last_status = dict(device_sound=dict(clicks=True))

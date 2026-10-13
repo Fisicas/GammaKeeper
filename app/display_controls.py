@@ -28,13 +28,16 @@ def colormap_selector():
 
 def controls(window, spectrum=False):
     row=Q.QHBoxLayout()
-    energy=selector();counts=selector()
+    energy=selector('log')
+    counts=selector('log' if spectrum else 'linear')
     row.addWidget(Q.QLabel('Energy axis'));row.addWidget(energy)
     row.addWidget(Q.QLabel('Counts axis' if spectrum else 'Count-rate axis'));row.addWidget(counts)
     if spectrum:
-        window.spectrum_energy_axis=energy;window.spectrum_counts_axis=counts
+        window.spectrum_energy_axis=energy;window.spectrum_tab_counts_axis=counts
     else:
         window.energy_axis=energy;window.counts_axis=counts
+        window.spectrum_counts_axis=selector('log')
+        row.addWidget(Q.QLabel('Spectrum counts'));row.addWidget(window.spectrum_counts_axis)
         window.intensity_scale=selector('log')
         row.addWidget(Q.QLabel('Spectrogram intensity'));row.addWidget(window.intensity_scale)
         window.spectrogram_colormap=colormap_selector()
@@ -44,22 +47,26 @@ def controls(window, spectrum=False):
 
 
 def connect_controls(window):
-    for original,mirror in ((window.energy_axis,window.spectrum_energy_axis),(window.counts_axis,window.spectrum_counts_axis)):
+    for original,mirror in ((window.energy_axis,window.spectrum_energy_axis),
+                            (window.spectrum_counts_axis,window.spectrum_tab_counts_axis)):
         original.currentIndexChanged.connect(mirror.setCurrentIndex)
         mirror.currentIndexChanged.connect(original.setCurrentIndex)
-    for widget in (window.energy_axis,window.counts_axis,window.intensity_scale,window.spectrogram_colormap):
+    for widget in (window.energy_axis,window.counts_axis,window.spectrum_counts_axis,
+                   window.spectrum_tab_counts_axis,window.intensity_scale,window.spectrogram_colormap):
         widget.currentIndexChanged.connect(window.display_scales_changed)
 
 
 def preferences(window):
     return dict(energy=window.energy_axis.currentData(),counts=window.counts_axis.currentData(),
+                spectrum_counts=window.spectrum_counts_axis.currentData(),
                 intensity=window.intensity_scale.currentData())
 
 
 def restore(window,values):
     values=values if isinstance(values,dict) else {}
-    for name,widgets,default in (('energy',(window.energy_axis,window.spectrum_energy_axis),'linear'),
-                                 ('counts',(window.counts_axis,window.spectrum_counts_axis),'linear'),
+    for name,widgets,default in (('energy',(window.energy_axis,window.spectrum_energy_axis),'log'),
+                                 ('counts',(window.counts_axis,),'linear'),
+                                 ('spectrum_counts',(window.spectrum_counts_axis,window.spectrum_tab_counts_axis),'log'),
                                  ('intensity',(window.intensity_scale,),'log')):
         value=values.get(name,default)
         if value not in ('linear','log'):value=default

@@ -29,7 +29,7 @@ class TimeSeriesMixin:
         self.plot_options_button.setCheckable(True);self.plot_options_button.setChecked(False)
         self.plot_options=Q.QFrame();self.plot_options.setObjectName('panel')
         options_layout=Q.QVBoxLayout(self.plot_options);options_layout.setContentsMargins(8,8,8,8)
-        self.plot_refresh=Q.QPushButton('Refresh plots');self.plot_refresh.clicked.connect(lambda:self.request_preview(True))
+        self.plot_refresh=Q.QPushButton('Refresh plots');self.plot_refresh.clicked.connect(self.refresh_live_plots)
         actions.addWidget(self.plot_options_button);actions.addStretch();actions.addWidget(self.plot_refresh)
         layout.addLayout(actions)
         layout.addWidget(self.plot_options)
@@ -48,7 +48,7 @@ class TimeSeriesMixin:
         for widget in (self.view_mode,self.view_epoch,self.follow_live,self.axis_timezone,self.color_percentile):controls.addWidget(widget)
         options_layout.addLayout(controls)
         options_layout.addLayout(display_controls.controls(self))
-        self.display_scale_note=Q.QLabel('Scales change display only; log axes hide zeros/nonpositive values. Spectrogram intensity is independent of the count-rate axis.')
+        self.display_scale_note=Q.QLabel('Scales are display-only; logarithmic axes hide nonpositive values. Spectrum-count and spectrogram-intensity scales are independent of the time-series count-rate scale.')
         self.display_scale_note.setWordWrap(True)
         self.display_scale_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
         options_layout.addWidget(self.display_scale_note)
@@ -71,6 +71,14 @@ class TimeSeriesMixin:
         self.plot_cadence=Q.QLabel('Acquisition interval: waiting for run settings · displayed grouping: waiting for plot data')
         self.plot_cadence.setObjectName('muted')
         layout.addWidget(self.plot_cadence)
+        self.plot_render_status=Q.QLabel('')
+        self.plot_render_status.setWordWrap(True)
+        self.plot_render_status.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        self.plot_render_status.setStyleSheet(f'color: {GOLD}; font-weight: 600;')
+        self.plot_render_status.setVisible(False)
+        self.plot_preview_error=''
+        self.plot_accumulation_error=''
+        layout.addWidget(self.plot_render_status)
         legend=Q.QHBoxLayout();legend.setSpacing(18)
         self.series_buttons={}
         for key,label,color,dashed in (
@@ -91,6 +99,31 @@ class TimeSeriesMixin:
         layout.addWidget(self.chart_toolbar);layout.addWidget(self.charts,1)
         self.tabs.addTab(page,'Live dashboard')
 
+    def refresh_live_plots(self):
+        """Refresh derived views from saved records and report background work."""
+        if not self.run or not (self.run/'run.sqlite').exists() or self._closing:
+            self.plot_render_status.setText('Open a saved run to refresh its plots.')
+            self.plot_render_status.setVisible(True)
+            return
+        self.request_preview(True)
+        self.request_dashboard_accumulation()
+        self.update_plot_render_status()
+
+    def update_plot_render_status(self):
+        """Summarize active plot work without obscuring the plots themselves."""
+        messages=[]
+        if self.preview_busy or self.preview_pending:
+            messages.append('Rendering spectrogram and count/dose plots…')
+        if getattr(self,'dashboard_accumulation_busy',False):
+            messages.append(getattr(self,'dashboard_accumulation_progress_text','')
+                            or 'Building accumulated spectrum from verified saved intervals…')
+        if self.plot_preview_error:
+            messages.append(self.plot_preview_error)
+        if self.plot_accumulation_error:
+            messages.append(self.plot_accumulation_error)
+        self.plot_render_status.setText('  ·  '.join(messages))
+        self.plot_render_status.setVisible(bool(messages))
+
     def request_preview(self,force=False):
         if not self.run or not (self.run/'run.sqlite').exists() or self._closing:
             return
@@ -99,8 +132,10 @@ class TimeSeriesMixin:
             return
         if self.preview_busy:
             if force:
+                self.plot_preview_error=''
                 self.preview_cancel.set();self.preview_pending=True
                 self.update_plot_cadence()
+                self.update_plot_render_status()
             return
         try:
             mode=self.view_mode.currentData()
@@ -130,7 +165,9 @@ class TimeSeriesMixin:
             key=(str(self.run.resolve()),repr(view),self.view_epoch.currentData(),head)
             if key==self.preview_key and not force:return
             self.preview_cancel=threading.Event();self.preview_busy=True
+            self.plot_preview_error=''
             self.update_plot_cadence()
+            self.update_plot_render_status()
             self._last_preview_request=time.monotonic()
             self._preview_forced=force
             task=PreviewTask(self.run,view,self.view_epoch.currentData(),key,self.preview_cancel,self.analysis_root/'cache'/'previews')
@@ -140,6 +177,8 @@ class TimeSeriesMixin:
             self.preview_pool.start(task)
         except (OSError,ValueError,sqlite3.Error) as error:
             self.preview_note.setText(str(error))
+            self.plot_preview_error='Plot unavailable: '+str(error)
+            self.update_plot_render_status()
 
     def update_plot_cadence(self, interval_s=None):
         """Keep acquisition cadence distinct from display grouping during refreshes."""
@@ -160,12 +199,17 @@ class TimeSeriesMixin:
         if self._closing:return
         if self.preview_pending:
             self.preview_pending=False;self.request_preview(True);return
-        if not self.run or message['key'][0]!=str(self.run.resolve()):return
+        if not self.run or message['key'][0]!=str(self.run.resolve()):
+            self.update_plot_render_status();return
         if message['error']:
-            self.preview_note.setText('Plot unavailable: '+message['error']);return
+            self.preview_note.setText('Plot unavailable: '+message['error'])
+            self.plot_preview_error='Plot unavailable: '+message['error']
+            self.update_plot_render_status();return
         result=message['result']
-        if result is None:return
+        if result is None:
+            self.update_plot_render_status();return
         self.preview_key=message['key'];self.analysis_rows=result['rows'];self.preview_summary=result['summary']
+        self.plot_preview_error=''
         self.preview_aggregation=int(result['aggregation'])
         self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • up to {result['aggregation']} recorded intervals / group"
         self.update_plot_cadence()
@@ -173,6 +217,7 @@ class TimeSeriesMixin:
         self.preview_note.setText(f"{kind} through spectrum {result['head']:,}; source check {result['source_verified_utc']}. "
                                   'Groups sum counts / device seconds; gaps remain blank. Full integrity audit is separate. Click a heatmap interval to inspect its spectrum.')
         if self.follow_live.isChecked() or self._preview_forced:self.redraw_analysis()
+        self.update_plot_render_status()
 
     def redraw_analysis(self,*args):
         self.refresh_spectrum(True)
@@ -187,8 +232,10 @@ class TimeSeriesMixin:
     def display_scales_changed(self,*unused):
         if not hasattr(self,'spectrum_canvas'):return
         energy=self.energy_axis.currentData();counts=self.counts_axis.currentData()
-        self.spectrum_canvas.energy_scale=energy;self.spectrum_canvas.counts_scale=counts
+        spectrum_counts=self.spectrum_counts_axis.currentData()
+        self.spectrum_canvas.energy_scale=energy;self.spectrum_canvas.counts_scale=spectrum_counts
         self.charts.energy_scale=energy;self.charts.counts_scale=counts
+        self.charts.spectrum_counts_scale=spectrum_counts
         self.charts.intensity_scale=self.intensity_scale.currentData()
         self.charts.colormap=self.spectrogram_colormap.currentData()
         # Redraw the already displayed row; toggling a scale never starts a new
@@ -199,7 +246,7 @@ class TimeSeriesMixin:
             self.spectrum_canvas.show_interval(row,roi)
         else:
             apply_scale(self.spectrum_canvas.ax,'x',energy)
-            apply_scale(self.spectrum_canvas.ax,'y',counts)
+            apply_scale(self.spectrum_canvas.ax,'y',spectrum_counts)
             self.spectrum_canvas.draw_idle()
         if self.analysis_rows:
             snapshot=self.last_status.get('last_snapshot') or self.analysis_rows[-1][3]
@@ -207,6 +254,7 @@ class TimeSeriesMixin:
         else:
             apply_scale(self.charts.spg,'x',energy)
             apply_scale(self.charts.count,'y',counts)
+            self.charts.set_accumulated(self.dashboard_accumulation_row,self.dashboard_accumulation_error)
             self.charts.draw_idle()
         for toolbar in (self.spectrum_toolbar,self.chart_toolbar):
             toolbar.update();toolbar.push_current()

@@ -40,6 +40,7 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         self.dashboard_accumulation_cancel=threading.Event();self.dashboard_accumulation_busy=False
         self.dashboard_accumulation_engine=None;self.dashboard_accumulation_key=None
         self.dashboard_accumulation_row=None;self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
+        self.dashboard_accumulation_progress_text=''
         self.tabs=Q.QTabWidget()
         self._build_timeseries_tab()
         self._build_spectrum_tab(bg,panel,text)
