@@ -7,7 +7,8 @@ Override the location with --releases or GAMMAKEEPER_RELEASES.
 
 Steps: export the tag with ``git archive``; check every exported file against
 its git blob (SHA-256); optionally compare with an existing release folder;
-vendor dependencies from the lock file; run the unit tests in a throwaway copy
+reuse app-local dependencies only when every package file matches the lock
+reference, otherwise vendor dependencies from the lock file; run the unit tests in a throwaway copy
 so test output never lands in the release; write DEPLOYMENT.json; move the
 release into place. Releases are never replaced: a running recorder may be
 using an older one. ``current.txt`` is written only with --activate, and only
@@ -29,6 +30,8 @@ import sys
 import tarfile
 import tempfile
 from pathlib import Path
+
+from vendor_dependencies import compare, digests, read_listing
 
 REPO = Path(__file__).resolve().parents[1]
 DEFAULT_RELEASES = Path(os.environ.get('GAMMAKEEPER_RELEASES', REPO.parent / 'GammaKeeper Releases'))
@@ -78,10 +81,28 @@ def vendor(staging, python):
     app = app_root(staging)
     if sha256((app / lock).read_bytes()) != sha256((app_root(REPO) / lock).read_bytes()):
         raise SystemExit(f'{lock} in the release differs from the repository; vendor it with its own tooling')
+    reference_file = app / 'dependencies-lock-v01.sha256'
+    reference = read_listing(reference_file)
+    local_dependencies = app_root(REPO) / 'dependencies'
+    if local_dependencies.is_dir():
+        local_digests = digests(local_dependencies)
+        code, _meta = compare(local_digests, reference)
+        if not code:
+            target = app / 'dependencies'
+            shutil.copytree(local_dependencies, target, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+            copied, copied_meta = compare(digests(target), reference)
+            if copied:
+                shutil.rmtree(target)
+                raise SystemExit(f'Copied local dependencies differ from {reference_file.name}: {copied[:10]}')
+            return dict(lock_sha256=sha256((app / lock).read_bytes()),
+                        reference_sha256=sha256(reference_file.read_bytes()),
+                        source='verified local app/dependencies', files=len(local_digests),
+                        metadata_differences=copied_meta)
     subprocess.run([str(python), '-X', 'utf8', str(REPO / 'tools' / 'vendor_dependencies.py'),
                     '--target', str(app / 'dependencies'), '--python', str(python)], check=True)
     listing = (app_root(REPO) / 'dependencies-lock-v01.sha256').read_bytes()
-    return dict(lock_sha256=sha256((app / lock).read_bytes()), reference_sha256=sha256(listing))
+    return dict(lock_sha256=sha256((app / lock).read_bytes()), reference_sha256=sha256(listing),
+                source='lock-file install')
 
 
 def run_tests(staging, python):
