@@ -8,7 +8,15 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
 - Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
 
-## Release notes (current code: 0.5.1)
+## Release notes (current code: 0.7.0)
+
+## Plot-first live dashboard (0.7.0)
+
+The **Live dashboard** is now the default view when a run is open. It shows the spectrogram and the verified accumulated recording spectrum together, with count-rate and dose-rate trends beneath them. Count rate uses the left axis in cps; device dose rate uses the right axis in µSv/h. Axis labels and ticks use their curve colors. The device count estimator is a dashed, optional trace whose visibility control stays above the plotting area. The data area has no inset legend.
+
+The run label, acquisition interval, planned duration and end time remain visible above the plots. A compact freshness line reports spectrum and telemetry ages and supervisor restarts. Plot grouping is labeled separately from the acquisition interval. **Run setup** collapses the setup form after a run is selected; **Run details & diagnostics** keeps the full schedule, clock provenance, observed integrated dose, file path, messages and log available when needed. **More** opens the spectrum/ROI, run summary, events, exports, notes and experiment pages, and **Live plots** returns to the dashboard. F11 opens the dashboard full screen; Escape exits.
+
+The dashboard accumulated spectrum uses the same incremental raw-hash and reconstruction checks as the Spectrum / ROI viewer. It sums only complete recorded intervals, keeps original channels and calibration, excludes pre-recording device counts, and refuses to combine incompatible channel grids. Display grouping, linear/log axes, dose presentation and window layout do not change acquisition or recorded data.
 
 Paths beginning with `../` in these notes are relative to the original `radiacode_logger_v0*` release folder, i.e. they name folders in the `Radiacode Data` workspace. In this repository the application lives in `app/`.
 

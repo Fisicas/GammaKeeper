@@ -16,6 +16,7 @@ from ui.theme import TEAL, GOLD, MUTED
 class RunStatusMixin:
     def refresh(self):
         self.poll_background_jobs()
+        self._sync_recording_layout()
         if self.export_process and self.export_process.poll() is not None:
             code = self.export_process.returncode
             self.export_log.close()
@@ -45,6 +46,10 @@ class RunStatusMixin:
             self.status_stale = age > 25 and state['state'] in ('starting', 'connecting', 'recording', 'reconnecting')
             self.last_status = state
             active = self.active()
+            self.live_stop_button.setVisible(active)
+            self.live_stop_button.setEnabled(active and not getattr(self,'read_only',False))
+            self._update_live_context(state, active)
+            self.update_plot_cadence(state.get('interval_s',10))
             self.metric_captions[0].setText('Spectrum rate • latest interval' if active else 'Spectrum rate • final interval')
             self.metric_captions[1].setText('Dose rate • latest estimator' if active else 'Dose rate • final estimator')
             prefix = 'SIMULATED • ' if state['mode'] == 'demo' else ''
@@ -105,6 +110,7 @@ class RunStatusMixin:
                 seq = snapshot['seq']
                 render_key=(str(self.run),seq,caught_up)
                 if self.last_seq != render_key:
+                    self.request_dashboard_accumulation()
                     self.request_preview()
                     if not self.last_seq or self.last_seq[1]!=seq:
                         self.message(f'Saved spectrum {seq}; ' + ', '.join(interval.get('quality', [])))
@@ -122,6 +128,18 @@ class RunStatusMixin:
             progress=' • loading saved telemetry' if not caught_up else ''
             self.health.setText(f'{age_text} • {telemetry_text} • supervisor restarts: {sup.get("restarts",0)} • {lead_text}{progress}\nDose uses host-reception observations; exact sample/filter latency is not calibrated.')
             self.health.setStyleSheet(f'color: {GOLD if active and ((spectrum_age and spectrum_age>max(30,state.get("interval_s",10)*3)) or (telemetry_age and telemetry_age>5)) else MUTED};')
+            stale = bool(active and ((spectrum_age is not None and spectrum_age > max(30,state.get('interval_s',10)*3))
+                                     or (telemetry_age is not None and telemetry_age > 5)))
+            freshness = f'Spectra {spectrum_age:.1f} s' if spectrum_age is not None else 'No spectrum yet'
+            freshness += f'  ·  telemetry {telemetry_age:.1f} s' if telemetry_age is not None else '  ·  no telemetry yet'
+            freshness += f'  ·  restarts {sup.get("restarts",0)}'
+            if state['state'] == 'reconnecting':
+                freshness = f"Reconnecting · retry in {state.get('retry_delay_s','?')} s  ·  " + freshness
+            elif stale:
+                freshness = 'Data may be stale  ·  ' + freshness
+            self.live_freshness.setText(freshness)
+            self.live_freshness.setStyleSheet(f'color: {GOLD if stale or state["state"] in ("reconnecting","error") else MUTED};')
+            self.live_freshness.setToolTip(self.health.text())
             if not active and state['state'] in ('completed','stopped'):
                 self.health.setText(f"Saved final spectrum: {(snapshot or {}).get('utc_after','unknown')} • supervisor restarts: {sup.get('restarts',0)} • {lead_text}\nCompleted data are static; dose uses received estimators with uncalibrated sample/filter latency.")
             self.refresh_analysis_status(state,active,coverage if caught_up else None)
@@ -155,3 +173,22 @@ class RunStatusMixin:
                 self.resume_button.setEnabled(False)
                 self.setup_button.setEnabled(not self.active())
             self.detail.setText(f'Waiting for saved state: {error}')
+
+    def _update_live_context(self, state, active):
+        """Keep run identity and schedule visible without the full explanatory summary."""
+        settings = self.run_settings
+        if not settings:
+            self.run_context.setText('Run settings loading')
+            return
+        from run_settings import format_duration
+        duration = 'Continuous' if settings['duration_s'] == 0 else format_duration(settings['duration_s'])
+        label = settings['label'] or '(unlabeled run)'
+        parts = [label, f"every {settings['interval_s']:g} s", f'planned {duration}']
+        planned = settings.get('planned_end_utc')
+        if planned:
+            end = dt.datetime.fromisoformat(planned)
+            remaining = (end - dt.datetime.now(dt.timezone.utc)).total_seconds()
+            parts.append('ends ' + end.astimezone().strftime('%b %d %H:%M %z'))
+            parts.append(format_duration(max(0,remaining)) + ' remaining' if remaining > 0 else 'planned end reached')
+        self.run_context.setText('  ·  '.join(parts))
+        self.run_context.setToolTip(self.run_summary.text())

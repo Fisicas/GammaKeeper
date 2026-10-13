@@ -139,6 +139,10 @@ class SetupPanelMixin:
             self.science_cancel.set();self.science_result=None;self._last_science=-float('inf')
             self.science_figure.clear();self.science_canvas.draw_idle()
             self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
+            self.dashboard_accumulation_cancel.set();self.dashboard_accumulation_key=None
+            self.dashboard_accumulation_engine=None;self.dashboard_accumulation_row=None
+            self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
+            self.charts.set_accumulated(None)
             self.selected_analysis_row=None
             self._spectrum_key=None
             self.spectrum_canvas.empty('Loading recorded spectra…')
@@ -194,8 +198,12 @@ class SetupPanelMixin:
         self.experiment_overview.setText('Configure a new recording.');self.science_text.clear()
         self.update_time_export()
         self.preview_cancel.set();self.analysis_rows=[];self.preview_key=None;self.preview_summary={}
+        self.preview_aggregation=None
         self.selected_analysis_row=None;self._spectrum_key=None
         self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
+        self.dashboard_accumulation_cancel.set();self.dashboard_accumulation_key=None
+        self.dashboard_accumulation_engine=None;self.dashboard_accumulation_row=None
+        self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
         self.spectrum_canvas.empty('Start a new recording or open a saved run to view interval spectra.')
         self.recorder = None
         self.last_status = {}
@@ -219,9 +227,10 @@ class SetupPanelMixin:
         if self.charts.colorbar:
             self.charts.colorbar.remove()
             self.charts.colorbar = None
-        for axis in (self.charts.spg, self.charts.count, self.charts.dose):
+        for axis in (self.charts.spg, self.charts.accum, self.charts.count, self.charts.dose):
             axis.clear()
         self.charts.empty()
+        self.charts.set_accumulated(None)
         self.health.setText('Waiting for a new recording')
         self.detail.setText('Starting a new recording creates a separate run folder.')
 

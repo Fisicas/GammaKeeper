@@ -11,6 +11,7 @@ from export_run import readonly
 from plot_scales import apply_scale
 import display_controls
 from ui.tasks import PreviewTask
+from ui.theme import TEAL, GOLD, MUTED
 
 # Time-series windows: seconds before the latest saved spectrum, or a named mode.
 VIEW_WINDOWS = [('Last 5 minutes', 300), ('Last 30 minutes', 1800), ('Last 1 hour', 3600), ('Last 6 hours', 21600),
@@ -21,8 +22,20 @@ DEFAULT_WINDOW = 1800
 
 class TimeSeriesMixin:
     def _build_timeseries_tab(self):
-        """Time series tab: view controls, display scales, ranges, ROI and the Charts canvas."""
+        """Plot-first live dashboard; less-used plotting controls are collapsed."""
         page=Q.QWidget();layout=Q.QVBoxLayout(page);layout.setContentsMargins(0,0,0,0)
+        actions=Q.QHBoxLayout()
+        self.plot_options_button=Q.QToolButton();self.plot_options_button.setText('Plot options ▸')
+        self.plot_options_button.setCheckable(True);self.plot_options_button.setChecked(False)
+        self.plot_options=Q.QFrame();self.plot_options.setObjectName('panel')
+        options_layout=Q.QVBoxLayout(self.plot_options);options_layout.setContentsMargins(8,8,8,8)
+        self.plot_refresh=Q.QPushButton('Refresh plots');self.plot_refresh.clicked.connect(lambda:self.request_preview(True))
+        actions.addWidget(self.plot_options_button);actions.addStretch();actions.addWidget(self.plot_refresh)
+        layout.addLayout(actions)
+        layout.addWidget(self.plot_options)
+        self.plot_options.setVisible(False)
+        self.plot_options_button.toggled.connect(lambda shown:(self.plot_options.setVisible(shown),
+                                                               self.plot_options_button.setText('Plot options ▾' if shown else 'Plot options ▸')))
         controls=Q.QHBoxLayout()
         self.view_mode=Q.QComboBox()
         for text,data in VIEW_WINDOWS:self.view_mode.addItem(text,data)
@@ -32,14 +45,13 @@ class TimeSeriesMixin:
         self.follow_live=Q.QCheckBox('Follow live');self.follow_live.setChecked(True)
         self.axis_timezone=Q.QComboBox();self.axis_timezone.addItems(['UTC','Local time'])
         self.color_percentile=Q.QDoubleSpinBox();self.color_percentile.setRange(90,100);self.color_percentile.setDecimals(1);self.color_percentile.setValue(99.5);self.color_percentile.setSuffix(' % color limit')
-        refresh=Q.QPushButton('Refresh plot');refresh.clicked.connect(lambda:self.request_preview(True))
-        for widget in (self.view_mode,self.view_epoch,self.follow_live,self.axis_timezone,self.color_percentile,refresh):controls.addWidget(widget)
-        layout.addLayout(controls)
-        layout.addLayout(display_controls.controls(self))
+        for widget in (self.view_mode,self.view_epoch,self.follow_live,self.axis_timezone,self.color_percentile):controls.addWidget(widget)
+        options_layout.addLayout(controls)
+        options_layout.addLayout(display_controls.controls(self))
         self.display_scale_note=Q.QLabel('Scales change display only; log axes hide zeros/nonpositive values. Spectrogram intensity is independent of the count-rate axis.')
         self.display_scale_note.setWordWrap(True)
         self.display_scale_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
-        layout.addWidget(self.display_scale_note)
+        options_layout.addWidget(self.display_scale_note)
         ranges=Q.QHBoxLayout()
         self.view_from=Q.QDateTimeEdit();self.view_until=Q.QDateTimeEdit()
         for edit in (self.view_from,self.view_until):
@@ -52,12 +64,27 @@ class TimeSeriesMixin:
         self.roi_from.setValue(500);self.roi_to.setValue(700)
         self.roi_terminal=Q.QCheckBox('Include terminal channel')
         for widget in (self.roi_enabled,self.roi_from,self.roi_to,self.roi_terminal):ranges.addWidget(widget)
-        layout.addLayout(ranges)
+        options_layout.addLayout(ranges)
         self.preview_note=Q.QLabel('Plots are derived views; original records remain saved. Click the heatmap to inspect an interval spectrum.')
         self.preview_note.setWordWrap(True);self.preview_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
-        layout.addWidget(self.preview_note)
+        options_layout.addWidget(self.preview_note)
+        self.plot_cadence=Q.QLabel('Acquisition interval: waiting for run settings · displayed grouping: waiting for plot data')
+        self.plot_cadence.setObjectName('muted')
+        layout.addWidget(self.plot_cadence)
+        legend=Q.QHBoxLayout();legend.setSpacing(18)
+        self.series_buttons={}
+        for key,label,color,line_style in (
+                ('counts','Spectrum differences · cps',TEAL,'━'),
+                ('estimator','Device estimator · cps',MUTED,'┄'),
+                ('dose','Device dose rate · µSv/h',GOLD,'━')):
+            button=Q.QToolButton();button.setText(f'{line_style}  {label}');button.setCheckable(True);button.setChecked(True)
+            button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
+            button.setStyleSheet(f'QToolButton {{ color: {color}; background: transparent; font-weight: 500; padding: 2px; }} QToolButton:!checked {{ color: {MUTED}; }}')
+            button.toggled.connect(lambda checked,name=key:self.charts.set_series_visible(name,checked))
+            self.series_buttons[key]=button;legend.addWidget(button)
+        legend.addStretch();layout.addLayout(legend)
         layout.addWidget(self.chart_toolbar);layout.addWidget(self.charts,1)
-        self.tabs.addTab(page,'Time series')
+        self.tabs.addTab(page,'Live dashboard')
 
     def request_preview(self,force=False):
         if not self.run or not (self.run/'run.sqlite').exists() or self._closing:
@@ -68,6 +95,7 @@ class TimeSeriesMixin:
         if self.preview_busy:
             if force:
                 self.preview_cancel.set();self.preview_pending=True
+                self.update_plot_cadence()
             return
         try:
             mode=self.view_mode.currentData()
@@ -97,6 +125,7 @@ class TimeSeriesMixin:
             key=(str(self.run.resolve()),repr(view),self.view_epoch.currentData(),head)
             if key==self.preview_key and not force:return
             self.preview_cancel=threading.Event();self.preview_busy=True
+            self.update_plot_cadence()
             self._last_preview_request=time.monotonic()
             self._preview_forced=force
             task=PreviewTask(self.run,view,self.view_epoch.currentData(),key,self.preview_cancel,self.analysis_root/'cache'/'previews')
@@ -106,6 +135,20 @@ class TimeSeriesMixin:
             self.preview_pool.start(task)
         except (OSError,ValueError,sqlite3.Error) as error:
             self.preview_note.setText(str(error))
+
+    def update_plot_cadence(self, interval_s=None):
+        """Keep acquisition cadence distinct from display grouping during refreshes."""
+        if interval_s is None:
+            interval_s=float((self.last_status or {}).get('interval_s',10))
+        if self.preview_busy or self.preview_pending:
+            grouping='updating preview'
+        elif self.preview_aggregation is None:
+            grouping='waiting for plot data'
+        elif self.preview_aggregation==1:
+            grouping='individual recorded intervals'
+        else:
+            grouping=f'up to {self.preview_aggregation} recorded intervals per plotted group'
+        self.plot_cadence.setText(f'Acquisition interval: {interval_s:g} s  ·  Display: {grouping}')
 
     def preview_done(self,message):
         self.preview_busy=False
@@ -118,7 +161,9 @@ class TimeSeriesMixin:
         result=message['result']
         if result is None:return
         self.preview_key=message['key'];self.analysis_rows=result['rows'];self.preview_summary=result['summary']
+        self.preview_aggregation=int(result['aggregation'])
         self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • up to {result['aggregation']} recorded intervals / group"
+        self.update_plot_cadence()
         kind='Cached prefix + verified new intervals' if result.get('cached') else 'Verified raw reconstruction'
         self.preview_note.setText(f"{kind} through spectrum {result['head']:,}; source check {result['source_verified_utc']}. "
                                   'Groups sum counts / device seconds; gaps remain blank. Full integrity audit is separate. Click a heatmap interval to inspect its spectrum.')
