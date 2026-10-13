@@ -30,12 +30,16 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         self.analysis_root=root
         self.preview_pool=QtCore.QThreadPool(self);self.preview_pool.setMaxThreadCount(1)
         self.preview_cancel=threading.Event();self.preview_busy=False;self.preview_pending=False
-        self.preview_key=None;self.analysis_rows=[];self.preview_summary={};self._closing=False
+        self.preview_key=None;self.analysis_rows=[];self.preview_summary={};self.preview_aggregation=None;self._closing=False
         self.background_jobs=[];self._last_events=0;self._last_disk=0
         self.selected_analysis_row=None
         self.accumulation_pool=QtCore.QThreadPool(self);self.accumulation_pool.setMaxThreadCount(1)
         self.accumulation_cancel=threading.Event();self.accumulation_busy=False
         self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None;self.accumulation_head=-1;self.accumulation_error=None
+        self.dashboard_accumulation_pool=QtCore.QThreadPool(self);self.dashboard_accumulation_pool.setMaxThreadCount(1)
+        self.dashboard_accumulation_cancel=threading.Event();self.dashboard_accumulation_busy=False
+        self.dashboard_accumulation_engine=None;self.dashboard_accumulation_key=None
+        self.dashboard_accumulation_row=None;self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
         self.tabs=Q.QTabWidget()
         self._build_timeseries_tab()
         self._build_spectrum_tab(bg,panel,text)

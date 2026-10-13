@@ -141,6 +141,48 @@ class SpectrumTabMixin:
     def spectrum_tab_changed(self,index):
         if index==1:self.refresh_spectrum(True)
 
+    def request_dashboard_accumulation(self):
+        """Keep the default whole-run spectrum current independently of tab selection."""
+        if not self.run or self._closing:
+            return
+        snapshot=(self.last_status or {}).get('last_snapshot') or {}
+        head=snapshot.get('seq',-1)
+        if head<0:return
+        run_key=str(self.run.resolve())
+        if self.dashboard_accumulation_key!=run_key:
+            self.dashboard_accumulation_cancel.set()
+            self.dashboard_accumulation_key=run_key
+            self.dashboard_accumulation_engine=AccumulatedSpectrum(self.run)
+            self.dashboard_accumulation_row=None
+            self.dashboard_accumulation_head=-1
+            self.dashboard_accumulation_error=None
+            self.charts.set_accumulated(None)
+        if self.dashboard_accumulation_busy or self.dashboard_accumulation_head>=head:
+            return
+        self.dashboard_accumulation_cancel=threading.Event()
+        self.dashboard_accumulation_busy=True
+        task=AccumulationTask(self.dashboard_accumulation_engine,run_key,self.dashboard_accumulation_cancel)
+        self._dashboard_accumulation_task=task
+        task.signals.done.connect(self.dashboard_accumulation_done)
+        self.dashboard_accumulation_pool.start(task)
+
+    def dashboard_accumulation_done(self,message):
+        self.dashboard_accumulation_busy=False
+        if self._closing:
+            return
+        if message['key']!=self.dashboard_accumulation_key:
+            QtCore.QTimer.singleShot(0,self.request_dashboard_accumulation)
+            return
+        if message.get('cancelled'):
+            return
+        self.dashboard_accumulation_row=message.get('row')
+        self.dashboard_accumulation_head=message.get('head',-1)
+        self.dashboard_accumulation_error=message.get('error')
+        self.charts.set_accumulated(self.dashboard_accumulation_row,self.dashboard_accumulation_error)
+        if self.tabs.currentIndex()==1 and self.spectrum_mode.currentIndex()==2:
+            self.refresh_spectrum(True)
+        self.request_dashboard_accumulation()
+
     def refresh_spectrum(self,force=False):
         if not hasattr(self,'spectrum_canvas') or self._closing:return
         if self.tabs.currentIndex()!=1 and not force:return
@@ -164,9 +206,17 @@ class SpectrumTabMixin:
                 label='Latest recorded interval'
             elif self.spectrum_mode.currentIndex()==1:
                 row=self.selected_analysis_row;label='Selected heatmap interval / group'
+            elif self.spectrum_mode.currentIndex()==2:
+                row=self.dashboard_accumulation_row;label='Accumulated recording'
+                if self.dashboard_accumulation_error:
+                    raise ValueError(self.dashboard_accumulation_error)
+                if row is None:
+                    self.spectrum_note.setText('Accumulated recording • verifying complete intervals')
+                    self.spectrum_canvas.empty('Accumulating complete recorded intervals…')
+                    return
             else:
                 start=self.collection_from.dateTime().toMSecsSinceEpoch()/1000 if self.spectrum_mode.currentIndex()==3 else None
-                end=self.collection_until.dateTime().toMSecsSinceEpoch()/1000 if self.spectrum_mode.currentIndex()==3 and not self.collection_latest.isChecked() else None
+                end=self.collection_until.dateTime().toMSecsSinceEpoch()/1000 if not self.collection_latest.isChecked() else None
                 if end is not None and start>=end:raise ValueError('Collection start must precede its end')
                 key=(str(self.run.resolve()),self.spectrum_mode.currentIndex(),start,end,self.collection_epoch.currentData())
                 if self.accumulation_key!=key:
@@ -183,7 +233,7 @@ class SpectrumTabMixin:
                     self.accumulation_pool.start(task)
                 if self.accumulation_error:raise ValueError(self.accumulation_error)
                 row=self.accumulation_row
-                label='Accumulated recording' if self.spectrum_mode.currentIndex()==2 else 'Accumulated collection range'
+                label='Accumulated collection range'
                 if row is None:
                     self.spectrum_note.setText(label+' • loading complete intervals' if self.accumulation_busy else label+' • no complete recorded intervals inside this range')
                     if not self.accumulation_busy:self.spectrum_canvas.empty('No complete recorded intervals in this collection range. Expand the bounds or choose another epoch.')

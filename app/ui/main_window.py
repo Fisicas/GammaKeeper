@@ -17,7 +17,7 @@ from ui.paths import DATA_ROOT, ROOT, SETTINGS_DIR
 from ui.run_status import RunStatusMixin
 from ui.setup_panel import SetupPanelMixin
 from ui.splash import SplashScreen, app_icon, set_app_user_model_id
-from ui.theme import BG, PANEL, TEXT, TEAL, STYLESHEET
+from ui.theme import BG, PANEL, TEXT, TEAL, GOLD, MUTED, STYLESHEET
 
 
 class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
@@ -59,34 +59,57 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.connection = Q.QLabel('Ready')
         self.connection.setStyleSheet(f'color: {TEAL}; font-weight: 600;')
         header.addWidget(self.connection)
+        self.settings_toggle=Q.QToolButton();self.settings_toggle.setCheckable(True)
+        self.settings_toggle.setToolTip('Show or hide run setup and recording controls')
+        self.settings_toggle.toggled.connect(self._set_setup_visible)
+        header.addWidget(self.settings_toggle)
+        self.back_live_button=Q.QToolButton();self.back_live_button.setText('Live plots')
+        self.back_live_button.setEnabled(False);self.back_live_button.clicked.connect(lambda:self.tabs.setCurrentIndex(0))
+        header.addWidget(self.back_live_button)
+        self.more_button=Q.QToolButton();self.more_button.setText('More')
+        self.more_menu=Q.QMenu(self.more_button);self.more_button.setMenu(self.more_menu)
+        self.more_button.setPopupMode(Q.QToolButton.ToolButtonPopupMode.InstantPopup)
+        header.addWidget(self.more_button)
+        self.fullscreen_button=Q.QToolButton();self.fullscreen_button.setText('Full screen')
+        self.fullscreen_button.clicked.connect(self.toggle_fullscreen);header.addWidget(self.fullscreen_button)
+        self.live_stop_button=Q.QPushButton('Stop recording…');self.live_stop_button.setObjectName('stop')
+        self.live_stop_button.clicked.connect(self.stop_recording);self.live_stop_button.setVisible(False)
+        header.addWidget(self.live_stop_button)
         layout.addLayout(header)
         content = Q.QHBoxLayout()
         layout.addLayout(content, 1)
         settings = self._build_setup_panel(content)
+        self.setup_scroll=content.itemAt(0).widget()
         right = Q.QVBoxLayout()
         content.addLayout(right, 1)
-        cards = Q.QHBoxLayout()
+        self.run_context=Q.QLabel('Configure a recording or open a saved run.')
+        self.run_context.setObjectName('muted');self.run_context.setTextFormat(QtCore.Qt.TextFormat.PlainText)
+        self.run_context.setToolTip('Run label, recorded interval, planned duration and end time')
+        right.addWidget(self.run_context)
+        metric_row=Q.QHBoxLayout();metric_row.setSpacing(24)
         self.metrics = []
         self.metric_captions=[]
-        for text in ['Count rate • spectrum', 'Dose rate • latest', 'Dose • observed', 'Saved spectra']:
-            frame = Q.QFrame()
-            frame.setObjectName('panel')
-            stack = Q.QVBoxLayout(frame)
+        for text in ['Spectrum rate', 'Dose rate', 'Observed dose', 'Saved spectra']:
+            frame=Q.QWidget();stack=Q.QVBoxLayout(frame);stack.setContentsMargins(0,0,0,0);stack.setSpacing(0)
             caption = Q.QLabel(text)
             caption.setObjectName('muted')
             self.metric_captions.append(caption)
             value = Q.QLabel('—')
-            value.setObjectName('metric')
+            value.setStyleSheet(f'font-size: 13pt; font-weight: 600; color: {TEAL};')
             stack.addWidget(caption)
             stack.addWidget(value)
             self.metrics.append(value)
-            cards.addWidget(frame)
-        right.addLayout(cards)
+            if len(self.metrics)==3:
+                self.observed_metric=frame
+            elif len(self.metrics) in (1,2,4):
+                metric_row.addWidget(frame)
+        metric_row.addStretch();right.addLayout(metric_row)
+        self.live_freshness=Q.QLabel('Waiting for current data')
+        self.live_freshness.setObjectName('muted');right.addWidget(self.live_freshness)
         self.run_summary = Q.QLabel('Configure a new recording or open a saved run.')
         self.run_summary.setWordWrap(True)
         self.run_summary.setTextFormat(QtCore.Qt.TextFormat.PlainText)
         self.run_summary.setObjectName('muted')
-        right.addWidget(self.run_summary)
         self.charts = Charts()
         self.chart_toolbar=NavigationToolbar2QT(self.charts,self)
         self.init_analysis(right,ROOT,BG,PANEL,TEXT)
@@ -97,23 +120,44 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         settings.insertWidget(settings.count()-2,backup)
         resume_backup=Q.QPushButton('Resume interrupted backup…');resume_backup.clicked.connect(lambda:self.backup_selected(True))
         settings.insertWidget(settings.count()-2,resume_backup)
+        self.details_button=Q.QToolButton();self.details_button.setText('Run details and diagnostics [show]')
+        self.details_button.setCheckable(True);self.details_button.setChecked(False)
+        self.details_container=Q.QWidget();details_layout=Q.QVBoxLayout(self.details_container)
+        details_layout.setContentsMargins(0,0,0,0);details_layout.setSpacing(4)
         self.health=Q.QLabel('Waiting for run health')
         self.health.setObjectName('muted')
         self.health.setWordWrap(True)
-        right.addWidget(self.health)
+        details_layout.addWidget(self.health)
         self.detail = Q.QLabel('Start a new run or open a saved run. Device accumulators and calibration are preserved.')
         self.detail.setObjectName('muted')
         self.detail.setWordWrap(True)
-        right.addWidget(self.detail)
+        details_layout.addWidget(self.detail)
+        details_layout.addWidget(self.run_summary)
+        self.observed_metric.setParent(self.details_container)
+        details_layout.addWidget(self.observed_metric)
         self.log = Q.QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumHeight(85)
         self.log.document().setMaximumBlockCount(300)
-        right.addWidget(self.log)
+        details_layout.addWidget(self.log)
         self.footer = Q.QLabel('UTC uses the Windows clock. Raw records retain device flags and error percentages. Gaps are never filled.')
         self.footer.setObjectName('muted')
         self.footer.setWordWrap(True)
-        layout.addWidget(self.footer)
+        details_layout.addWidget(self.footer)
+        self.details_container.setVisible(False)
+        self.details_button.toggled.connect(lambda shown:(self.details_container.setVisible(shown),
+                                                          self.details_button.setText('Run details and diagnostics [hide]' if shown else 'Run details and diagnostics [show]')))
+        right.addWidget(self.details_button);right.addWidget(self.details_container)
+        self.tabs.tabBar().hide()
+        for index in range(1,self.tabs.count()):
+            action=self.more_menu.addAction(self.tabs.tabText(index))
+            action.triggered.connect(lambda checked=False,page=index:self.tabs.setCurrentIndex(page))
+        self.tabs.currentChanged.connect(lambda index:self.back_live_button.setEnabled(index!=0))
+        self._layout_run=object()
+        self.fullscreen_shortcut=QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_F11),self)
+        self.fullscreen_shortcut.activated.connect(self.toggle_fullscreen)
+        self.escape_shortcut=QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape),self)
+        self.escape_shortcut.activated.connect(self.exit_fullscreen)
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(1000)
@@ -131,7 +175,34 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
                 self.detect_device()  # no remembered detector: use the one on USB, if exactly one
         display_controls.restore(self,preferences.get("display",{}))
         self.restore_view(preferences.get('view',{}))
+        self._sync_recording_layout()
         self.refresh()
+
+    def _set_setup_visible(self, shown):
+        self.setup_scroll.setVisible(shown)
+        self.settings_toggle.setText('Hide setup' if shown else 'Run setup')
+
+    def _sync_recording_layout(self):
+        selected=str(self.run.resolve()) if self.run else None
+        if selected==self._layout_run:return
+        self._layout_run=selected
+        shown=selected is None
+        blocked=self.settings_toggle.blockSignals(True)
+        self.settings_toggle.setChecked(shown)
+        self.settings_toggle.blockSignals(blocked)
+        self._set_setup_visible(shown)
+        self.tabs.setCurrentIndex(0)
+
+    def toggle_fullscreen(self):
+        if self.isFullScreen():
+            self.exit_fullscreen()
+        else:
+            self.showFullScreen();self.fullscreen_button.setText('Exit full screen')
+
+    def exit_fullscreen(self):
+        if self.isFullScreen():
+            self.showNormal()
+            self.fullscreen_button.setText('Full screen')
 
     def message(self, text):
         self.log.appendPlainText(dt.datetime.now().strftime('%H:%M:%S') + '  ' + text)
@@ -146,6 +217,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self._closing=True
         self.preview_cancel.set()
         self.accumulation_cancel.set()
+        self.dashboard_accumulation_cancel.set()
         self.science_cancel.set()
         if self.read_only:
             event.accept();return
