@@ -66,7 +66,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.back_live_button=Q.QToolButton();self.back_live_button.setText('Live plots')
         self.back_live_button.setEnabled(False);self.back_live_button.clicked.connect(lambda:self.tabs.setCurrentIndex(0))
         header.addWidget(self.back_live_button)
-        self.more_button=Q.QToolButton();self.more_button.setText('More ▾')
+        self.more_button=Q.QToolButton();self.more_button.setText('More')
         self.more_menu=Q.QMenu(self.more_button);self.more_button.setMenu(self.more_menu)
         self.more_button.setPopupMode(Q.QToolButton.ToolButtonPopupMode.InstantPopup)
         header.addWidget(self.more_button)
@@ -120,7 +120,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         settings.insertWidget(settings.count()-2,backup)
         resume_backup=Q.QPushButton('Resume interrupted backup…');resume_backup.clicked.connect(lambda:self.backup_selected(True))
         settings.insertWidget(settings.count()-2,resume_backup)
-        self.details_button=Q.QToolButton();self.details_button.setText('Run details & diagnostics  ▸')
+        self.details_button=Q.QToolButton();self.details_button.setText('Run details and diagnostics [show]')
         self.details_button.setCheckable(True);self.details_button.setChecked(False)
         self.details_container=Q.QWidget();details_layout=Q.QVBoxLayout(self.details_container)
         details_layout.setContentsMargins(0,0,0,0);details_layout.setSpacing(4)
@@ -146,7 +146,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         details_layout.addWidget(self.footer)
         self.details_container.setVisible(False)
         self.details_button.toggled.connect(lambda shown:(self.details_container.setVisible(shown),
-                                                          self.details_button.setText('Run details & diagnostics  ▾' if shown else 'Run details & diagnostics  ▸')))
+                                                          self.details_button.setText('Run details and diagnostics [hide]' if shown else 'Run details and diagnostics [show]')))
         right.addWidget(self.details_button);right.addWidget(self.details_container)
         self.tabs.tabBar().hide()
         for index in range(1,self.tabs.count()):

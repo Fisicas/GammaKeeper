@@ -5,7 +5,7 @@ import threading
 import time
 
 import numpy as np
-from PySide6 import QtCore, QtWidgets as Q
+from PySide6 import QtCore, QtGui, QtWidgets as Q
 import matplotlib.dates as mdates
 from export_run import readonly
 from plot_scales import apply_scale
@@ -25,7 +25,7 @@ class TimeSeriesMixin:
         """Plot-first live dashboard; less-used plotting controls are collapsed."""
         page=Q.QWidget();layout=Q.QVBoxLayout(page);layout.setContentsMargins(0,0,0,0)
         actions=Q.QHBoxLayout()
-        self.plot_options_button=Q.QToolButton();self.plot_options_button.setText('Plot options ▸')
+        self.plot_options_button=Q.QToolButton();self.plot_options_button.setText('Plot options [show]')
         self.plot_options_button.setCheckable(True);self.plot_options_button.setChecked(False)
         self.plot_options=Q.QFrame();self.plot_options.setObjectName('panel')
         options_layout=Q.QVBoxLayout(self.plot_options);options_layout.setContentsMargins(8,8,8,8)
@@ -35,7 +35,7 @@ class TimeSeriesMixin:
         layout.addWidget(self.plot_options)
         self.plot_options.setVisible(False)
         self.plot_options_button.toggled.connect(lambda shown:(self.plot_options.setVisible(shown),
-                                                               self.plot_options_button.setText('Plot options ▾' if shown else 'Plot options ▸')))
+                                                               self.plot_options_button.setText('Plot options [hide]' if shown else 'Plot options [show]')))
         controls=Q.QHBoxLayout()
         self.view_mode=Q.QComboBox()
         for text,data in VIEW_WINDOWS:self.view_mode.addItem(text,data)
@@ -73,12 +73,17 @@ class TimeSeriesMixin:
         layout.addWidget(self.plot_cadence)
         legend=Q.QHBoxLayout();legend.setSpacing(18)
         self.series_buttons={}
-        for key,label,color,line_style in (
-                ('counts','Spectrum differences · cps',TEAL,'━'),
-                ('estimator','Device estimator · cps',MUTED,'┄'),
-                ('dose','Device dose rate · µSv/h',GOLD,'━')):
-            button=Q.QToolButton();button.setText(f'{line_style}  {label}');button.setCheckable(True);button.setChecked(True)
-            button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
+        for key,label,color,dashed in (
+                ('counts','Spectrum differences · cps',TEAL,False),
+                ('estimator','Device estimator · cps',MUTED,True),
+                ('dose','Device dose rate · µSv/h',GOLD,False)):
+            swatch=QtGui.QPixmap(24,12);swatch.fill(QtCore.Qt.GlobalColor.transparent)
+            painter=QtGui.QPainter(swatch);pen=QtGui.QPen(QtGui.QColor(color));pen.setWidth(2)
+            if dashed:pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+            painter.setPen(pen);painter.drawLine(1,6,23,6);painter.end()
+            button=Q.QToolButton();button.setText(label);button.setIcon(QtGui.QIcon(swatch))
+            button.setIconSize(QtCore.QSize(24,12));button.setCheckable(True);button.setChecked(True)
+            button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             button.setStyleSheet(f'QToolButton {{ color: {color}; background: transparent; font-weight: 500; padding: 2px; }} QToolButton:!checked {{ color: {MUTED}; }}')
             button.toggled.connect(lambda checked,name=key:self.charts.set_series_visible(name,checked))
             self.series_buttons[key]=button;legend.addWidget(button)

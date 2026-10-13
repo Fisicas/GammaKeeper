@@ -80,6 +80,8 @@ class LiveDashboardPlots(unittest.TestCase):
             self.assertTrue(window.tabs.tabBar().isHidden())
             self.assertTrue(window.details_container.isHidden())
             self.assertEqual(window.tabs.currentIndex(), 0)
+            self.assertFalse(window.series_buttons['counts'].icon().isNull())
+            self.assertFalse(window.series_buttons['estimator'].icon().isNull())
             window.settings_toggle.setChecked(True)
             self.assertFalse(window.setup_scroll.isHidden())
             window.close()
