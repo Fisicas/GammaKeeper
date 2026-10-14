@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bootstrap
-from PySide6 import QtWidgets as Q
+from PySide6 import QtCore, QtGui, QtWidgets as Q
 from ui.charts import Charts
 from gui import Window
 from recorder import make_config
@@ -25,6 +25,12 @@ class LiveDashboardPlots(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = Q.QApplication.instance() or Q.QApplication([])
+        # Match the launcher's font setup: restricted offscreen Windows sessions
+        # may not enumerate system fonts, which otherwise invalidates size checks.
+        for name in ('segoeui.ttf','segoeuib.ttf','seguisb.ttf'):
+            font=Path(os.environ.get('WINDIR',r'C:\Windows'))/'Fonts'/name
+            if font.exists():QtGui.QFontDatabase.addApplicationFontFromData(QtCore.QByteArray(font.read_bytes()))
+        cls.app.setFont(QtGui.QFont('Segoe UI',10));cls.app.setStyle('Fusion')
 
     @staticmethod
     def temp_root():
@@ -73,6 +79,9 @@ class LiveDashboardPlots(unittest.TestCase):
         plotted = charts.accum.lines[0]
         self.assertEqual(list(plotted.get_ydata()), counts[:-1])
         self.assertIn('2 complete intervals', charts.accum.get_title(loc='left'))
+        charts.roi=(1.,2.,False)
+        charts.set_accumulated(row,status='cached checkpoint')
+        self.assertIn('cached checkpoint',charts.accum.get_title(loc='left'))
 
     def test_log_accumulated_spectrum_retains_full_energy_extent_after_live_redraws(self):
         charts = Charts()
@@ -176,6 +185,45 @@ class LiveDashboardPlots(unittest.TestCase):
             self.assertFalse(window.setup_scroll.isHidden())
             window.close()
             self.app.processEvents()
+
+    def test_large_live_metrics_and_header_controls_fit_smaller_windows(self):
+        with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
+            run=Path(scratch)/'empty-read-only-run';run.mkdir()
+            window=Window(run,read_only=True);window.timer.stop()
+            window.connection.setText('RECORDING')
+            window.live_stop_button.setVisible(True)
+            window.metrics[0].setText('12,345.67 cps')
+            window.metrics[1].setText('1,234.567 µSv/h')
+            window.metrics[3].setText('120,960')
+            buttons=(window.settings_toggle,window.back_live_button,window.more_button,
+                     window.fullscreen_button,window.live_stop_button)
+            try:
+                self.assertIn('https://github.com/Fisicas/GammaKeeper',window.brand_link.text())
+                self.assertTrue(window.brand_link.openExternalLinks())
+                for size in ((1280,800),(1920,1080)):
+                    with self.subTest(size=size):
+                        window.resize(*size);window.show();self.app.processEvents()
+                        self.assertEqual(window.width(),size[0])
+                        for index in (0,1,3):
+                            metric=window.metrics[index]
+                            self.assertGreaterEqual(metric.font().pointSizeF(),24)
+                            self.assertGreaterEqual(metric.width(),metric.fontMetrics().horizontalAdvance(metric.text()))
+                        visible=(window.brand_link,window.connection)+buttons
+                        for widget in visible:
+                            bounds=widget.geometry()
+                            self.assertGreaterEqual(bounds.left(),0)
+                            self.assertLessEqual(bounds.right(),window.centralWidget().width())
+                        for first,second in zip(visible,visible[1:]):
+                            self.assertFalse(first.geometry().intersects(second.geometry()))
+                        for button in buttons:self.assertGreaterEqual(button.height(),36)
+                        self.assertGreater(window.charts.height(),300)
+                science_index=window.tabs.indexOf(window.experiment_page)
+                self.assertGreater(science_index,0)
+                with patch.object(window,'request_science') as refresh_qc:
+                    window.tabs.setCurrentIndex(science_index)
+                refresh_qc.assert_called_once_with()
+            finally:
+                window.close();self.app.processEvents()
 
     def test_live_accumulated_spectrum_loads_from_run_in_background(self):
         with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:

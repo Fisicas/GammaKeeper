@@ -43,6 +43,7 @@ class Charts(FigureCanvasQTAgg):
         self.scale_note = ''
         self.accumulated_row = None
         self.accumulated_error = None
+        self.accumulated_status = ''
         self.series_visible = dict(counts=True, estimator=True, dose=True)
         self.series_artists = {}
         self.empty()
@@ -74,9 +75,9 @@ class Charts(FigureCanvasQTAgg):
                         ha='center', va='center', color=MUTED)
         self.dose.patch.set_visible(False)
         self._style_rate_axes()
-        self.accum.set_xlabel('Energy (keV) • original channel calibration')
+        self.accum.set_xlabel('Energy (keV)')
         self.accum.set_ylabel('Accumulated counts / channel')
-        self.spg.set_xlabel('Energy (keV) • device polynomial; original channels')
+        self.spg.set_xlabel('Energy (keV)')
         self.spg.set_ylabel('UTC • time increases downward')
         self.count.set_xlabel('UTC')
         self.count.set_ylabel('Count rate (cps)', color=TEAL)
@@ -110,10 +111,11 @@ class Charts(FigureCanvasQTAgg):
             artist.set_visible(bool(visible))
         self.draw_idle()
 
-    def set_accumulated(self, row, error=None):
+    def set_accumulated(self, row, error=None, status=''):
         """Set the raw-verified accumulated recording/range row for the live pane."""
         self.accumulated_row = row
         self.accumulated_error = error
+        self.accumulated_status = status
         self._draw_accumulated()
         self.draw_idle()
 
@@ -121,7 +123,7 @@ class Charts(FigureCanvasQTAgg):
         ax = self.accum
         ax.clear()
         self.style(ax)
-        ax.set_xlabel('Energy (keV) • original channel calibration')
+        ax.set_xlabel('Energy (keV)')
         ax.set_ylabel('Accumulated counts / channel')
         row = self.accumulated_row
         if row is None:
@@ -162,7 +164,8 @@ class Charts(FigureCanvasQTAgg):
         intervals = collection.get('included_intervals')
         label = 'Accumulated recording' if collection.get('selection_rule', '').startswith('Complete recorded') and collection.get('requested_start_utc') is None else 'Accumulated collection range'
         suffix = f' • {intervals:,} complete intervals' if intervals is not None else ''
-        ax.set_title(label + suffix, loc='left')
+        status=f' • {self.accumulated_status}' if self.accumulated_status else ''
+        ax.set_title(label + suffix + status, loc='left')
         if self.roi:
             lower, upper, include_terminal = self.roi
             mask = (energy >= lower) & (energy <= upper)
@@ -176,7 +179,7 @@ class Charts(FigureCanvasQTAgg):
                     shown_lower = max(lower, float(positive.min()))
             if shown_lower < upper:
                 ax.axvspan(shown_lower, upper, color=GOLD, alpha=.14)
-            ax.set_title(label + suffix + f' • ROI {selected:,} counts', loc='left')
+            ax.set_title(label + suffix + status + f' • ROI {selected:,} counts', loc='left')
         apply_scale(ax, 'x', self.energy_scale, energy)
         apply_scale(ax, 'y', self.spectrum_counts_scale, counts)
 
@@ -267,7 +270,7 @@ class Charts(FigureCanvasQTAgg):
             self.spg.text(.5, .5, 'Baseline saved; waiting for a complete interval', transform=self.spg.transAxes,
                           ha='center', color=MUTED)
         self._draw_accumulated()
-        self.spg.set_xlabel('Energy (keV) • device polynomial; original channels')
+        self.spg.set_xlabel('Energy (keV)')
         self.spg.set_ylabel('UTC • time increases downward')
         if self.local_time:
             self.spg.set_ylabel('Local time • UTC offset shown • time increases downward')

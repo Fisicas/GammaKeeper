@@ -50,12 +50,18 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         layout = Q.QVBoxLayout(main)
         layout.setContentsMargins(24, 18, 24, 18)
         header = Q.QHBoxLayout()
-        title = Q.QLabel('GammaKeeper')
+        self.project_url = 'https://github.com/Fisicas/GammaKeeper'
+        title = self.brand_link = Q.QLabel(
+            f'<a href="{self.project_url}" style="color: {TEXT}; text-decoration: none;">GammaKeeper</a>')
         title.setObjectName('title')
+        title.setOpenExternalLinks(True)
+        title.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse |
+                                      QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard)
+        title.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        title.setAccessibleName('GammaKeeper project website')
+        title.setToolTip('Open GammaKeeper on GitHub')
         header.addWidget(title)
-        subtitle = Q.QLabel('Spectra, counts and dose • durable experiment logging')
-        subtitle.setObjectName('muted')
-        header.addWidget(subtitle, 1)
+        header.addStretch(1)
         self.connection = Q.QLabel('Ready')
         self.connection.setStyleSheet(f'color: {TEAL}; font-weight: 600;')
         header.addWidget(self.connection)
@@ -75,6 +81,10 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.live_stop_button=Q.QPushButton('Stop recording…');self.live_stop_button.setObjectName('stop')
         self.live_stop_button.clicked.connect(self.stop_recording);self.live_stop_button.setVisible(False)
         header.addWidget(self.live_stop_button)
+        for button in (self.settings_toggle,self.back_live_button,self.more_button,self.fullscreen_button):
+            button.setObjectName('header_action')
+            button.setMinimumHeight(36)
+        self.live_stop_button.setMinimumHeight(36)
         layout.addLayout(header)
         content = Q.QHBoxLayout()
         layout.addLayout(content, 1)
@@ -87,23 +97,26 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.run_context.setToolTip('Run label, recorded interval, planned duration and end time')
         right.addWidget(self.run_context)
         metric_row=Q.QHBoxLayout();metric_row.setSpacing(24)
+        self.metric_frames=[]
         self.metrics = []
         self.metric_captions=[]
         for text in ['Spectrum rate', 'Dose rate', 'Observed dose', 'Saved spectra']:
             frame=Q.QWidget();stack=Q.QVBoxLayout(frame);stack.setContentsMargins(0,0,0,0);stack.setSpacing(0)
             caption = Q.QLabel(text)
-            caption.setObjectName('muted')
+            caption.setObjectName('metric_caption')
             self.metric_captions.append(caption)
             value = Q.QLabel('—')
-            value.setStyleSheet(f'font-size: 13pt; font-weight: 600; color: {TEAL};')
+            value.setObjectName('metric')
+            if text=='Dose rate':value.setProperty('metricRole','dose')
             stack.addWidget(caption)
             stack.addWidget(value)
             self.metrics.append(value)
             if len(self.metrics)==3:
                 self.observed_metric=frame
             elif len(self.metrics) in (1,2,4):
-                metric_row.addWidget(frame)
-        metric_row.addStretch();right.addLayout(metric_row)
+                self.metric_frames.append(frame)
+                metric_row.addWidget(frame,1)
+        right.addLayout(metric_row)
         self.live_freshness=Q.QLabel('Waiting for current data')
         self.live_freshness.setObjectName('muted');right.addWidget(self.live_freshness)
         self.run_summary = Q.QLabel('Configure a new recording or open a saved run.')

@@ -10,6 +10,8 @@ import matplotlib.dates as mdates
 from export_run import readonly
 from plot_scales import apply_scale
 import display_controls
+import gui_preferences
+from ui.paths import ANALYSIS_CACHE_DIR
 from ui.tasks import PreviewTask
 from ui.theme import TEAL, GOLD, MUTED
 
@@ -116,6 +118,8 @@ class TimeSeriesMixin:
         messages=[]
         if self.preview_busy or self.preview_pending:
             messages.append('Rendering spectrogram and count/dose plots…')
+        if self.plot_preview_cache_status:
+            messages.append(self.plot_preview_cache_status)
         if getattr(self,'dashboard_accumulation_busy',False):
             messages.append(getattr(self,'dashboard_accumulation_progress_text','')
                             or 'Building accumulated spectrum from verified saved intervals…')
@@ -139,6 +143,7 @@ class TimeSeriesMixin:
             if force:
                 self.plot_preview_error=''
                 self.preview_cancel.set();self.preview_pending=True
+                self.preview_request_key=None
                 self.update_plot_cadence()
                 self.update_plot_render_status()
             return
@@ -171,13 +176,17 @@ class TimeSeriesMixin:
             if key==self.preview_key and not force:return
             self.preview_cancel=threading.Event();self.preview_busy=True
             self.plot_preview_error=''
+            self.plot_preview_cache_status=''
             self.update_plot_cadence()
             self.update_plot_render_status()
             self._last_preview_request=time.monotonic()
             self._preview_forced=force
-            task=PreviewTask(self.run,view,self.view_epoch.currentData(),key,self.preview_cancel,self.analysis_root/'cache'/'previews')
+            cache=None if gui_preferences.test_mode() else ANALYSIS_CACHE_DIR/'previews'
+            task=PreviewTask(self.run,view,self.view_epoch.currentData(),key,self.preview_cancel,cache)
+            self.preview_request_key=key
             self._preview_task=task
             task.signals.progress.connect(self.preview_note.setText)
+            task.signals.snapshot.connect(self.preview_snapshot)
             task.signals.done.connect(self.preview_done)
             self.preview_pool.start(task)
         except (OSError,ValueError,sqlite3.Error) as error:
@@ -199,30 +208,67 @@ class TimeSeriesMixin:
             grouping=f'up to {self.preview_aggregation} recorded intervals per plotted group'
         self.plot_cadence.setText(f'Acquisition interval: {interval_s:g} s  ·  Display: {grouping}')
 
+    def preview_snapshot(self,message):
+        if self._closing or message.get('key')!=self.preview_request_key:return
+        result=message.get('result')
+        if not result:return
+        state=result.get('verification_state')
+        if state=='cached':
+            self.plot_preview_cache_status=(f"Showing saved plots through spectrum {result['head']:,}; "
+                'checking the cache endpoint and newer spectra. Full archive audit is separate.')
+        else:
+            self.plot_preview_cache_status=f"Showing an initial verified preview through spectrum {result['head']:,}; loading the rest…"
+        self._apply_preview_result(result,provisional=True)
+
+    def _apply_preview_result(self,result,provisional=False):
+        self.analysis_rows=result['rows'];self.preview_summary=result['summary']
+        self.preview_aggregation=int(result['aggregation'])
+        self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • up to {result['aggregation']} recorded intervals / group"
+        self.update_plot_cadence()
+        if result.get('view')=='full' and 'accumulated_row' in result:
+            self.dashboard_accumulation_key=str(self.run.resolve())
+            self.dashboard_accumulation_row=result.get('accumulated_row')
+            self.dashboard_accumulation_head=result['head']
+            self.dashboard_accumulation_error=result.get('accumulated_error')
+            status=('cached checkpoint' if provisional and result.get('verification_state')=='cached'
+                    else 'verified partial' if provisional else '')
+            self.charts.set_accumulated(self.dashboard_accumulation_row,self.dashboard_accumulation_error,status)
+        if provisional:
+            state=result.get('verification_state')
+            basis='Saved cached display' if state=='cached' else 'Initial verified display'
+            self.preview_note.setText(f"{basis} through spectrum {result['head']:,}; current source verification is still running. "
+                                      'Full integrity audit is separate.')
+        else:
+            kind='Cached prefix + verified new intervals' if result.get('cached') else 'Verified raw reconstruction'
+            checked=result.get('source_verified_utc')
+            self.preview_note.setText(f"{kind} through spectrum {result['head']:,}; source check {checked}. "
+                                      'Groups sum counts / device seconds; gaps remain blank. Full integrity audit is separate. Click a heatmap interval to inspect its spectrum.')
+            self.plot_preview_cache_status=''
+        if self.follow_live.isChecked() or self._preview_forced:self.redraw_analysis()
+        self.update_plot_render_status()
+
     def preview_done(self,message):
         self.preview_busy=False
         if self._closing:return
         if self.preview_pending:
             self.preview_pending=False;self.request_preview(True);return
-        if not self.run or message['key'][0]!=str(self.run.resolve()):
+        if (not self.run or message['key'][0]!=str(self.run.resolve())
+                or message['key']!=self.preview_request_key):
             self.update_plot_render_status();return
         if message['error']:
             self.preview_note.setText('Plot unavailable: '+message['error'])
             self.plot_preview_error='Plot unavailable: '+message['error']
+            if self.plot_preview_cache_status.startswith('Showing saved plots'):
+                self.plot_preview_cache_status='Saved cached plots remain visible, but the current source check failed.'
+            elif self.plot_preview_cache_status.startswith('Showing an initial verified preview'):
+                self.plot_preview_cache_status='The initial verified preview remains visible, but loading the full source stopped with an error.'
             self.update_plot_render_status();return
         result=message['result']
         if result is None:
             self.update_plot_render_status();return
-        self.preview_key=message['key'];self.analysis_rows=result['rows'];self.preview_summary=result['summary']
+        self.preview_key=message['key']
         self.plot_preview_error=''
-        self.preview_aggregation=int(result['aggregation'])
-        self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • up to {result['aggregation']} recorded intervals / group"
-        self.update_plot_cadence()
-        kind='Cached prefix + verified new intervals' if result.get('cached') else 'Verified raw reconstruction'
-        self.preview_note.setText(f"{kind} through spectrum {result['head']:,}; source check {result['source_verified_utc']}. "
-                                  'Groups sum counts / device seconds; gaps remain blank. Full integrity audit is separate. Click a heatmap interval to inspect its spectrum.')
-        if self.follow_live.isChecked() or self._preview_forced:self.redraw_analysis()
-        self.update_plot_render_status()
+        self._apply_preview_result(result)
 
     def redraw_analysis(self,*args):
         self.refresh_spectrum(True)

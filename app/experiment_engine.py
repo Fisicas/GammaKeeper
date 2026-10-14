@@ -6,11 +6,17 @@ import json
 from pathlib import Path
 import sqlite3
 import numpy as np
-from analysis import reconstruct, midpoint, VERSION
-from build_identity import identity
+from analysis import reconstruct, midpoint
 from export_run import readonly
 
 AGGREGATE = {'gap_recovered_aggregate','reconnect_aggregate_continuity_inferred'}
+# Increment only when the persisted overview aggregation semantics change.
+ENGINE_CACHE_VERSION = 1
+# The deployed 0.7.2 build used the complete application source digest in its
+# cache policy. Keep those checkpoints reusable after checking their endpoint.
+COMPATIBLE_CACHE_SOURCE_SHA256 = (
+    '07e34f9a649229247a5bbbf2ec424b9c9eb7d6a32f821aa6a27ca9298f96e374',
+)
 
 
 class ExperimentEngine:
@@ -25,8 +31,13 @@ class ExperimentEngine:
           CREATE TABLE IF NOT EXISTS bins(key TEXT PRIMARY KEY,counts BLOB,payload TEXT);
           CREATE TABLE IF NOT EXISTS fits(key TEXT PRIMARY KEY,payload TEXT);
         ''')
-        self.policy=hashlib.sha256((str(self.run)+json.dumps(self.config,sort_keys=True)+
-                                   repr((period_s,epoch))+identity()['source_sha256']).encode()).hexdigest()
+        policy_inputs=dict(version=ENGINE_CACHE_VERSION,run=str(self.run),config=self.config,
+                           period_s=period_s,epoch=epoch)
+        self.policy=hashlib.sha256(json.dumps(policy_inputs,sort_keys=True).encode()).hexdigest()
+        legacy_prefix=(str(self.run)+json.dumps(self.config,sort_keys=True)+repr((period_s,epoch)))
+        self.compatible_policies={self.policy}
+        self.compatible_policies.update(hashlib.sha256((legacy_prefix+source_hash).encode()).hexdigest()
+                                        for source_hash in COMPATIBLE_CACHE_SOURCE_SHA256)
 
     def close(self): self.db.close()
 
@@ -37,17 +48,23 @@ class ExperimentEngine:
             self.db.execute('BEGIN IMMEDIATE')
             saved=self.db.execute("SELECT payload FROM state WHERE key='engine'").fetchone()
             state=json.loads(saved[0]) if saved else None
-            if not state or state['policy']!=self.policy:
+            if not state or state['policy'] not in self.compatible_policies:
                 self.db.execute('DELETE FROM bins');self.db.execute('DELETE FROM fits')
                 if self.db.execute("SELECT 1 FROM sqlite_master WHERE name='telemetry_bins'").fetchone():
                     self.db.execute('DELETE FROM telemetry_bins')
                 state=dict(policy=self.policy,last_seq=-1,epoch=0,previous=None,segment=0,source_head=head,
                            summary=dict(total_counts=0,device_elapsed_s=0.,normal_device_exposure_s=0.,
                                         aggregate_device_exposure_s=0.,invalid_wall_s=0.,quality_counts={},snapshots=0))
+            else:
+                # Promote the validated cache identity after the normal endpoint
+                # hash check below; do not discard otherwise-compatible 0.7.2 bins.
+                state['policy']=self.policy
             summary=state['summary']
             if state['last_seq']>head: raise ValueError('Derived cache extends beyond source')
             if state.get('last_file'):
-                raw=(self.run/state['last_file']).read_bytes()
+                endpoint=(self.run/state['last_file']).resolve()
+                if not endpoint.is_relative_to(self.run): raise ValueError('Cached raw path escapes recording')
+                raw=endpoint.read_bytes()
                 indexed=source.execute('SELECT sha256 FROM snapshots WHERE seq=?',(state['last_seq'],)).fetchone()
                 if not indexed or indexed[0]!=state['last_sha256'] or hashlib.sha256(raw).hexdigest()!=indexed[0]:
                     raise ValueError('Cached source endpoint integrity mismatch; rebuild/audit required')

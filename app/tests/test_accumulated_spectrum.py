@@ -50,6 +50,44 @@ class CollectedSpectrum(unittest.TestCase):
         row=self.finish(engine);self.assertEqual(row[2]['counts_delta'],[4,8,12])
         self.assertEqual(row[3]['collection']['included_intervals'],4)
 
+    def test_accumulated_checkpoint_restores_then_processes_only_new_tail(self):
+        run=self.create();cache=self.root/'cache'/'accumulated.sqlite'
+        first=AccumulatedSpectrum(run,cache_path=cache);row=self.finish(first)
+        self.assertEqual(row[2]['counts_delta'],[3,6,9])
+
+        resumed=AccumulatedSpectrum(run,cache_path=cache)
+        self.assertTrue(resumed.restore_cache())
+        self.assertEqual(resumed.result()[2]['counts_delta'],[3,6,9])
+        resumed.validate_cached_endpoint()
+
+        store=RunStore(run);store.append_snapshot(snapshot(40,[104,208,312]));store.close()
+        row=self.finish(resumed)
+        self.assertEqual(row[2]['counts_delta'],[4,8,12])
+        self.assertEqual(row[3]['collection']['included_intervals'],4)
+
+    def test_accumulated_checkpoint_rejects_a_changed_endpoint(self):
+        run=self.create();cache=self.root/'cache'/'accumulated.sqlite'
+        engine=AccumulatedSpectrum(run,cache_path=cache);self.finish(engine)
+        resumed=AccumulatedSpectrum(run,cache_path=cache)
+        self.assertTrue(resumed.restore_cache())
+        endpoint=(run/resumed.last_file)
+        endpoint.write_text('{}',encoding='utf-8')
+        with self.assertRaisesRegex(ValueError,'raw integrity mismatch'):
+            resumed.validate_cached_endpoint()
+
+    def test_corrupted_accumulated_checkpoint_is_discarded_and_rebuilt_from_raw(self):
+        import sqlite3
+        run=self.create();cache=self.root/'cache'/'accumulated.sqlite'
+        engine=AccumulatedSpectrum(run,cache_path=cache);self.finish(engine)
+        db=sqlite3.connect(cache)
+        payload=db.execute('SELECT payload FROM checkpoint WHERE id=1').fetchone()[0]
+        state=json.loads(payload);state['counts'][0]+=1
+        db.execute('UPDATE checkpoint SET payload=? WHERE id=1',(json.dumps(state),));db.commit();db.close()
+
+        rebuilt=AccumulatedSpectrum(run,cache_path=cache)
+        self.assertFalse(rebuilt.restore_cache())
+        self.assertEqual(self.finish(rebuilt)[2]['counts_delta'],[3,6,9])
+
     def test_requested_range_only_sums_complete_intervals_and_reports_edges(self):
         run=self.create();row=self.finish(AccumulatedSpectrum(run,self.base+5,self.base+25))
         self.assertEqual(row[2]['counts_delta'],[1,2,3])

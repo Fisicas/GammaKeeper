@@ -12,7 +12,12 @@ STYLESHEET = f'''
           QFrame#panel QLabel, QFrame#panel QCheckBox {{ background: transparent; }}
           QLabel#title {{ font-size: 23pt; font-weight: 600; }}
           QLabel#muted {{ color: {MUTED}; font-size: 9pt; }}
-          QLabel#metric {{ font-size: 21pt; font-weight: 600; color: {TEAL}; }}
+          QLabel#metric_caption {{ color: {MUTED}; font-size: 10pt; }}
+          QLabel#metric {{ font-size: 24pt; font-weight: 600; color: {TEAL}; }}
+          QLabel#metric[metricRole="dose"] {{ color: {GOLD}; }}
+          QToolButton#header_action {{ background: #273b4d; border: 1px solid #34495e; border-radius: 5px; padding: 7px 12px; font-weight: 600; }}
+          QToolButton#header_action:hover {{ background: #354f65; }}
+          QToolButton#header_action:pressed, QToolButton#header_action:checked {{ background: #354f65; border-color: {TEAL}; }}
           QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox {{ background: #101c28; border: 1px solid #34495e; border-radius: 5px; padding: 6px; }}
           QPushButton {{ background: #273b4d; border: none; border-radius: 5px; padding: 9px 12px; font-weight: 600; }}
           QPushButton:hover {{ background: #354f65; }}

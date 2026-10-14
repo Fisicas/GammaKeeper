@@ -5,12 +5,14 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import bootstrap
 import hashlib
+import json
 import math
 import tempfile
 import unittest
 import numpy as np
+from unittest.mock import patch
 from scipy.special import ndtr
-from experiment_engine import ExperimentEngine
+from experiment_engine import ExperimentEngine,COMPATIBLE_CACHE_SOURCE_SHA256
 from scientific_models import peak_fit, decay_fit
 from recorder import make_config
 from storage import RunStore
@@ -18,6 +20,12 @@ from test_core import snapshot
 
 
 class ScientificProgress(unittest.TestCase):
+    @staticmethod
+    def scratch_dir():
+        path=Path(__file__).resolve().parents[1]/'validation'/'scientific_progress_temp'
+        path.mkdir(parents=True,exist_ok=True)
+        return path
+
     def test_gain_model_recovers_known_shift_with_blend_and_refuses_no_information(self):
         channels=np.arange(1024);edges=3*(np.arange(1025)-.5)
         rng=np.random.default_rng(43)
@@ -43,7 +51,7 @@ class ScientificProgress(unittest.TestCase):
         self.assertIn('conditional',fit['uncertainty'])
 
     def test_incremental_cache_conserves_channels_and_detects_changed_endpoint(self):
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory(dir=self.scratch_dir()) as folder:
             root=Path(folder);run=root/'recording'
             store=RunStore(run,make_config('TEST',10,0,'demo','cache'))
             for i in range(10):store.append_snapshot(snapshot(i*10,[100+i,200+2*i]))
@@ -61,3 +69,33 @@ class ScientificProgress(unittest.TestCase):
             file.write_text('{}')
             with self.assertRaisesRegex(ValueError,'endpoint integrity'):engine.update()
             engine.close()
+
+    def test_previous_release_checkpoint_is_promoted_without_rescanning_prefix(self):
+        with tempfile.TemporaryDirectory(dir=self.scratch_dir()) as folder:
+            root=Path(folder);run=root/'recording';cache=root/'cache.sqlite'
+            store=RunStore(run,make_config('TEST',10,0,'demo','cache migration'))
+            for i in range(10):store.append_snapshot(snapshot(i*10,[100+i,200+2*i]))
+            store.close()
+            engine=ExperimentEngine(run,cache)
+            self.assertTrue(engine.update())
+            prefix=(str(engine.run)+json.dumps(engine.config,sort_keys=True)+repr((engine.period,engine.epoch)))
+            old_policy=hashlib.sha256((prefix+COMPATIBLE_CACHE_SOURCE_SHA256[0]).encode()).hexdigest()
+            engine.close()
+
+            db=__import__('sqlite3').connect(cache)
+            state=json.loads(db.execute("SELECT payload FROM state WHERE key='engine'").fetchone()[0])
+            state['policy']=old_policy
+            db.execute("UPDATE state SET payload=? WHERE key='engine'",(json.dumps(state),));db.commit();db.close()
+
+            resumed=ExperimentEngine(run,cache);read_spectra=[]
+            original=Path.read_bytes
+            def capture(path):
+                if path.is_relative_to(run/'spectra'):read_spectra.append(path)
+                return original(path)
+            with patch.object(Path,'read_bytes',capture):self.assertTrue(resumed.update())
+            self.assertEqual(len(read_spectra),1)
+            self.assertEqual(read_spectra[0].name,'000000009.json')
+            promoted=json.loads(resumed.db.execute("SELECT payload FROM state WHERE key='engine'").fetchone()[0])
+            self.assertEqual(promoted['policy'],resumed.policy)
+            np.testing.assert_array_equal(sum((row['counts'] for row in resumed.result()['rows']),np.zeros(2,dtype=int)),[9,18])
+            resumed.close()
