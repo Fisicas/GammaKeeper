@@ -8,7 +8,17 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
 - Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
 
-## Release notes (current code: 0.7.2)
+## Release notes (current code: 0.7.3)
+
+## Header readability (0.7.3)
+
+The live spectrum rate, dose rate and saved-spectrum count now use 24-point text and share the available header width. Dose-rate text matches the gold dose curve. Header buttons have larger click targets, and the GammaKeeper wordmark opens the canonical GitHub project page. Advanced analysis pages scroll when necessary rather than forcing the live dashboard to use their minimum width; scientific-QC refresh and export-tab behavior remain available. Dashboard energy labels are shortened to avoid clipping; original channels and calibration remain in the recorded data and exports. Layout checks use synthetic data at 1280×800, 1920×1080 and 2560×1440. The README includes the user-tested 0.7.3 viewer of the ongoing recording, with only its Windows title bar omitted; see [public release preparation](PUBLIC_RELEASE.md).
+
+## Cached-first reopening (0.7.3)
+
+Opening a whole-run display can now show its last saved derived plot checkpoint immediately while the background worker checks the cached source endpoint and processes any newer spectra. The dashboard status marks this as a cached display until the source check completes; an endpoint or raw-data mismatch is reported and the cached plot is identified as unverified. The accumulated-spectrum panel also restores its compact checkpoint before processing the new tail. Cache files are stored under `GammaKeeper Runs\_settings\analysis_cache` (or the corresponding `_settings` folder when `GAMMAKEEPER_DATA_ROOT` is set), so they survive side-by-side application upgrades. They are disposable derived data; the immutable spectra and SQLite journal remain authoritative. A full integrity audit still reads the complete archive and remains an explicit operation.
+
+This release does not change the acquisition format or write analysis results into raw records. The display cache is small and bounded by the plotted bins and channel count; it is not an additional copy of every spectrum. Synthetic tests cover cache restore, endpoint tampering, compatibility with the 0.7.2 overview checkpoint, and cached-first display followed by tail verification. No hardware or active run was used.
 
 ## Stable live-plot rendering status (0.7.2)
 

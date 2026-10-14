@@ -1,26 +1,38 @@
 <p align="center">
-  <img src="docs/images/splash.png" alt="GammaKeeper splash screen: the gamma 'keeper' icon, wordmark and startup steps over a radon-progeny gamma spectrum" width="760">
+  <a href="https://github.com/Fisicas/GammaKeeper"><img src="docs/images/splash.png" alt="GammaKeeper splash screen: the gamma 'keeper' icon, wordmark and startup steps over a radon-progeny gamma spectrum" width="760"></a>
 </p>
 
 <p align="center">
   <b>Unattended, verifiable time-resolved gamma spectroscopy with RadiaCode detectors on Windows.</b>
 </p>
 
-GammaKeeper (formerly RadiaLog) records a gamma spectrum every few seconds for days at a time, and keeps every one of them: immutable, hash-verified raw records, a crash-safe journal, SNTP-referenced timing, and automatic reconnection that never invents data. It was built for sealed-canister measurements of radon (Rn-222) adsorbed on activated charcoal, where the signal is the slow decay of the Pb-214 and Bi-214 photopeaks over several days. The faint spectrum behind the splash screen is that radon-progeny spectrum.
+[GammaKeeper](https://github.com/Fisicas/GammaKeeper) (formerly RadiaLog) reads cumulative gamma spectra at a chosen interval for days at a time and retains the raw records: SHA-256 indexed spectra, a crash-safe journal, SNTP-referenced timing, and automatic reconnection with explicit gaps or recovered aggregates. It was built for sealed-canister measurements of radon (Rn-222) adsorbed on activated charcoal, where changes in the Pb-214 and Bi-214 photopeaks can be followed over several days. The faint spectrum behind the splash screen is that radon-progeny spectrum.
 
 ## What it does
 
 - **Time-resolved spectra without a rolling buffer.** Each interval's 1,024-channel spectrum is the exact integer difference of the device's cumulative spectra, normalized by the measured device exposure. Nothing is overwritten, smoothed or resampled.
-- **Survives the real world.** A supervisor restarts the recorder, USB faults back off and reconnect, and counts accumulated during a gap are kept as one flagged aggregate rather than lost or spread over invented bins. Interrupted runs can be resumed until their planned end.
-- **Proves its own data.** Raw records are immutable and SHA-256 indexed; resume verifies them before acquiring; completed runs get a background audit and export.
+- **Automatic recovery.** A supervisor restarts the recorder, USB faults back off and reconnect, and counts recovered across a gap are kept as one flagged aggregate rather than spread over invented bins. Interrupted runs can be resumed until their planned end.
+- **Verifiable records.** Raw records are immutable and SHA-256 indexed; resume verifies them before acquiring; completed runs get a background audit and export.
 - **Honest timing.** UTC comes from validated SNTP measurements bound to the monotonic clock, with the uncertainty and reference age saved alongside the data.
 - **Analysis-ready exports.** CSV/NPZ time bins, nonoverlapping or moving-average spectra, native RCSPG, and XLSX matrices for fitting tools, each with full provenance.
 - **One job per device.** A per-serial lock keeps two recorders from sharing a detector, across old and new releases.
 
 <p align="center">
-  <img src="docs/images/screenshot-time-series.png" alt="Time series tab: spectrogram, count rate and dose rate of a recorded run" width="49%">
-  <img src="docs/images/screenshot-spectrum.png" alt="Spectrum / ROI tab: accumulated spectrum of a recorded run" width="49%">
+  <a href="docs/images/screenshot-live-dashboard-v073-20261013.svg"><img src="docs/images/screenshot-live-dashboard-v073-20261013.svg" alt="GammaKeeper 0.7.3 live dashboard: charcoal spectrogram, accumulated spectrum, and count and dose rates with larger header readings" width="100%"></a>
 </p>
+
+GammaKeeper 0.7.3 viewing a real ongoing charcoal recording, captured October 13, 2026. The viewer observes the independently running recorder; its stop control is disabled. Only the Windows title bar is omitted from the image; plotted data and readings are unchanged. Click for full size. [Screenshot provenance](docs/images/README.md).
+
+<details>
+<summary>Earlier recording view with linear energy axes</summary>
+
+<p align="center">
+  <a href="docs/images/screenshot-live-dashboard-linear-20261013.png"><img src="docs/images/screenshot-live-dashboard-linear-20261013.png" alt="Earlier GammaKeeper 0.7.2 view of the same charcoal recording using linear energy axes" width="100%"></a>
+</p>
+
+Captured earlier with GammaKeeper 0.7.2. The readings differ because acquisition continued between captures. Display scales do not alter original channel counts. These ongoing-run screenshots do not establish completed multi-day or decay-model qualification.
+
+</details>
 
 ## Quick start
 
@@ -36,8 +48,9 @@ The [manual](docs/manual.md) covers operation, data formats, scientific conventi
 
 ## Documentation
 
-GammaKeeper 0.6.0 adds a ten-day preset, persistent local monitoring and verified daily backups,
-versioned sample/background metadata, hourly scientific QC, and streamed seal-referenced exports.
+GammaKeeper 0.7.3 adds cached-first reopening, a clearer live dashboard, larger readings and controls,
+and a stable render-status area. Earlier releases provide persistent monitoring, verified backups,
+versioned sample/background metadata, scientific QC and seal-referenced exports.
 See the [ten-day experiment guide](docs/TEN_DAY_EXPERIMENTS.md) for operation, provenance and qualification limits.
 
 | Document | Contents |
@@ -45,6 +58,7 @@ See the [ten-day experiment guide](docs/TEN_DAY_EXPERIMENTS.md) for operation, p
 | [Manual and release notes](docs/manual.md) | operation, data and scientific meaning, timing and reconnection, exports, validation, release history |
 | [Time-resolved export](docs/TIME_RESOLVED.md) | schedule input, export modes, file formats, fitting caveats |
 | [Display scales](docs/DISPLAY_SCALES.md) | linear/log axes and what they do and do not change |
+| [Public release preparation](docs/PUBLIC_RELEASE.md) | publication scope, screenshot provenance and release checks |
 | [Contributing](CONTRIBUTING.md) · [Agent rules](AGENTS.md) | repository layout, workflow, releases |
 | [Development plan](docs/plan/) | current plan (highest version) and its evidence |
 
@@ -59,7 +73,7 @@ See the [ten-day experiment guide](docs/TEN_DAY_EXPERIMENTS.md) for operation, p
 
 ## Status
 
-GammaKeeper is pre-1.0. The automated suite runs on every pull request (unit and synthetic GUI tests on Windows). Multi-day qualification with the detector, including a sealed-charcoal half-life check, is planned before the first experimental release; see the development plan.
+GammaKeeper is pre-1.0. The automated suite runs on every pull request (unit and synthetic GUI tests on Windows). A real multi-day charcoal experiment is ongoing. Completed long-run qualification, native RCSPG import and UFit execution remain unverified; see the manual and development plan. This release is for experimental use.
 
 ## Name, credits and license
 
