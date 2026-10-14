@@ -31,6 +31,7 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         self.preview_pool=QtCore.QThreadPool(self);self.preview_pool.setMaxThreadCount(1)
         self.preview_cancel=threading.Event();self.preview_busy=False;self.preview_pending=False
         self.preview_key=None;self.analysis_rows=[];self.preview_summary={};self.preview_aggregation=None;self._closing=False
+        self.preview_request_key=None;self.plot_preview_cache_status=''
         self.background_jobs=[];self._last_events=0;self._last_disk=0
         self.selected_analysis_row=None
         self.accumulation_pool=QtCore.QThreadPool(self);self.accumulation_pool.setMaxThreadCount(1)
@@ -40,6 +41,7 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         self.dashboard_accumulation_cancel=threading.Event();self.dashboard_accumulation_busy=False
         self.dashboard_accumulation_engine=None;self.dashboard_accumulation_key=None
         self.dashboard_accumulation_row=None;self.dashboard_accumulation_head=-1;self.dashboard_accumulation_error=None
+        self.dashboard_accumulation_progress_text=''
         self.tabs=Q.QTabWidget()
         self._build_timeseries_tab()
         self._build_spectrum_tab(bg,panel,text)
@@ -51,6 +53,17 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         install_time_export(self)
         self._build_notes_tab()
         self._build_experiment_tab()
+        # Hidden advanced pages must not impose their wide control rows on the
+        # dashboard's minimum width. Scroll them when the window is smaller.
+        for index in range(1,self.tabs.count()):
+            page=self.tabs.widget(index);label=self.tabs.tabText(index)
+            if isinstance(page,Q.QScrollArea):continue
+            self.tabs.removeTab(index)
+            scroll=Q.QScrollArea();scroll.setWidgetResizable(True)
+            scroll.setFrameShape(Q.QFrame.Shape.NoFrame)
+            scroll.setWidget(page)
+            self.tabs.insertTab(index,scroll,label)
+            if page is self.experiment_page:self.experiment_page=scroll
         right.addWidget(self.tabs,1)
         self.charts.mpl_connect('button_press_event',self.select_interval)
         self.charts.mpl_connect('button_release_event',self.navigation_finished)

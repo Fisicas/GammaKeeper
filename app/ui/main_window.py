@@ -50,12 +50,18 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         layout = Q.QVBoxLayout(main)
         layout.setContentsMargins(24, 18, 24, 18)
         header = Q.QHBoxLayout()
-        title = Q.QLabel('GammaKeeper')
+        self.project_url = 'https://github.com/Fisicas/GammaKeeper'
+        title = self.brand_link = Q.QLabel(
+            f'<a href="{self.project_url}" style="color: {TEXT}; text-decoration: none;">GammaKeeper</a>')
         title.setObjectName('title')
+        title.setOpenExternalLinks(True)
+        title.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse |
+                                      QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard)
+        title.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        title.setAccessibleName('GammaKeeper project website')
+        title.setToolTip('Open GammaKeeper on GitHub')
         header.addWidget(title)
-        subtitle = Q.QLabel('Spectra, counts and dose • durable experiment logging')
-        subtitle.setObjectName('muted')
-        header.addWidget(subtitle, 1)
+        header.addStretch(1)
         self.connection = Q.QLabel('Ready')
         self.connection.setStyleSheet(f'color: {TEAL}; font-weight: 600;')
         header.addWidget(self.connection)
@@ -64,7 +70,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.settings_toggle.toggled.connect(self._set_setup_visible)
         header.addWidget(self.settings_toggle)
         self.back_live_button=Q.QToolButton();self.back_live_button.setText('Live plots')
-        self.back_live_button.setEnabled(False);self.back_live_button.clicked.connect(lambda:self.tabs.setCurrentIndex(0))
+        self.back_live_button.clicked.connect(self.return_to_live_plots)
         header.addWidget(self.back_live_button)
         self.more_button=Q.QToolButton();self.more_button.setText('More')
         self.more_menu=Q.QMenu(self.more_button);self.more_button.setMenu(self.more_menu)
@@ -75,6 +81,10 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.live_stop_button=Q.QPushButton('Stop recording…');self.live_stop_button.setObjectName('stop')
         self.live_stop_button.clicked.connect(self.stop_recording);self.live_stop_button.setVisible(False)
         header.addWidget(self.live_stop_button)
+        for button in (self.settings_toggle,self.back_live_button,self.more_button,self.fullscreen_button):
+            button.setObjectName('header_action')
+            button.setMinimumHeight(36)
+        self.live_stop_button.setMinimumHeight(36)
         layout.addLayout(header)
         content = Q.QHBoxLayout()
         layout.addLayout(content, 1)
@@ -87,23 +97,26 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.run_context.setToolTip('Run label, recorded interval, planned duration and end time')
         right.addWidget(self.run_context)
         metric_row=Q.QHBoxLayout();metric_row.setSpacing(24)
+        self.metric_frames=[]
         self.metrics = []
         self.metric_captions=[]
         for text in ['Spectrum rate', 'Dose rate', 'Observed dose', 'Saved spectra']:
             frame=Q.QWidget();stack=Q.QVBoxLayout(frame);stack.setContentsMargins(0,0,0,0);stack.setSpacing(0)
             caption = Q.QLabel(text)
-            caption.setObjectName('muted')
+            caption.setObjectName('metric_caption')
             self.metric_captions.append(caption)
             value = Q.QLabel('—')
-            value.setStyleSheet(f'font-size: 13pt; font-weight: 600; color: {TEAL};')
+            value.setObjectName('metric')
+            if text=='Dose rate':value.setProperty('metricRole','dose')
             stack.addWidget(caption)
             stack.addWidget(value)
             self.metrics.append(value)
             if len(self.metrics)==3:
                 self.observed_metric=frame
             elif len(self.metrics) in (1,2,4):
-                metric_row.addWidget(frame)
-        metric_row.addStretch();right.addLayout(metric_row)
+                self.metric_frames.append(frame)
+                metric_row.addWidget(frame,1)
+        right.addLayout(metric_row)
         self.live_freshness=Q.QLabel('Waiting for current data')
         self.live_freshness.setObjectName('muted');right.addWidget(self.live_freshness)
         self.run_summary = Q.QLabel('Configure a new recording or open a saved run.')
@@ -152,7 +165,8 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         for index in range(1,self.tabs.count()):
             action=self.more_menu.addAction(self.tabs.tabText(index))
             action.triggered.connect(lambda checked=False,page=index:self.tabs.setCurrentIndex(page))
-        self.tabs.currentChanged.connect(lambda index:self.back_live_button.setEnabled(index!=0))
+        self.tabs.currentChanged.connect(self._update_live_plots_button)
+        self._update_live_plots_button()
         self._layout_run=object()
         self.fullscreen_shortcut=QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_F11),self)
         self.fullscreen_shortcut.activated.connect(self.toggle_fullscreen)
@@ -181,6 +195,19 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
     def _set_setup_visible(self, shown):
         self.setup_scroll.setVisible(shown)
         self.settings_toggle.setText('Hide setup' if shown else 'Run setup')
+
+    def _update_live_plots_button(self, index=None):
+        on_dashboard=self.tabs.currentIndex()==0
+        self.back_live_button.setText('Refresh plots' if on_dashboard else 'Live plots')
+        self.back_live_button.setToolTip('Rebuild the live plots from saved records' if on_dashboard
+                                         else 'Return to the live plots dashboard')
+        self.back_live_button.setEnabled(True)
+
+    def return_to_live_plots(self):
+        if self.tabs.currentIndex()==0:
+            self.refresh_live_plots()
+        else:
+            self.tabs.setCurrentIndex(0)
 
     def _sync_recording_layout(self):
         selected=str(self.run.resolve()) if self.run else None

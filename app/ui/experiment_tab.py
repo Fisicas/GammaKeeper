@@ -71,7 +71,8 @@ class ExperimentMixin:
         self.tabs.addTab(page,'Experiment / scientific QC');self.experiment_page=page
         self.science_pool=QtCore.QThreadPool(self);self.science_pool.setMaxThreadCount(1)
         self.science_busy=False;self.science_pending=False;self.science_cancel=threading.Event();self.science_result=None;self._last_science=-float('inf')
-        self.tabs.currentChanged.connect(lambda index:self.request_science() if self.tabs.widget(index) is page else None)
+        self.tabs.currentChanged.connect(lambda index:self.request_science()
+            if self.tabs.widget(index) is self.experiment_page else None)
         browser=Q.QWidget();stack=Q.QVBoxLayout(browser);actions=Q.QHBoxLayout()
         scan=Q.QPushButton('Refresh recordings');scan.clicked.connect(self.scan_runs)
         open_view=Q.QPushButton('Open selected in another viewer');open_view.clicked.connect(self.open_listed_run)

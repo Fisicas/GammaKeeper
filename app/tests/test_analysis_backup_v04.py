@@ -10,6 +10,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 from storage import RunStore
 from recorder import make_config
 from test_core import snapshot
@@ -18,6 +19,8 @@ from backup_run import backup
 from run_policy import resume_allowed
 from telemetry_analysis import LiveJournalTelemetry
 from completion import seal
+from incremental_preview import live_preview
+from experiment_engine import COMPATIBLE_CACHE_SOURCE_SHA256
 
 
 class DerivedViewsAndBackups(unittest.TestCase):
@@ -51,8 +54,54 @@ class DerivedViewsAndBackups(unittest.TestCase):
         run=self.run_data()
         first=read_preview(run,'full',max_bins=4,cache_dir=self.root/'cache')
         second=read_preview(run,'full',max_bins=4,cache_dir=self.root/'cache')
-        self.assertTrue(second['cached']);self.assertEqual(first['source_verified_utc'],second['source_verified_utc'])
+        self.assertTrue(second['cached']);self.assertNotEqual(first['source_verified_utc'],second['source_verified_utc'])
+        self.assertIsNotNone(second['source_verified_utc'])
         self.assertEqual(first['summary'],second['summary'])
+
+    def test_full_preview_publishes_cached_checkpoint_then_verifies_new_tail(self):
+        run=self.run_data();cache=self.root/'cache'
+        config=json.loads((run/'manifest.json').read_text(encoding='utf-8'))
+        first=live_preview(run,20,config,None,4,cache)
+        self.assertEqual(first['verification_state'],'verified_current')
+
+        store=RunStore(run);store.append_snapshot(snapshot(105,[121,242,363]));store.close()
+        snapshots=[]
+        result=live_preview(run,21,config,None,4,cache,snapshot=snapshots.append)
+        self.assertEqual(len(snapshots),1)
+        self.assertEqual(snapshots[0]['verification_state'],'cached')
+        self.assertEqual(snapshots[0]['head'],20)
+        self.assertEqual(result['verification_state'],'verified_current')
+        self.assertEqual(result['head'],21)
+        self.assertEqual(result['accumulated_row'][2]['counts_delta'],[21,42,63])
+
+    def test_first_open_imports_compatible_cache_from_previous_release(self):
+        run=self.run_data();config=json.loads((run/'manifest.json').read_text(encoding='utf-8'))
+        releases=self.root/'GammaKeeper Releases';old_app=releases/'0.7.2'/'app'
+        legacy=old_app/'cache'/'previews'
+        legacy.mkdir(parents=True)
+        prior=live_preview(run,20,config,None,4,self.root/'seed-cache')
+        source=next((self.root/'seed-cache').glob('*.sqlite'))
+        period=prior['aggregation']*config['interval_s']
+        old_prefix=(str(run.resolve())+json.dumps(config,sort_keys=True)+repr((period,None)))
+        old_policy=hashlib.sha256((old_prefix+COMPATIBLE_CACHE_SOURCE_SHA256[0]).encode()).hexdigest()
+        db=sqlite3.connect(source)
+        state=json.loads(db.execute("SELECT payload FROM state WHERE key='engine'").fetchone()[0])
+        state['policy']=old_policy
+        db.execute("UPDATE state SET payload=? WHERE key='engine'",(json.dumps(state),));db.commit();db.close()
+        legacy_bytes=source.read_bytes()
+        (legacy/source.name).write_bytes(legacy_bytes)
+        store=RunStore(run);store.append_snapshot(snapshot(105,[121,242,363]));store.close()
+
+        target=self.root/'settings'/'analysis_cache'/'previews'
+        snapshots=[]
+        with patch.dict(os.environ,{'GAMMAKEEPER_RELEASES':str(releases)}):
+            result=live_preview(run,21,config,None,4,target,snapshot=snapshots.append)
+        self.assertEqual(len(snapshots),1)
+        self.assertEqual(snapshots[0]['verification_state'],'cached')
+        self.assertEqual(snapshots[0]['head'],20)
+        self.assertEqual(result['verification_state'],'verified_current')
+        self.assertTrue(any(target.glob('*.sqlite')))
+        self.assertEqual((legacy/source.name).read_bytes(),legacy_bytes)
 
     def test_preview_rejects_modified_raw_input(self):
         run=self.run_data()

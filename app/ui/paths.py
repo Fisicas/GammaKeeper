@@ -18,3 +18,5 @@ def data_root(environ=os.environ):
 DATA_ROOT = data_root()
 # GUI preferences live beside the data, so upgrades and side-by-side releases share them.
 SETTINGS_DIR = DATA_ROOT / '_settings'
+# Derived analysis caches are reusable across app upgrades and disposable; raw runs remain authoritative.
+ANALYSIS_CACHE_DIR = SETTINGS_DIR / 'analysis_cache'

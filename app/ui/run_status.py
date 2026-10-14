@@ -1,6 +1,7 @@
 """Periodic status refresh: state banner, metrics, health, clock footer."""
 import datetime as dt
 import hashlib
+import math
 import sqlite3
 
 from analysis import midpoint, timestamp, DOSE_R_TO_USV
@@ -189,6 +190,6 @@ class RunStatusMixin:
             end = dt.datetime.fromisoformat(planned)
             remaining = (end - dt.datetime.now(dt.timezone.utc)).total_seconds()
             parts.append('ends ' + end.astimezone().strftime('%b %d %H:%M %z'))
-            parts.append(format_duration(max(0,remaining)) + ' remaining' if remaining > 0 else 'planned end reached')
+            parts.append(format_duration(math.ceil(remaining)) + ' remaining' if remaining > 0 else 'planned end reached')
         self.run_context.setText('  ·  '.join(parts))
         self.run_context.setToolTip(self.run_summary.text())

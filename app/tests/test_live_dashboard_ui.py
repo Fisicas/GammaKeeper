@@ -9,10 +9,11 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bootstrap
-from PySide6 import QtWidgets as Q
+from PySide6 import QtCore, QtGui, QtWidgets as Q
 from ui.charts import Charts
 from gui import Window
 from recorder import make_config
@@ -24,6 +25,12 @@ class LiveDashboardPlots(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = Q.QApplication.instance() or Q.QApplication([])
+        # Match the launcher's font setup: restricted offscreen Windows sessions
+        # may not enumerate system fonts, which otherwise invalidates size checks.
+        for name in ('segoeui.ttf','segoeuib.ttf','seguisb.ttf'):
+            font=Path(os.environ.get('WINDIR',r'C:\Windows'))/'Fonts'/name
+            if font.exists():QtGui.QFontDatabase.addApplicationFontFromData(QtCore.QByteArray(font.read_bytes()))
+        cls.app.setFont(QtGui.QFont('Segoe UI',10));cls.app.setStyle('Fusion')
 
     @staticmethod
     def temp_root():
@@ -60,6 +67,8 @@ class LiveDashboardPlots(unittest.TestCase):
 
     def test_accumulated_plot_uses_supplied_original_channel_counts(self):
         charts = Charts()
+        charts.energy_scale = 'linear'
+        charts.spectrum_counts_scale = 'linear'
         counts = [12, 0, 31, 57]
         collection = dict(included_intervals=2, requested_start_utc=None,
                           selection_rule='Complete recorded intervals only')
@@ -70,6 +79,96 @@ class LiveDashboardPlots(unittest.TestCase):
         plotted = charts.accum.lines[0]
         self.assertEqual(list(plotted.get_ydata()), counts[:-1])
         self.assertIn('2 complete intervals', charts.accum.get_title(loc='left'))
+        charts.roi=(1.,2.,False)
+        charts.set_accumulated(row,status='cached checkpoint')
+        self.assertIn('cached checkpoint',charts.accum.get_title(loc='left'))
+
+    def test_log_accumulated_spectrum_retains_full_energy_extent_after_live_redraws(self):
+        charts = Charts()
+        self.assertEqual(charts.energy_scale, 'log')
+        self.assertEqual(charts.spectrum_counts_scale, 'log')
+        self.assertEqual(charts.counts_scale, 'linear')
+        channels=256
+        counts=list(range(1,channels+1))
+        calibration=[1.0,1.0,0.0]
+        collection=dict(included_intervals=1,requested_start_utc=None,
+                        selection_rule='Complete recorded intervals only')
+        saved=dict(spectrum=dict(counts=counts,calibration_keV=calibration),
+                   telemetry_bin={'coverage_fraction':0})
+        interval=dict(counts_delta=counts,device_duration_s=10.0,wall_duration_s=10.0,
+                      count_rate_cps=sum(counts)/10,quality=['normal'])
+        row=(1791840000.0,[0],dict(counts_delta=counts),
+             dict(spectrum=saved['spectrum'],collection=collection))
+        charts.set_accumulated(row)
+        for _ in range(3):
+            charts.show_rows([(1791840000.0,0,interval,saved)],saved,'device')
+            self.assertEqual(charts.accum.get_xscale(),'log')
+            self.assertEqual(charts.accum.get_yscale(),'log')
+            self.assertGreater(charts.accum.get_xlim()[1],250)
+            self.assertLess(charts.accum.get_xlim()[1],300)
+
+    def test_plot_scale_defaults_and_live_button_feedback(self):
+        with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
+            run=Path(scratch)/'empty-read-only-run'
+            run.mkdir()
+            window=Window(run,read_only=True)
+            window.timer.stop()
+            try:
+                self.assertEqual(window.energy_axis.currentData(),'log')
+                self.assertEqual(window.spectrum_energy_axis.currentData(),'log')
+                self.assertEqual(window.counts_axis.currentData(),'linear')
+                self.assertEqual(window.spectrum_counts_axis.currentData(),'log')
+                self.assertEqual(window.spectrum_tab_counts_axis.currentData(),'log')
+                self.assertEqual(window.intensity_scale.currentData(),'log')
+                self.assertTrue(window.back_live_button.isEnabled())
+                self.assertEqual(window.back_live_button.text(),'Refresh plots')
+                with patch.object(window,'refresh_live_plots') as refresh:
+                    window.back_live_button.click()
+                refresh.assert_called_once_with()
+                window.tabs.setCurrentIndex(1)
+                self.assertEqual(window.back_live_button.text(),'Live plots')
+                window.back_live_button.click()
+                self.assertEqual(window.tabs.currentIndex(),0)
+            finally:
+                window.close()
+                self.app.processEvents()
+
+    def test_rendering_status_does_not_reflow_dashboard_plots(self):
+        with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
+            run=Path(scratch)/'empty-read-only-run'
+            run.mkdir()
+            window=Window(run,read_only=True)
+            window.timer.stop()
+            window.resize(1400,900)
+            window.show()
+            self.app.processEvents()
+            try:
+                self.assertIs(window.plot_render_status.parentWidget(),window.plot_refresh.parentWidget())
+                self.assertTrue(window.plot_render_status.isHidden())
+                self.assertEqual(window.plot_render_status.height(),24)
+                charts_geometry=window.charts.geometry()
+                toolbar_geometry=window.chart_toolbar.geometry()
+                refresh_geometry=window.plot_refresh.geometry()
+
+                window.preview_busy=True
+                window.update_plot_render_status()
+                self.app.processEvents()
+                self.assertFalse(window.plot_render_status.isHidden())
+                self.assertIn('Rendering spectrogram',window.plot_render_status.text())
+                self.assertEqual(window.charts.geometry(),charts_geometry)
+                self.assertEqual(window.chart_toolbar.geometry(),toolbar_geometry)
+                self.assertEqual(window.plot_refresh.geometry(),refresh_geometry)
+
+                window.preview_busy=False
+                window.update_plot_render_status()
+                self.app.processEvents()
+                self.assertTrue(window.plot_render_status.isHidden())
+                self.assertEqual(window.charts.geometry(),charts_geometry)
+                self.assertEqual(window.chart_toolbar.geometry(),toolbar_geometry)
+                self.assertEqual(window.plot_refresh.geometry(),refresh_geometry)
+            finally:
+                window.close()
+                self.app.processEvents()
 
     def test_recording_shell_hides_setup_and_diagnostics_behind_controls(self):
         with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
@@ -87,6 +186,45 @@ class LiveDashboardPlots(unittest.TestCase):
             window.close()
             self.app.processEvents()
 
+    def test_large_live_metrics_and_header_controls_fit_smaller_windows(self):
+        with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
+            run=Path(scratch)/'empty-read-only-run';run.mkdir()
+            window=Window(run,read_only=True);window.timer.stop()
+            window.connection.setText('RECORDING')
+            window.live_stop_button.setVisible(True)
+            window.metrics[0].setText('12,345.67 cps')
+            window.metrics[1].setText('1,234.567 µSv/h')
+            window.metrics[3].setText('120,960')
+            buttons=(window.settings_toggle,window.back_live_button,window.more_button,
+                     window.fullscreen_button,window.live_stop_button)
+            try:
+                self.assertIn('https://github.com/Fisicas/GammaKeeper',window.brand_link.text())
+                self.assertTrue(window.brand_link.openExternalLinks())
+                for size in ((1280,800),(1920,1080)):
+                    with self.subTest(size=size):
+                        window.resize(*size);window.show();self.app.processEvents()
+                        self.assertEqual(window.width(),size[0])
+                        for index in (0,1,3):
+                            metric=window.metrics[index]
+                            self.assertGreaterEqual(metric.font().pointSizeF(),24)
+                            self.assertGreaterEqual(metric.width(),metric.fontMetrics().horizontalAdvance(metric.text()))
+                        visible=(window.brand_link,window.connection)+buttons
+                        for widget in visible:
+                            bounds=widget.geometry()
+                            self.assertGreaterEqual(bounds.left(),0)
+                            self.assertLessEqual(bounds.right(),window.centralWidget().width())
+                        for first,second in zip(visible,visible[1:]):
+                            self.assertFalse(first.geometry().intersects(second.geometry()))
+                        for button in buttons:self.assertGreaterEqual(button.height(),36)
+                        self.assertGreater(window.charts.height(),300)
+                science_index=window.tabs.indexOf(window.experiment_page)
+                self.assertGreater(science_index,0)
+                with patch.object(window,'request_science') as refresh_qc:
+                    window.tabs.setCurrentIndex(science_index)
+                refresh_qc.assert_called_once_with()
+            finally:
+                window.close();self.app.processEvents()
+
     def test_live_accumulated_spectrum_loads_from_run_in_background(self):
         with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
             run = Path(scratch) / 'synthetic-run'
@@ -101,6 +239,7 @@ class LiveDashboardPlots(unittest.TestCase):
             window = Window(run, read_only=True)
             window.timer.stop()
             try:
+                self.assertFalse(window.plot_render_status.isHidden())
                 deadline = time.monotonic() + 15
                 while window.dashboard_accumulation_busy or window.dashboard_accumulation_row is None:
                     self.app.processEvents()
@@ -117,6 +256,7 @@ class LiveDashboardPlots(unittest.TestCase):
                     time.sleep(.01)
                 window.refresh()
                 self.assertIn('Display: individual recorded intervals', window.plot_cadence.text())
+                self.assertTrue(window.plot_render_status.isHidden())
             finally:
                 window._closing = True
                 window.dashboard_accumulation_cancel.set()

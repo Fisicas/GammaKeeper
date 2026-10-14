@@ -12,9 +12,11 @@ import numpy as np
 from export_run import readonly
 from telemetry_analysis import observation_from_batch,ObservationIndex
 from analysis import timestamp,reconstruct
+from spectrum_view import accumulated_from_preview_rows
 
 
-def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, cancelled=None, cache_dir=None):
+def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, cancelled=None,
+                cache_dir=None, snapshot_callback=None):
     run=Path(run).resolve()
     config=json.loads((run/'manifest.json').read_text(encoding='utf-8'))
     db=readonly(run/'run.sqlite')
@@ -30,7 +32,7 @@ def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, ca
         closed=terminal and json.loads(terminal[0]).get('status') in ('completed','stopped')
         if cache_dir and not closed and view=='full':
             from incremental_preview import live_preview
-            return live_preview(run,head,config,epoch,max_bins,cache_dir,progress,cancelled)
+            return live_preview(run,head,config,epoch,max_bins,cache_dir,progress,cancelled,snapshot_callback)
         signature=hashlib.sha256((str(run)+str((run/'run.sqlite').stat().st_mtime_ns)+
                                   (run/'manifest.json').read_text()+repr((first,head,epoch,max_bins))+
                                   hashlib.sha256(Path(__file__).read_bytes()).hexdigest()+
@@ -45,9 +47,25 @@ def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, ca
                         cached=json.loads(handle.read(32*1024*1024))
                     if cached.get('signature')==signature:
                         cached['cached']=True
-                        return cached
+                        if view=='full' and 'accumulated_row' not in cached:
+                            cached['accumulated_row'],cached['accumulated_error']=accumulated_from_preview_rows(
+                                cached.get('rows',[]),cached.get('head'),cached.get('summary'))
+                        if view=='full' and snapshot_callback:
+                            cached['verification_state']='cached'
+                            snapshot_callback(cached)
+                        if view!='full' or not cache_dir or not snapshot_callback:
+                            return cached
+                        # The saved plot is an immediate display checkpoint. Continue
+                        # through the incremental source check so the cache endpoint
+                        # and any appended raw spectra are checked before refresh ends.
+                        from incremental_preview import live_preview
+                        return live_preview(run,head,config,epoch,max_bins,progress,cancelled,
+                                            cache_dir,None)
                 except (OSError,ValueError,KeyError):
                     continue
+        if cache_dir and view=='full':
+            from incremental_preview import live_preview
+            return live_preview(run,head,config,epoch,max_bins,cache_dir,progress,cancelled,snapshot_callback)
         condition='seq>=? AND seq<=?'
         args=[first,head]
         if epoch is not None:
@@ -102,8 +120,8 @@ def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, ca
                 observation_window.popleft()
             tb=ObservationIndex(list(observation_window)).bin(start,end)
             s=dict(spectrum=dict(counts=delta or [0]*len(group[-1][3]['spectrum']['counts']),calibration_keV=calibration),
-                   telemetry_bin=tb,
-                   display_first_seq=group[0][3]['seq'],display_last_seq=group[-1][3]['seq'])
+                   telemetry_bin=tb,display_first_seq=group[0][3]['seq'],
+                   display_last_seq=group[-1][3]['seq'],display_interval_count=len(usable) if valid else 0)
             d=dict(counts_delta=delta,device_duration_s=duration or None,wall_duration_s=end-start,
                    quality=['normal'] if nominal else sorted(quality-{'normal'}) or ['display_boundary'],
                    count_rate_cps=sum(delta)/duration if delta is not None and duration>0 else None)
@@ -157,6 +175,8 @@ def read_preview(run, view='recent', epoch=None, max_bins=600, progress=None, ca
         result=dict(rows=rows,summary=summary,head=head,aggregation=factor,source=str(run),view=view,
                     cached=False,signature=signature,source_verified_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
                     note='Display sums of recorded channel differences divided by summed device duration; mixed/gap groups left blank. Original channels retained.')
+        if view=='full':
+            result['accumulated_row'],result['accumulated_error']=accumulated_from_preview_rows(rows,head,summary)
         if cache_prefix:
             try:
                 cache_dir.mkdir(parents=True,exist_ok=True)

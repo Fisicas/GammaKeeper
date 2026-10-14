@@ -9,9 +9,11 @@ from PySide6 import QtCore, QtWidgets as Q
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg,NavigationToolbar2QT
 from export_run import readonly
-from spectrum_view import latest_interval,AccumulatedSpectrum
+from spectrum_view import latest_interval,AccumulatedSpectrum,accumulation_cache_path
 from plot_scales import apply_scale,display_values
 import display_controls
+import gui_preferences
+from ui.paths import ANALYSIS_CACHE_DIR
 from ui.tasks import AccumulationTask
 
 
@@ -145,6 +147,9 @@ class SpectrumTabMixin:
         """Keep the default whole-run spectrum current independently of tab selection."""
         if not self.run or self._closing:
             return
+        if self.view_mode.currentData()=='full':
+            if self.dashboard_accumulation_busy:self.dashboard_accumulation_cancel.set()
+            return
         snapshot=(self.last_status or {}).get('last_snapshot') or {}
         head=snapshot.get('seq',-1)
         if head<0:return
@@ -152,36 +157,71 @@ class SpectrumTabMixin:
         if self.dashboard_accumulation_key!=run_key:
             self.dashboard_accumulation_cancel.set()
             self.dashboard_accumulation_key=run_key
-            self.dashboard_accumulation_engine=AccumulatedSpectrum(self.run)
+            cache=None if gui_preferences.test_mode() else accumulation_cache_path(
+                self.run,ANALYSIS_CACHE_DIR)
+            self.dashboard_accumulation_engine=AccumulatedSpectrum(self.run,cache_path=cache)
             self.dashboard_accumulation_row=None
             self.dashboard_accumulation_head=-1
             self.dashboard_accumulation_error=None
+            self.dashboard_accumulation_progress_text=''
             self.charts.set_accumulated(None)
         if self.dashboard_accumulation_busy or self.dashboard_accumulation_head>=head:
             return
         self.dashboard_accumulation_cancel=threading.Event()
         self.dashboard_accumulation_busy=True
+        self.plot_accumulation_error=''
+        self.dashboard_accumulation_progress_text='Building accumulated spectrum from verified saved intervals…'
+        self.update_plot_render_status()
         task=AccumulationTask(self.dashboard_accumulation_engine,run_key,self.dashboard_accumulation_cancel)
         self._dashboard_accumulation_task=task
+        task.signals.snapshot.connect(self.dashboard_accumulation_snapshot)
+        task.signals.progress.connect(self.dashboard_accumulation_progress)
         task.signals.done.connect(self.dashboard_accumulation_done)
         self.dashboard_accumulation_pool.start(task)
 
+    def dashboard_accumulation_snapshot(self,message):
+        if self._closing or message.get('key')!=self.dashboard_accumulation_key:return
+        self.dashboard_accumulation_row=message.get('row')
+        self.dashboard_accumulation_head=message.get('head',-1)
+        state='cached checkpoint' if message.get('cached') else 'verified partial'
+        self.dashboard_accumulation_progress_text=(
+            f"Showing {state} through spectrum {self.dashboard_accumulation_head:,}; verifying newer intervals…")
+        self.charts.set_accumulated(self.dashboard_accumulation_row,status=state)
+        self.update_plot_render_status()
+
+    def dashboard_accumulation_progress(self,message):
+        self.dashboard_accumulation_progress_text=message
+        self.update_plot_render_status()
+
     def dashboard_accumulation_done(self,message):
         self.dashboard_accumulation_busy=False
+        self.dashboard_accumulation_progress_text=''
         if self._closing:
             return
         if message['key']!=self.dashboard_accumulation_key:
             QtCore.QTimer.singleShot(0,self.request_dashboard_accumulation)
+            self.update_plot_render_status()
             return
         if message.get('cancelled'):
+            self.update_plot_render_status()
             return
-        self.dashboard_accumulation_row=message.get('row')
-        self.dashboard_accumulation_head=message.get('head',-1)
         self.dashboard_accumulation_error=message.get('error')
-        self.charts.set_accumulated(self.dashboard_accumulation_row,self.dashboard_accumulation_error)
+        if not self.dashboard_accumulation_error:
+            self.dashboard_accumulation_row=message.get('row')
+            self.dashboard_accumulation_head=message.get('head',-1)
+        self.plot_accumulation_error=('Accumulated spectrum unavailable: '+self.dashboard_accumulation_error
+                                      if self.dashboard_accumulation_error else '')
+        if self.dashboard_accumulation_error and self.dashboard_accumulation_row is not None:
+            self.plot_accumulation_error=('Cached accumulated spectrum remains visible, but its source check failed: '
+                                          +self.dashboard_accumulation_error)
+            self.charts.set_accumulated(self.dashboard_accumulation_row,status='source check failed')
+        else:
+            self.charts.set_accumulated(self.dashboard_accumulation_row,self.dashboard_accumulation_error)
+        self.update_plot_render_status()
         if self.tabs.currentIndex()==1 and self.spectrum_mode.currentIndex()==2:
             self.refresh_spectrum(True)
-        self.request_dashboard_accumulation()
+        if not self.dashboard_accumulation_error:
+            self.request_dashboard_accumulation()
 
     def refresh_spectrum(self,force=False):
         if not hasattr(self,'spectrum_canvas') or self._closing:return

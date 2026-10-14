@@ -8,7 +8,29 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
 - Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
 
-## Release notes (current code: 0.7.0)
+## Release notes (current code: 0.7.3)
+
+## Header readability (0.7.3)
+
+The live spectrum rate, dose rate and saved-spectrum count now use 24-point text and share the available header width. Dose-rate text matches the gold dose curve. Header buttons have larger click targets, and the GammaKeeper wordmark opens the canonical GitHub project page. Advanced analysis pages scroll when necessary rather than forcing the live dashboard to use their minimum width; scientific-QC refresh and export-tab behavior remain available. Dashboard energy labels are shortened to avoid clipping; original channels and calibration remain in the recorded data and exports. Layout checks use synthetic data at 1280×800, 1920×1080 and 2560×1440. The README includes the user-tested 0.7.3 viewer of the ongoing recording, with only its Windows title bar omitted; see [public release preparation](PUBLIC_RELEASE.md).
+
+## Cached-first reopening (0.7.3)
+
+Opening a whole-run display can now show its last saved derived plot checkpoint immediately while the background worker checks the cached source endpoint and processes any newer spectra. The dashboard status marks this as a cached display until the source check completes; an endpoint or raw-data mismatch is reported and the cached plot is identified as unverified. The accumulated-spectrum panel also restores its compact checkpoint before processing the new tail. Cache files are stored under `GammaKeeper Runs\_settings\analysis_cache` (or the corresponding `_settings` folder when `GAMMAKEEPER_DATA_ROOT` is set), so they survive side-by-side application upgrades. They are disposable derived data; the immutable spectra and SQLite journal remain authoritative. A full integrity audit still reads the complete archive and remains an explicit operation.
+
+This release does not change the acquisition format or write analysis results into raw records. The display cache is small and bounded by the plotted bins and channel count; it is not an additional copy of every spectrum. Synthetic tests cover cache restore, endpoint tampering, compatibility with the 0.7.2 overview checkpoint, and cached-first display followed by tail verification. No hardware or active run was used.
+
+## Stable live-plot rendering status (0.7.2)
+
+Dashboard rendering progress and errors now appear beside **Refresh plots** in the fixed top control row. The status is a single line; longer messages are shortened in the row and remain available as a tooltip. Showing or clearing the status does not move the plots. This is a display-only change and does not alter acquisition or recorded data. GUI geometry was checked using synthetic data; no physical device was used.
+
+## Live plot rendering and countdown correction (0.7.1)
+
+The accumulated spectrum now retains its calibrated energy and count limits through every live redraw; a redundant log-scale reset had temporarily narrowed the view to the first channels while a later repaint restored it. Energy, accumulated-spectrum counts, and spectrogram intensity default to logarithmic display, while the count-rate time series defaults to linear. The spectrum and count-rate scales are independent, and all scale changes remain display-only.
+
+The dashboard shows a short progress message while its spectrogram, rate plots, or accumulated spectrum are rebuilt from saved records. The header action now refreshes plots when already on the dashboard and returns to the dashboard from other pages. Remaining time displays in whole seconds, rounded upward; saved durations and acquisition timing retain their stored precision.
+
+Validation is synthetic GUI/regression testing only. No active RadiaCode acquisition was interrupted or used for hardware-in-the-loop verification.
 
 ## Plot-first live dashboard (0.7.0)
 
@@ -22,7 +44,7 @@ Paths beginning with `../` in these notes are relative to the original `radiacod
 
 ## Linear and logarithmic display
 
-Use the independent **Energy axis** and **Counts axis** selectors in **Spectrum / ROI**. Their linked controls also change the spectrogram energy axis and time-series count-rate axis. **Spectrogram intensity** independently selects linear or logarithmic colors. Choices are remembered on GUI reopening. Log views hide nonpositive values without adding pseudocounts; Linear shows measured zeros. Raw spectra, calibrated energies, ROI sums and scientific exports are unchanged. Acquisition and reconstruction rules are retained.
+Use the **Energy axis**, **Spectrum counts**, and **Spectrogram intensity** selectors in the dashboard plot options. The Spectrum / ROI page links the energy and spectrum-count selectors to these dashboard controls. The time-series **Count-rate axis** remains independent and defaults to Linear. Choices are remembered on GUI reopening. Log views hide nonpositive values without adding pseudocounts; Linear shows measured zeros. Raw spectra, calibrated energies, ROI sums and scientific exports are unchanged. Acquisition and reconstruction rules are retained.
 
 
 ## Flexible time input and time-resolved export
