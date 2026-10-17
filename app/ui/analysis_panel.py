@@ -3,7 +3,9 @@ import datetime as dt
 import threading
 import time
 
+import numpy as np
 from PySide6 import QtCore, QtWidgets as Q
+from matplotlib.widgets import SpanSelector
 from system_time import boot_identity
 import display_controls
 from ui.events_tab import EventsMixin
@@ -67,8 +69,25 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         right.addWidget(self.tabs,1)
         self.charts.mpl_connect('button_press_event',self.select_interval)
         self.charts.mpl_connect('button_release_event',self.navigation_finished)
+        self.charts.mpl_connect('pick_event',self.toggle_axis_from_pick)
+        self.spectrum_canvas.mpl_connect('pick_event',self.toggle_axis_from_pick)
+        self.chart_energy_span=SpanSelector(self.charts.accum,self.select_energy_span,'horizontal',
+                                            useblit=False,button=1,minspan=.01,
+                                            props=dict(facecolor='#f5bc66',alpha=.25))
+        self.spectrum_energy_span=SpanSelector(self.spectrum_canvas.ax,self.select_energy_span,'horizontal',
+                                               useblit=False,button=1,minspan=.01,
+                                               props=dict(facecolor='#f5bc66',alpha=.25))
         self.view_mode.currentIndexChanged.connect(lambda:self.request_preview(True))
+        self.view_mode.currentIndexChanged.connect(lambda:self.request_dashboard_accumulation())
         self.view_epoch.currentIndexChanged.connect(lambda:self.request_preview(True))
+        self.view_epoch.currentIndexChanged.connect(lambda:self.request_dashboard_accumulation())
+        self.time_range_slider.rangeChanged.connect(self._time_slider_changed)
+        self.time_range_slider.rangeCommitted.connect(self.apply_time_range)
+        for edit in (self.view_from,self.view_until):edit.editingFinished.connect(self.apply_time_range)
+        self.energy_range_slider.rangeChanged.connect(self._energy_slider_changed)
+        self.energy_range_slider.rangeCommitted.connect(self.apply_energy_range)
+        self.spectrum_energy_slider.rangeChanged.connect(self._energy_slider_changed)
+        self.spectrum_energy_slider.rangeCommitted.connect(self.apply_energy_range)
         for control in (self.axis_timezone,self.color_percentile,self.roi_from,self.roi_to):
             signal=control.currentIndexChanged if isinstance(control,Q.QComboBox) else control.valueChanged
             signal.connect(self.redraw_analysis)
@@ -82,7 +101,74 @@ class AnalysisUI(TimeSeriesMixin, SpectrumTabMixin, SummaryMixin, EventsMixin, N
         # Both tabs edit the same ROI; the controls remain usable in either view.
         for original,mirror in ((self.roi_from,self.spectrum_roi_from),(self.roi_to,self.spectrum_roi_to)):
             original.valueChanged.connect(mirror.setValue);mirror.valueChanged.connect(original.setValue)
+            original.valueChanged.connect(self._energy_boxes_changed)
         for original,mirror in ((self.roi_enabled,self.spectrum_roi_enabled),(self.roi_terminal,self.spectrum_roi_terminal)):
             original.toggled.connect(mirror.setChecked);mirror.toggled.connect(original.setChecked)
         self.view_from.setToolTip('Select saved intervals whose end timestamps lie in this UTC window; counts are not redistributed.')
         self.view_until.setToolTip(self.view_from.toolTip())
+
+    def toggle_axis_from_pick(self,event):
+        artist=event.artist
+        axes=((self.charts.spg.xaxis.label,self.energy_axis),
+              (self.charts.accum.xaxis.label,self.energy_axis),
+              (self.charts.accum.yaxis.label,self.spectrum_counts_axis),
+              (self.charts.count.yaxis.label,self.counts_axis),
+              (self.charts.dose.yaxis.label,self.dose_axis),
+              (self.spectrum_canvas.ax.xaxis.label,self.energy_axis),
+              (self.spectrum_canvas.ax.yaxis.label,self.spectrum_counts_axis))
+        for label,control in axes:
+            if artist is label:
+                control.setCurrentIndex(1-control.currentIndex())
+                return
+
+    def select_energy_span(self,low,high):
+        toolbar=self.spectrum_toolbar if self.tabs.currentIndex()==1 else self.chart_toolbar
+        if toolbar.mode or high<=low:return
+        self.energy_range_slider.set_values(low,high,emit=False)
+        self._energy_slider_changed(*self.energy_range_slider.values())
+        self.roi_enabled.setChecked(True)
+        self.redraw_analysis()
+
+    def fit_spectrum_region(self,zoom_x=False):
+        on_tab=self.tabs.currentIndex()==1
+        row=self.spectrum_canvas.display_row if on_tab else self.charts.accumulated_row
+        ax=self.spectrum_canvas.ax if on_tab else self.charts.accum
+        if row is None or row[2].get('counts_delta') is None:return
+        counts=np.asarray(row[2]['counts_delta'][:-1],dtype=float)
+        a0,a1,a2=row[3]['spectrum']['calibration_keV']
+        channels=np.arange(len(counts))
+        energy=a0+a1*channels+a2*channels**2
+        low,high=self.energy_range_slider.values() if self.roi_enabled.isChecked() else ax.get_xlim()
+        selected=counts[(energy>=low)&(energy<=high)]
+        selected=selected[np.isfinite(selected)]
+        if ax.get_yscale()=='log':selected=selected[selected>0]
+        if not selected.size:return
+        bottom,top=float(selected.min()),float(selected.max())
+        if ax.get_yscale()=='log':
+            bottom=max(np.finfo(float).tiny,bottom/1.2)
+            top=max(bottom*1.1,top*1.2)
+        else:
+            margin=max((top-bottom)*.07,1.)
+            bottom=max(0.,bottom-margin);top+=margin
+        xlim=(low,high) if zoom_x else ax.get_xlim()
+        if zoom_x and ax.get_xscale()=='log':
+            positive=energy[energy>0]
+            if not len(positive):return
+            xlim=(max(low,float(positive.min())),high)
+        if xlim[1]<=xlim[0]:return
+        ax.set_xlim(*xlim);ax.set_ylim(bottom,top)
+        if on_tab:self.spectrum_canvas.view_limits=(xlim,(bottom,top))
+        else:self.charts.accum_view=(xlim,(bottom,top))
+        ax.figure.canvas.draw_idle()
+
+    def reset_spectrum_axes(self):
+        if self.tabs.currentIndex()==1:
+            self.spectrum_canvas.view_limits=None
+            row=self.spectrum_canvas.display_row
+            if row is not None:
+                roi=(self.roi_from.value(),self.roi_to.value(),self.roi_terminal.isChecked()) if self.roi_enabled.isChecked() else None
+                self.spectrum_canvas.show_interval(row,roi)
+        else:
+            self.charts.accum_view=None
+            self.charts._draw_accumulated()
+            self.charts.draw_idle()

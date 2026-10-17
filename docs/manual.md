@@ -10,6 +10,14 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 
 ## Release notes (current code: 0.7.3)
 
+## Plot interaction draft (unreleased source branch)
+
+The dashboard now gives the spectrogram and accumulated spectrum equal plot widths. New runs default to Cividis colors and an unclipped logarithmic heatmap. The 100% upper color limit is held at the highest displayed value seen in the current viewing session for that run; a lower selected percentile is explicitly labelled as clipped. The plot change addresses the display effect documented for the 78 keV charcoal feature; it does not remeasure that peak or alter recorded spectra.
+
+Choose a UTC time window by dragging either handle of the time slider or typing the start/end boxes. The spectrum beside the spectrogram then sums only complete saved intervals inside the chosen window. Its collection metadata reports excluded straddling intervals. Drag across either spectrum, use the energy sliders, or type keV endpoints to select a highlighted spectral ROI. **Fit Y to region** adjusts the ordinate to measured counts in that region, **Zoom to region** also narrows X, and **Reset X/Y** restores the full view. Axis buttons and clickable labels switch linear/log display for energy, spectrum counts, count rate and dose rate; the heatmap has its own color-scale button. UTC time stays linear.
+
+The header gives **Elapsed** wall-clock span since the first saved spectrum and **Remaining** schedule time. Elapsed includes gaps; a stopped or stale run stops at its last saved spectrum. Saved-spectrum count remains under **Run details and diagnostics**. F11 allocates the screen to the plots and their controls, and Escape restores the previous layout. These are display and derived-accumulation changes only; see [plot interaction plan v13](plan/improvement_plan_v13.md) for evidence, limits and verification.
+
 ## Header readability (0.7.3)
 
 The live spectrum rate, dose rate and saved-spectrum count now use 24-point text and share the available header width. Dose-rate text matches the gold dose curve. Header buttons have larger click targets, and the GammaKeeper wordmark opens the canonical GitHub project page. Advanced analysis pages scroll when necessary rather than forcing the live dashboard to use their minimum width; scientific-QC refresh and export-tab behavior remain available. Dashboard energy labels are shortened to avoid clipping; original channels and calibration remain in the recorded data and exports. Layout checks use synthetic data at 1280×800, 1920×1080 and 2560×1440. The README includes the user-tested 0.7.3 viewer of the ongoing recording, with only its Windows title bar omitted; see [public release preparation](PUBLIC_RELEASE.md).

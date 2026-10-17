@@ -14,6 +14,7 @@ from plot_scales import apply_scale,display_values
 import display_controls
 import gui_preferences
 from ui.paths import ANALYSIS_CACHE_DIR
+from ui.range_slider import RangeSlider
 from ui.tasks import AccumulationTask
 
 
@@ -28,6 +29,7 @@ class SpectrumCanvas(FigureCanvasQTAgg):
         self.energy_scale='linear';self.counts_scale='linear'
         self.scale_note=''
         self.display_row=None
+        self.view_limits=None
         self.empty('Waiting for a recorded interval. The first spectrum is a baseline.')
 
     def style(self):
@@ -35,6 +37,7 @@ class SpectrumCanvas(FigureCanvasQTAgg):
         self.ax.tick_params(colors=self.text)
         for spine in self.ax.spines.values():spine.set_color(self.text)
         self.ax.xaxis.label.set_color(self.text);self.ax.yaxis.label.set_color(self.text)
+        self.ax.xaxis.label.set_picker(5);self.ax.yaxis.label.set_picker(5)
 
     def empty(self,message):
         self.ax.clear();self.style();self.last_counts=None;self.last_roi_counts=None
@@ -91,6 +94,8 @@ class SpectrumCanvas(FigureCanvasQTAgg):
         else:self.ax.set_title(f'{end} • epoch {epoch} • '+', '.join(d['quality']),color=self.text,fontsize=10)
         apply_scale(self.ax,'x',self.energy_scale,energy if counts is not None else ())
         apply_scale(self.ax,'y',self.counts_scale,counts if counts is not None else ())
+        if self.view_limits:
+            self.ax.set_xlim(*self.view_limits[0]);self.ax.set_ylim(*self.view_limits[1])
         self.draw_idle()
 
 
@@ -126,8 +131,12 @@ class SpectrumTabMixin:
         self.spectrum_roi_from=Q.QDoubleSpinBox();self.spectrum_roi_to=Q.QDoubleSpinBox()
         for control in (self.spectrum_roi_from,self.spectrum_roi_to):control.setRange(0,10000);control.setDecimals(1);control.setSuffix(' keV')
         self.spectrum_roi_from.setValue(self.roi_from.value());self.spectrum_roi_to.setValue(self.roi_to.value())
+        self.spectrum_energy_slider=RangeSlider();self.spectrum_energy_slider.set_domain(0,10000)
+        self.spectrum_energy_slider.set_values(self.roi_from.value(),self.roi_to.value(),emit=False)
         self.spectrum_roi_terminal=Q.QCheckBox('Include terminal channel')
-        for widget in (self.spectrum_roi_enabled,self.spectrum_roi_from,self.spectrum_roi_to,self.spectrum_roi_terminal):spectrum_roi.addWidget(widget)
+        for widget in (self.spectrum_roi_enabled,self.spectrum_roi_from,self.spectrum_energy_slider,
+                       self.spectrum_roi_to,self.spectrum_roi_terminal):
+            spectrum_roi.addWidget(widget,1 if widget is self.spectrum_energy_slider else 0)
         spectrum_roi.addStretch();spectrum_layout.addLayout(spectrum_roi)
         self.spectrum_note=Q.QLabel('Accumulated recording grows as data arrive. Choose a collection range and click Apply range to sum complete intervals in that range.')
         self.spectrum_note.setWordWrap(True);self.spectrum_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
@@ -137,6 +146,16 @@ class SpectrumTabMixin:
         self.spectrum_display_note.setWordWrap(True)
         spectrum_layout.addWidget(self.spectrum_display_note)
         self.spectrum_toolbar=NavigationToolbar2QT(self.spectrum_canvas,self)
+        spectrum_actions=Q.QHBoxLayout()
+        self.spectrum_fit_ordinate=Q.QPushButton('Fit Y to region')
+        self.spectrum_fit_ordinate.clicked.connect(lambda:self.fit_spectrum_region(False))
+        self.spectrum_zoom_region=Q.QPushButton('Zoom to region')
+        self.spectrum_zoom_region.clicked.connect(lambda:self.fit_spectrum_region(True))
+        self.spectrum_reset_axes=Q.QPushButton('Reset X/Y')
+        self.spectrum_reset_axes.clicked.connect(self.reset_spectrum_axes)
+        for button in (self.spectrum_fit_ordinate,self.spectrum_zoom_region,self.spectrum_reset_axes):
+            spectrum_actions.addWidget(button)
+        spectrum_actions.addStretch();spectrum_layout.addLayout(spectrum_actions)
         spectrum_layout.addWidget(self.spectrum_toolbar);spectrum_layout.addWidget(self.spectrum_canvas)
         self.tabs.addTab(spectrum_page,'Spectrum / ROI')
 
@@ -144,7 +163,7 @@ class SpectrumTabMixin:
         if index==1:self.refresh_spectrum(True)
 
     def request_dashboard_accumulation(self):
-        """Keep the default whole-run spectrum current independently of tab selection."""
+        """Show a selected UTC range, or the whole run when no range is selected."""
         if not self.run or self._closing:
             return
         if self.view_mode.currentData()=='full':
@@ -153,13 +172,20 @@ class SpectrumTabMixin:
         snapshot=(self.last_status or {}).get('last_snapshot') or {}
         head=snapshot.get('seq',-1)
         if head<0:return
-        run_key=str(self.run.resolve())
+        run_path=str(self.run.resolve())
+        selected=self.view_mode.currentData()=='window'
+        start=self.view_from.dateTime().toSecsSinceEpoch() if selected else None
+        end=self.view_until.dateTime().toSecsSinceEpoch() if selected else None
+        epoch=self.view_epoch.currentData() if selected else None
+        if selected and end<=start:return
+        run_key=(run_path,start,end,epoch) if selected else run_path
         if self.dashboard_accumulation_key!=run_key:
             self.dashboard_accumulation_cancel.set()
             self.dashboard_accumulation_key=run_key
-            cache=None if gui_preferences.test_mode() else accumulation_cache_path(
-                self.run,ANALYSIS_CACHE_DIR)
-            self.dashboard_accumulation_engine=AccumulatedSpectrum(self.run,cache_path=cache)
+            cache=(None if selected or gui_preferences.test_mode() else accumulation_cache_path(
+                self.run,ANALYSIS_CACHE_DIR))
+            self.dashboard_accumulation_engine=AccumulatedSpectrum(
+                self.run,start,end,epoch,cache_path=cache)
             self.dashboard_accumulation_row=None
             self.dashboard_accumulation_head=-1
             self.dashboard_accumulation_error=None

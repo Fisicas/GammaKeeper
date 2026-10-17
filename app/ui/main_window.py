@@ -100,7 +100,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.metric_frames=[]
         self.metrics = []
         self.metric_captions=[]
-        for text in ['Spectrum rate', 'Dose rate', 'Observed dose', 'Saved spectra']:
+        for text in ['Spectrum rate', 'Dose rate', 'Observed dose', 'Elapsed', 'Remaining']:
             frame=Q.QWidget();stack=Q.QVBoxLayout(frame);stack.setContentsMargins(0,0,0,0);stack.setSpacing(0)
             caption = Q.QLabel(text)
             caption.setObjectName('metric_caption')
@@ -113,7 +113,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
             self.metrics.append(value)
             if len(self.metrics)==3:
                 self.observed_metric=frame
-            elif len(self.metrics) in (1,2,4):
+            else:
                 self.metric_frames.append(frame)
                 metric_row.addWidget(frame,1)
         right.addLayout(metric_row)
@@ -146,6 +146,9 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         self.detail.setWordWrap(True)
         details_layout.addWidget(self.detail)
         details_layout.addWidget(self.run_summary)
+        self.saved_spectra_label=Q.QLabel('Saved spectra: —')
+        self.saved_spectra_label.setObjectName('muted')
+        details_layout.addWidget(self.saved_spectra_label)
         self.observed_metric.setParent(self.details_container)
         details_layout.addWidget(self.observed_metric)
         self.log = Q.QPlainTextEdit()
@@ -213,6 +216,7 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         selected=str(self.run.resolve()) if self.run else None
         if selected==self._layout_run:return
         self._layout_run=selected
+        self.charts.set_source(selected)
         shown=selected is None
         blocked=self.settings_toggle.blockSignals(True)
         self.settings_toggle.setChecked(shown)
@@ -224,11 +228,21 @@ class Window(SetupPanelMixin, RunStatusMixin, AnalysisUI, Q.QMainWindow):
         if self.isFullScreen():
             self.exit_fullscreen()
         else:
+            self._fullscreen_tab=self.tabs.currentIndex()
+            self.tabs.setCurrentIndex(0)
+            widgets=(self.setup_scroll,self.run_context,self.live_freshness,
+                     self.details_button,self.details_container,*self.metric_frames)
+            self._fullscreen_visibility=[(widget,not widget.isHidden()) for widget in widgets]
+            for widget,_ in self._fullscreen_visibility:widget.hide()
+            self.charts.set_focus_mode(True)
             self.showFullScreen();self.fullscreen_button.setText('Exit full screen')
 
     def exit_fullscreen(self):
         if self.isFullScreen():
             self.showNormal()
+            self.charts.set_focus_mode(False)
+            for widget,shown in self._fullscreen_visibility:widget.setVisible(shown)
+            self.tabs.setCurrentIndex(self._fullscreen_tab)
             self.fullscreen_button.setText('Full screen')
 
     def message(self, text):

@@ -1,5 +1,6 @@
 """Time series tab: background previews, heatmap selection and display scales."""
 import datetime as dt
+import math
 import sqlite3
 import threading
 import time
@@ -12,6 +13,7 @@ from plot_scales import apply_scale
 import display_controls
 import gui_preferences
 from ui.paths import ANALYSIS_CACHE_DIR
+from ui.range_slider import RangeSlider
 from ui.tasks import PreviewTask
 from ui.theme import TEAL, GOLD, MUTED
 
@@ -54,7 +56,8 @@ class TimeSeriesMixin:
         self.view_epoch=Q.QComboBox();self.view_epoch.addItem('All epochs',None)
         self.follow_live=Q.QCheckBox('Follow live');self.follow_live.setChecked(True)
         self.axis_timezone=Q.QComboBox();self.axis_timezone.addItems(['UTC','Local time'])
-        self.color_percentile=Q.QDoubleSpinBox();self.color_percentile.setRange(90,100);self.color_percentile.setDecimals(1);self.color_percentile.setValue(99.5);self.color_percentile.setSuffix(' % color limit')
+        self.color_percentile=Q.QDoubleSpinBox();self.color_percentile.setRange(90,100);self.color_percentile.setDecimals(1);self.color_percentile.setValue(100);self.color_percentile.setSuffix(' % color limit')
+        self.color_percentile.setToolTip('100% shows the full displayed intensity range. Lower values clip high cells and can change the apparent width of fading bands.')
         for widget in (self.view_mode,self.view_epoch,self.follow_live,self.axis_timezone,self.color_percentile):controls.addWidget(widget)
         options_layout.addLayout(controls)
         options_layout.addLayout(display_controls.controls(self))
@@ -62,20 +65,47 @@ class TimeSeriesMixin:
         self.display_scale_note.setWordWrap(True)
         self.display_scale_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
         options_layout.addWidget(self.display_scale_note)
-        ranges=Q.QHBoxLayout()
+        time_controls=Q.QHBoxLayout()
         self.view_from=Q.QDateTimeEdit();self.view_until=Q.QDateTimeEdit()
         for edit in (self.view_from,self.view_until):
             edit.setDisplayFormat('yyyy-MM-dd HH:mm:ss');edit.setCalendarPopup(True);edit.setTimeZone(QtCore.QTimeZone(0))
-        ranges.addWidget(Q.QLabel('UTC from'));ranges.addWidget(self.view_from)
-        ranges.addWidget(Q.QLabel('to'));ranges.addWidget(self.view_until)
+            edit.setEnabled(False)
+        self.time_range_slider=RangeSlider();self.time_range_slider.setEnabled(False)
+        time_controls.addWidget(Q.QLabel('Time UTC'));time_controls.addWidget(self.view_from)
+        time_controls.addWidget(self.time_range_slider,1);time_controls.addWidget(self.view_until)
+        layout.addLayout(time_controls)
         self.roi_enabled=Q.QCheckBox('ROI')
         self.roi_from=Q.QDoubleSpinBox();self.roi_to=Q.QDoubleSpinBox()
         for spin in (self.roi_from,self.roi_to):spin.setRange(0,10000);spin.setDecimals(1);spin.setSuffix(' keV')
         self.roi_from.setValue(500);self.roi_to.setValue(700)
         self.roi_terminal=Q.QCheckBox('Include terminal channel')
-        for widget in (self.roi_enabled,self.roi_from,self.roi_to,self.roi_terminal):ranges.addWidget(widget)
-        options_layout.addLayout(ranges)
-        self.preview_note=Q.QLabel('Plots are derived views; original records remain saved. Click the heatmap to inspect an interval spectrum.')
+        energy_controls=Q.QHBoxLayout()
+        self.energy_range_slider=RangeSlider();self.energy_range_slider.set_domain(0,10000)
+        self.energy_range_slider.set_values(500,700,emit=False)
+        for widget in (self.roi_enabled,self.roi_from,self.energy_range_slider,self.roi_to):
+            energy_controls.addWidget(widget,1 if widget is self.energy_range_slider else 0)
+        energy_controls.addWidget(self.roi_terminal)
+        layout.addLayout(energy_controls)
+        axis_controls=Q.QHBoxLayout();self.axis_buttons={}
+        for key,label,control in (('energy','Energy X',self.energy_axis),
+                                  ('spectrum','Spectrum Y',self.spectrum_counts_axis),
+                                  ('rate','Rate Y',self.counts_axis),
+                                  ('dose','Dose Y',self.dose_axis),
+                                  ('intensity','Heatmap color',self.intensity_scale)):
+            button=Q.QPushButton();button.setToolTip('Toggle this display axis between linear and logarithmic')
+            button.clicked.connect(lambda checked=False,selector=control:selector.setCurrentIndex(1-selector.currentIndex()))
+            control.currentIndexChanged.connect(lambda index,b=button,t=label,c=control:b.setText(f'{t}: {c.currentText()}'))
+            button.setText(f'{label}: {control.currentText()}')
+            self.axis_buttons[key]=button;axis_controls.addWidget(button)
+        self.fit_ordinate_button=Q.QPushButton('Fit Y to region')
+        self.fit_ordinate_button.clicked.connect(lambda:self.fit_spectrum_region(False))
+        self.zoom_region_button=Q.QPushButton('Zoom to region')
+        self.zoom_region_button.clicked.connect(lambda:self.fit_spectrum_region(True))
+        self.reset_axes_button=Q.QPushButton('Reset X/Y')
+        self.reset_axes_button.clicked.connect(self.reset_spectrum_axes)
+        for button in (self.fit_ordinate_button,self.zoom_region_button,self.reset_axes_button):axis_controls.addWidget(button)
+        layout.addLayout(axis_controls)
+        self.preview_note=Q.QLabel('Plots are derived views; original records remain saved. Drag on the accumulated spectrum to select energy; use the time range for a complete-interval accumulation.')
         self.preview_note.setWordWrap(True);self.preview_note.setTextFormat(QtCore.Qt.TextFormat.PlainText)
         options_layout.addWidget(self.preview_note)
         self.plot_cadence=Q.QLabel('Acquisition interval: waiting for run settings · displayed grouping: waiting for plot data')
@@ -83,6 +113,7 @@ class TimeSeriesMixin:
         layout.addWidget(self.plot_cadence)
         self.plot_preview_error=''
         self.plot_accumulation_error=''
+        self.plot_control_error=''
         legend=Q.QHBoxLayout();legend.setSpacing(18)
         self.series_buttons={}
         for key,label,color,dashed in (
@@ -102,6 +133,87 @@ class TimeSeriesMixin:
         legend.addStretch();layout.addLayout(legend)
         layout.addWidget(self.chart_toolbar);layout.addWidget(self.charts,1)
         self.tabs.addTab(page,'Live dashboard')
+
+    def _sync_time_boxes(self,low,high):
+        for edit,value in ((self.view_from,low),(self.view_until,high)):
+            blocked=edit.blockSignals(True)
+            edit.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(round(value),QtCore.QTimeZone(0)))
+            edit.blockSignals(blocked)
+
+    def _update_time_domain(self,first,last):
+        if first is None or last is None or last<=first:
+            return
+        # The editable boxes display whole UTC seconds. Enclose fractional
+        # snapshot timestamps so releasing an endpoint handle stays valid.
+        first,last=math.floor(first),math.ceil(last)
+        run_key=str(self.run.resolve())
+        old_run=getattr(self,'_time_domain_run',None)
+        old_domain=self.time_range_slider.domain()
+        selected=self.view_mode.currentData()=='window' and old_run==run_key
+        if old_run!=run_key or old_domain!=(float(first),float(last)):
+            self.time_range_slider.set_domain(first,last,preserve=selected)
+            if not selected:self._sync_time_boxes(first,last)
+            self._time_domain_run=run_key
+        for widget in (self.time_range_slider,self.view_from,self.view_until):widget.setEnabled(True)
+
+    def _time_slider_changed(self,low,high):
+        self._sync_time_boxes(low,high)
+
+    def apply_time_range(self,*unused):
+        if not self.time_range_slider.isEnabled():return
+        low=self.view_from.dateTime().toSecsSinceEpoch()
+        high=self.view_until.dateTime().toSecsSinceEpoch()
+        domain=self.time_range_slider.domain()
+        if high<=low or low<domain[0] or high>domain[1]:
+            self.plot_control_error='Choose increasing UTC bounds inside the saved run.'
+            self.update_plot_render_status()
+            return
+        self.plot_control_error=''
+        self.update_plot_render_status()
+        self.time_range_slider.set_values(low,high,emit=False)
+        index=self.view_mode.findData('window')
+        if self.view_mode.currentIndex()!=index:
+            self.view_mode.setCurrentIndex(index)
+        else:
+            self.request_preview(True)
+            self.request_dashboard_accumulation()
+
+    def _energy_slider_changed(self,low,high):
+        for slider in (self.energy_range_slider,self.spectrum_energy_slider):
+            slider.set_values(low,high,emit=False)
+        for spin,value in ((self.roi_from,low),(self.roi_to,high),
+                           (self.spectrum_roi_from,low),(self.spectrum_roi_to,high)):
+            blocked=spin.blockSignals(True);spin.setValue(value);spin.blockSignals(blocked)
+
+    def apply_energy_range(self,*unused):
+        if self.roi_to.value()<=self.roi_from.value():
+            self.plot_control_error='ROI upper energy must exceed lower energy.'
+            self.update_plot_render_status()
+            return
+        self.plot_control_error=''
+        self.update_plot_render_status()
+        self.roi_enabled.setChecked(True)
+        self.redraw_analysis()
+
+    def _energy_boxes_changed(self,*unused):
+        for slider in (self.energy_range_slider,self.spectrum_energy_slider):
+            slider.set_values(self.roi_from.value(),self.roi_to.value(),emit=False)
+        if self.roi_to.value()>self.roi_from.value():self.roi_enabled.setChecked(True)
+
+    def _update_energy_domain(self,snapshot):
+        spectrum=snapshot.get('spectrum') or {}
+        counts=spectrum.get('counts') or []
+        if not counts:return
+        a0,a1,a2=spectrum['calibration_keV']
+        energy=np.asarray([a0,a0+a1*(len(counts)-1)+a2*(len(counts)-1)**2])
+        low,high=float(energy.min()),float(energy.max())
+        if high<=low:return
+        if self.energy_range_slider.domain()!=(low,high):
+            self.energy_range_slider.set_domain(low,high,preserve=True)
+            self.spectrum_energy_slider.set_domain(low,high,preserve=True)
+            for spin in (self.roi_from,self.roi_to,self.spectrum_roi_from,self.spectrum_roi_to):
+                blocked=spin.blockSignals(True);spin.setRange(low,high);spin.blockSignals(blocked)
+            self._energy_slider_changed(*self.energy_range_slider.values())
 
     def refresh_live_plots(self):
         """Refresh derived views from saved records and report background work."""
@@ -127,6 +239,8 @@ class TimeSeriesMixin:
             messages.append(self.plot_preview_error)
         if self.plot_accumulation_error:
             messages.append(self.plot_accumulation_error)
+        if self.plot_control_error:
+            messages.append(self.plot_control_error)
         status='  ·  '.join(messages)
         self.plot_render_status.setToolTip(status)
         self.plot_render_status.setText(self.plot_render_status.fontMetrics().elidedText(
@@ -153,6 +267,8 @@ class TimeSeriesMixin:
             db=readonly(self.run/'run.sqlite')
             try:
                 head=db.execute('SELECT coalesce(max(seq),-1) FROM snapshots').fetchone()[0]
+                time_bounds=db.execute('SELECT min(utc),max(utc) FROM snapshots').fetchone()
+                self._update_time_domain(*time_bounds)
                 epochs=[x[0] for x in db.execute('SELECT DISTINCT epoch FROM snapshots ORDER BY epoch')]
                 if isinstance(mode,int):
                     latest=db.execute('SELECT max(utc) FROM snapshots').fetchone()[0]
@@ -222,6 +338,7 @@ class TimeSeriesMixin:
 
     def _apply_preview_result(self,result,provisional=False):
         self.analysis_rows=result['rows'];self.preview_summary=result['summary']
+        if self.analysis_rows:self._update_energy_domain(self.analysis_rows[-1][3])
         self.preview_aggregation=int(result['aggregation'])
         self.charts.display_label=f"{len(self.analysis_rows)} displayed intervals • up to {result['aggregation']} recorded intervals / group"
         self.update_plot_cadence()
@@ -286,6 +403,7 @@ class TimeSeriesMixin:
         spectrum_counts=self.spectrum_counts_axis.currentData()
         self.spectrum_canvas.energy_scale=energy;self.spectrum_canvas.counts_scale=spectrum_counts
         self.charts.energy_scale=energy;self.charts.counts_scale=counts
+        self.charts.dose_scale=self.dose_axis.currentData()
         self.charts.spectrum_counts_scale=spectrum_counts
         self.charts.intensity_scale=self.intensity_scale.currentData()
         self.charts.colormap=self.spectrogram_colormap.currentData()
@@ -305,6 +423,7 @@ class TimeSeriesMixin:
         else:
             apply_scale(self.charts.spg,'x',energy)
             apply_scale(self.charts.count,'y',counts)
+            apply_scale(self.charts.dose,'y',self.dose_axis.currentData())
             self.charts.set_accumulated(self.dashboard_accumulation_row,self.dashboard_accumulation_error)
             self.charts.draw_idle()
         for toolbar in (self.spectrum_toolbar,self.chart_toolbar):
