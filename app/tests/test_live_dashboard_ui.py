@@ -9,12 +9,16 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bootstrap
 from PySide6 import QtCore, QtGui, QtWidgets as Q
+from PySide6.QtTest import QTest
+from matplotlib.backend_bases import MouseEvent
 from ui.charts import Charts
+from ui.range_slider import RangeSlider
 from gui import Window
 from recorder import make_config
 from storage import RunStore
@@ -82,6 +86,129 @@ class LiveDashboardPlots(unittest.TestCase):
         charts.roi=(1.,2.,False)
         charts.set_accumulated(row,status='cached checkpoint')
         self.assertIn('cached checkpoint',charts.accum.get_title(loc='left'))
+
+    def test_full_intensity_range_and_equal_width_top_plots(self):
+        charts=Charts();charts.resize(1200,700)
+        charts.intensity_scale='linear'
+        saved=dict(spectrum=dict(counts=[100]*6,calibration_keV=[5.,2.,0.]),
+                   telemetry_bin={'coverage_fraction':0})
+        def interval(peak):
+            return dict(counts_delta=[1,3,peak,3,1,0],device_duration_s=10.,
+                        wall_duration_s=10.,count_rate_cps=(peak+8)/10,quality=['normal'])
+        charts.show_rows([(1791840000.,0,interval(21),saved),
+                          (1791840010.,0,interval(12),saved)],saved,'demo')
+        charts.draw()
+        self.assertAlmostEqual(charts.spg.collections[0].norm.vmax,2.1)
+        self.assertAlmostEqual(charts.spg.get_position().width,charts.accum.get_position().width,places=6)
+        self.assertEqual(charts.colormap,'cividis')
+        charts.show_rows([(1791840010.,0,interval(12),saved)],saved,'demo')
+        self.assertAlmostEqual(charts.spg.collections[0].norm.vmax,2.1)
+        charts.set_source('different run')
+        charts.show_rows([(1791840010.,0,interval(12),saved)],saved,'demo')
+        self.assertAlmostEqual(charts.spg.collections[0].norm.vmax,1.2)
+        charts.color_percentile=90
+        charts.show_rows([(1791840000.,0,interval(21),saved),
+                          (1791840010.,0,interval(12),saved)],saved,'demo')
+        self.assertLess(charts.spg.collections[0].norm.vmax,2.1)
+        self.assertIn('clipped',charts.colorbar.ax.get_xlabel())
+
+    def test_selected_time_range_accumulates_only_complete_intervals(self):
+        with tempfile.TemporaryDirectory(dir=self.temp_root()) as scratch:
+            run=Path(scratch)/'synthetic-range'
+            store=RunStore(run,make_config('TEST',10,0,'demo','selected range'))
+            for second,counts in ((0,[100,100]),(10,[101,100]),
+                                  (20,[103,100]),(30,[106,100])):
+                store.append_snapshot(snapshot(second,counts))
+            store.set_state('ui_status',dict(mode='demo',serial='TEST',state='stopped',pid=0,
+                                             boot_id='test',utc=dt.datetime.now(dt.timezone.utc).isoformat()))
+            store.set_state('recorder',dict(status='stopped',pid=0,boot_id='test'))
+            store.close()
+            window=Window(run,read_only=True);window.timer.stop()
+            try:
+                first=int(dt.datetime(2026,1,1,tzinfo=dt.timezone.utc).timestamp())
+                self.assertTrue(window.time_range_slider.isEnabled())
+                window._update_time_domain(first+.25,first+30.75)
+                self.assertEqual(window.time_range_slider.domain(),(first,first+31))
+                window.apply_time_range()
+                self.assertEqual(window.view_mode.currentData(),'window')
+                window.view_from.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(first+20,QtCore.QTimeZone(0)))
+                window.view_until.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(first+10,QtCore.QTimeZone(0)))
+                window.apply_time_range()
+                self.assertIn('increasing UTC bounds',window.plot_render_status.toolTip())
+                window.view_from.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(first+5,QtCore.QTimeZone(0)))
+                window.view_until.setDateTime(QtCore.QDateTime.fromSecsSinceEpoch(first+25,QtCore.QTimeZone(0)))
+                window.apply_time_range()
+                self.assertEqual(window.plot_control_error,'')
+                self.assertEqual(window.view_mode.currentData(),'window')
+                deadline=time.monotonic()+15
+                while window.dashboard_accumulation_busy or window.dashboard_accumulation_row is None or window.dashboard_accumulation_key!=(
+                        str(run.resolve()),first+5,first+25,None):
+                    self.app.processEvents()
+                    if time.monotonic()>deadline:self.fail(window.dashboard_accumulation_error or 'Selected accumulation did not finish')
+                    time.sleep(.01)
+                self.assertEqual(window.dashboard_accumulation_row[2]['counts_delta'],[2,0])
+                collection=window.dashboard_accumulation_row[3]['collection']
+                self.assertEqual(collection['included_intervals'],1)
+                self.assertEqual(collection['excluded_boundary_intervals'],2)
+                self.assertEqual(window.metrics[3].text(),'30 s')
+                self.assertEqual(window.saved_spectra_label.text(),'Saved spectra: 4')
+            finally:
+                window.close();self.app.processEvents()
+
+    def test_drag_ranges_axis_switch_and_fullscreen_plot_focus(self):
+        window=Window(read_only=True);window.timer.stop()
+        try:
+            window.resize(1280,800);window.show();self.app.processEvents()
+            counts=[1,4,16,4,1,0]
+            row=(1791840000.,[0],dict(counts_delta=counts),
+                 dict(spectrum=dict(counts=counts,calibration_keV=[5.,2.,0.]),
+                      collection=dict(included_intervals=1,requested_start_utc=None,
+                                      selection_rule='Complete recorded intervals only')))
+            window.charts.set_accumulated(row)
+            window.charts.draw()
+            ax=window.charts.accum
+            x1,y=ax.transData.transform((6.,4.))
+            x2,_=ax.transData.transform((10.,4.))
+            for name,x in (('button_press_event',x1),('motion_notify_event',x2),
+                           ('button_release_event',x2)):
+                event=MouseEvent(name,window.charts,x,y,button=1)
+                window.charts.callbacks.process(name,event)
+            self.assertTrue(window.roi_enabled.isChecked())
+            self.assertAlmostEqual(window.roi_from.value(),6.,delta=.2)
+            self.assertAlmostEqual(window.roi_to.value(),10.,delta=.2)
+            self.assertEqual(window.energy_range_slider.values(),
+                             window.spectrum_energy_slider.values())
+            window.fit_spectrum_region(False)
+            self.assertGreater(ax.get_ylim()[0],0)
+            self.assertIsNotNone(window.charts.accum_view)
+            window.reset_spectrum_axes()
+            self.assertIsNone(window.charts.accum_view)
+            original=window.spectrum_counts_axis.currentData()
+            window.toggle_axis_from_pick(SimpleNamespace(artist=window.charts.accum.yaxis.label))
+            self.assertNotEqual(window.spectrum_counts_axis.currentData(),original)
+            window.toggle_fullscreen();self.app.processEvents()
+            self.assertTrue(window.isFullScreen())
+            self.assertTrue(all(frame.isHidden() for frame in window.metric_frames))
+            self.assertEqual(window.tabs.currentIndex(),0)
+            self.assertEqual(window.charts.grid.get_height_ratios(),[3.5,.65])
+            window.exit_fullscreen();self.app.processEvents()
+            self.assertFalse(window.isFullScreen())
+            self.assertTrue(all(not frame.isHidden() for frame in window.metric_frames))
+            self.assertEqual(window.charts.grid.get_height_ratios(),[2.1,1.1])
+        finally:
+            window.close();self.app.processEvents()
+
+    def test_range_slider_drag_updates_both_handles_without_quantizing_to_ticks(self):
+        slider=RangeSlider();slider.set_domain(0,100);slider.resize(400,32);slider.show()
+        changes=[];slider.rangeCommitted.connect(lambda low,high:changes.append((low,high)))
+        self.app.processEvents()
+        QTest.mousePress(slider,QtCore.Qt.MouseButton.LeftButton,pos=QtCore.QPoint(12,16))
+        QTest.mouseMove(slider,QtCore.QPoint(106,16))
+        QTest.mouseRelease(slider,QtCore.Qt.MouseButton.LeftButton,pos=QtCore.QPoint(106,16))
+        self.assertAlmostEqual(slider.values()[0],25,delta=1)
+        self.assertEqual(slider.values()[1],100)
+        self.assertEqual(changes[-1],slider.values())
+        slider.close()
 
     def test_log_accumulated_spectrum_retains_full_energy_extent_after_live_redraws(self):
         charts = Charts()

@@ -160,11 +160,12 @@ class DisplayScales(unittest.TestCase):
         self.assertEqual(before,[hashlib.sha256(f.read_bytes()).hexdigest() for f in files])
 
     def test_preferences_restore_and_close_save_the_actual_scales(self):
-        saved=dict(display=dict(energy='log',counts='log',spectrum_counts='log',intensity='linear'))
+        saved=dict(display=dict(energy='log',counts='log',spectrum_counts='log',dose='log',intensity='linear'))
         with patch('gui.gui_preferences.read',return_value=saved):window=self.window(self.run_data())
         self.assertEqual(window.spectrum_canvas.ax.get_xscale(),'log')
         self.assertEqual(window.spectrum_canvas.ax.get_yscale(),'log')
         self.assertEqual(window.intensity_scale.currentData(),'linear')
+        self.assertEqual(window.charts.dose.get_yscale(),'log')
         with patch('gui.gui_preferences.save') as save:window.close()
         self.assertEqual(save.call_args.args[1]['display'],saved['display'])
 

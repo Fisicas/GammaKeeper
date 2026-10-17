@@ -28,7 +28,8 @@ class TimeWindowTests(unittest.TestCase):
         try:
             self.assertEqual(window.view_mode.currentData(), DEFAULT_WINDOW)
             self.assertEqual(window.spectrogram_colormap.currentData(), display_controls.DEFAULT_COLORMAP)
-            self.assertEqual(window.charts.colormap, 'viridis')
+            self.assertEqual(window.charts.colormap, 'cividis')
+            self.assertEqual(window.color_percentile.value(),100)
             windows = [window.view_mode.itemData(i) for i in range(window.view_mode.count())]
             self.assertEqual(windows, [300, 1800, 3600, 21600, 86400, 'recent', 'full', 'window'])
         finally:
