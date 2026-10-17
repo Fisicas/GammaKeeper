@@ -33,7 +33,7 @@ def apply_scale(axis, which, scale, values=()):
     setter('log', nonpositive='mask')
 
 
-def intensity_norm(values, scale, percentile=99.5):
+def intensity_norm(values, scale, percentile=100.0):
     if scale not in ('linear', 'log'):
         raise ValueError('Invalid spectrogram scale')
     result = display_values(values, scale == 'log')

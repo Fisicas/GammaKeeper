@@ -79,7 +79,7 @@ class RunStatusMixin:
             self.resume_button.setEnabled(not active and allowed)
             self.resume_button.setToolTip(reason or 'Continue the original saved schedule')
             self.setup_button.setEnabled(not active)
-            self.metrics[3].setText(f"{state.get('snapshots', 0):,}")
+            self.saved_spectra_label.setText(f"Saved spectra: {state.get('snapshots', 0):,}")
             db=readonly(self.run/'run.sqlite')
             try:
                 first=db.execute('SELECT utc FROM snapshots ORDER BY seq LIMIT 1').fetchone()
@@ -97,6 +97,16 @@ class RunStatusMixin:
             finally:
                 db.close()
             snapshot = state.get('last_snapshot')
+            from run_settings import format_duration
+            now_utc=self.current_timeline_seconds()
+            start_utc=first[0] if first else timestamp(self.run_settings['created_utc'])
+            end_utc=now_utc if active and not self.status_stale else midpoint(snapshot) if snapshot else start_utc
+            self.metrics[3].setText(format_duration(max(0,round(end_utc-start_utc))))
+            self.metrics[3].setToolTip('Elapsed wall-clock span since the first saved spectrum; includes gaps. A stale or stopped run stops at its last saved spectrum.')
+            planned=self.run_settings.get('planned_end_utc')
+            remaining=timestamp(planned)-now_utc if planned else None
+            self.metrics[4].setText(format_duration(math.ceil(remaining)) if remaining is not None and remaining>0 else 'End reached' if planned else 'Continuous')
+            self.metrics[4].setToolTip('Wall-clock time until the planned end; this is not measured device exposure.')
             interval = state.get('last_interval', {})
             if snapshot:
                 rate = interval.get('count_rate_cps')

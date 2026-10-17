@@ -10,12 +10,11 @@ def selector(default='linear'):
     return widget
 
 
-# Spectrogram color maps. Viridis is the default: perceptually uniform, color-blind safe,
-# readable in grayscale, and its darkest color stays distinct from the dark plot panel.
+# Cividis is the default color-vision-deficiency optimized sequential map.
 COLORMAPS = [('Viridis', 'viridis'), ('Cividis (color-blind optimized)', 'cividis'), ('Inferno', 'inferno'),
              ('Magma', 'magma'), ('Plasma', 'plasma'), ('Turbo (rainbow; not perceptually uniform)', 'turbo'),
              ('Grayscale', 'gray')]
-DEFAULT_COLORMAP = 'viridis'
+DEFAULT_COLORMAP = 'cividis'
 
 
 def colormap_selector():
@@ -36,6 +35,8 @@ def controls(window, spectrum=False):
         window.spectrum_energy_axis=energy;window.spectrum_tab_counts_axis=counts
     else:
         window.energy_axis=energy;window.counts_axis=counts
+        window.dose_axis=selector('linear')
+        row.addWidget(Q.QLabel('Dose-rate axis'));row.addWidget(window.dose_axis)
         window.spectrum_counts_axis=selector('log')
         row.addWidget(Q.QLabel('Spectrum counts'));row.addWidget(window.spectrum_counts_axis)
         window.intensity_scale=selector('log')
@@ -52,13 +53,14 @@ def connect_controls(window):
         original.currentIndexChanged.connect(mirror.setCurrentIndex)
         mirror.currentIndexChanged.connect(original.setCurrentIndex)
     for widget in (window.energy_axis,window.counts_axis,window.spectrum_counts_axis,
-                   window.spectrum_tab_counts_axis,window.intensity_scale,window.spectrogram_colormap):
+                   window.spectrum_tab_counts_axis,window.dose_axis,window.intensity_scale,
+                   window.spectrogram_colormap):
         widget.currentIndexChanged.connect(window.display_scales_changed)
 
 
 def preferences(window):
     return dict(energy=window.energy_axis.currentData(),counts=window.counts_axis.currentData(),
-                spectrum_counts=window.spectrum_counts_axis.currentData(),
+                spectrum_counts=window.spectrum_counts_axis.currentData(),dose=window.dose_axis.currentData(),
                 intensity=window.intensity_scale.currentData())
 
 
@@ -66,6 +68,7 @@ def restore(window,values):
     values=values if isinstance(values,dict) else {}
     for name,widgets,default in (('energy',(window.energy_axis,window.spectrum_energy_axis),'log'),
                                  ('counts',(window.counts_axis,),'linear'),
+                                 ('dose',(window.dose_axis,),'linear'),
                                  ('spectrum_counts',(window.spectrum_counts_axis,window.spectrum_tab_counts_axis),'log'),
                                  ('intensity',(window.intensity_scale,),'log')):
         value=values.get(name,default)

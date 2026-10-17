@@ -21,23 +21,26 @@ class Charts(FigureCanvasQTAgg):
     def __init__(self):
         self.figure = Figure(figsize=(12, 7), facecolor=BG, layout='constrained')
         super().__init__(self.figure)
-        grid = self.figure.add_gridspec(2, 5, height_ratios=[2.1, 1.1])
-        self.spg = self.figure.add_subplot(grid[0, :3])
-        self.accum = self.figure.add_subplot(grid[0, 3:])
-        self.count = self.figure.add_subplot(grid[1, :])
+        self.grid = self.figure.add_gridspec(2, 2, height_ratios=[2.1, 1.1], width_ratios=[1, 1])
+        self.spg = self.figure.add_subplot(self.grid[0, 0])
+        self.accum = self.figure.add_subplot(self.grid[0, 1])
+        self.count = self.figure.add_subplot(self.grid[1, :])
         self.dose = self.count.twinx()
         self.dose.patch.set_visible(False)
         self.dose.set_zorder(self.count.get_zorder() + 1)
         self.colorbar = None
         self.display_label = 'Recent recorded intervals'
-        self.color_percentile = 99.5
+        self.color_percentile = 100.0
+        self.color_ceiling = None  # highest displayed cps/channel in this viewing session
+        self.source_key = None
         self.local_time = False
         self.show_dates = False
-        self.colormap = 'viridis'
+        self.colormap = 'cividis'
         self.roi = None
         self.annotations = []  # (utc seconds, kind, text) from the run's notes
         self.energy_scale = 'log'
         self.counts_scale = 'linear'
+        self.dose_scale = 'linear'
         self.spectrum_counts_scale = 'log'
         self.intensity_scale = 'log'
         self.scale_note = ''
@@ -46,7 +49,18 @@ class Charts(FigureCanvasQTAgg):
         self.accumulated_status = ''
         self.series_visible = dict(counts=True, estimator=True, dose=True)
         self.series_artists = {}
+        self.accum_view = None  # (energy limits, ordinate limits), display only
         self.empty()
+
+    def set_source(self,key):
+        if key!=self.source_key:
+            self.source_key=key
+            self.color_ceiling=None
+
+    def set_focus_mode(self, enabled):
+        """Give the two primary plots more height in the full-screen view."""
+        self.grid.set_height_ratios([3.5, .65] if enabled else [2.1, 1.1])
+        self.draw_idle()
 
     @staticmethod
     def style(ax, y_color=MUTED):
@@ -85,7 +99,9 @@ class Charts(FigureCanvasQTAgg):
         apply_scale(self.spg, 'x', self.energy_scale)
         apply_scale(self.accum, 'x', self.energy_scale)
         apply_scale(self.accum, 'y', self.spectrum_counts_scale)
+        self._pickable_axis_labels()
         apply_scale(self.count, 'y', self.counts_scale)
+        apply_scale(self.dose, 'y', self.dose_scale)
         self.draw_idle()
 
     def _style_rate_axes(self):
@@ -162,7 +178,7 @@ class Charts(FigureCanvasQTAgg):
                     color=GOLD, markersize=4)
         collection = snapshot.get('collection') or {}
         intervals = collection.get('included_intervals')
-        label = 'Accumulated recording' if collection.get('selection_rule', '').startswith('Complete recorded') and collection.get('requested_start_utc') is None else 'Accumulated collection range'
+        label = 'Accumulated' if collection.get('selection_rule', '').startswith('Complete recorded') and collection.get('requested_start_utc') is None else 'Selected range'
         suffix = f' • {intervals:,} complete intervals' if intervals is not None else ''
         status=f' • {self.accumulated_status}' if self.accumulated_status else ''
         ax.set_title(label + suffix + status, loc='left')
@@ -182,6 +198,16 @@ class Charts(FigureCanvasQTAgg):
             ax.set_title(label + suffix + status + f' • ROI {selected:,} counts', loc='left')
         apply_scale(ax, 'x', self.energy_scale, energy)
         apply_scale(ax, 'y', self.spectrum_counts_scale, counts)
+        if self.accum_view:
+            xlim, ylim = self.accum_view
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
+        self._pickable_axis_labels()
+
+    def _pickable_axis_labels(self):
+        for label in (self.spg.xaxis.label, self.accum.xaxis.label,
+                      self.accum.yaxis.label, self.count.yaxis.label,self.dose.yaxis.label):
+            label.set_picker(5)
 
     def show_rows(self, rows, last_snapshot, mode):
         if self.colorbar:
@@ -227,7 +253,7 @@ class Charts(FigureCanvasQTAgg):
             filtered.append(tb.get('device_count_rate_cps') if coverage >= .999 and is_normal else np.nan)
         span = (ends[-1] - starts[0]) if ends else 0.
         prefix = 'SIMULATED • ' if mode == 'demo' else ''
-        self.spg.set_title(prefix + 'Spectrogram • ' + self.display_label + ' • gaps left blank', loc='left')
+        self.spg.set_title(prefix + 'Spectrogram', loc='left')
         if ends and np.all(np.diff(energy) > 0):
             yedges = [starts[0]]
             cells = []
@@ -239,13 +265,21 @@ class Charts(FigureCanvasQTAgg):
                 yedges.append(end)
             values = np.ma.masked_invalid(np.asarray(cells))
             values, norm = intensity_norm(values, self.intensity_scale, self.color_percentile)
+            if self.color_percentile == 100:
+                self.color_ceiling=max(norm.vmax,self.color_ceiling or norm.vmax)
+                norm.vmax=self.color_ceiling
             if self.energy_scale == 'log':
                 values = np.ma.masked_where(np.broadcast_to(energy[:-1] <= 0, values.shape), values)
             cmap = __import__('matplotlib').colormaps[self.colormap].with_extremes(bad=PANEL)
             mesh = self.spg.pcolormesh(energy, yedges, values, cmap=cmap, norm=norm,
                                       shading='flat', rasterized=True)
-            self.colorbar = self.figure.colorbar(mesh, ax=self.spg, pad=.02, fraction=.025)
-            self.colorbar.set_label('counts/s/channel • ' + self.intensity_scale, color=MUTED, fontsize=8)
+            # A horizontal bar leaves both top axes the same plot width.
+            self.colorbar = self.figure.colorbar(mesh, ax=self.spg, orientation='horizontal',
+                                                pad=.16, fraction=.06)
+            limit = ('unclipped; upper limit held this session' if self.color_percentile == 100
+                     else f'clipped at {self.color_percentile:g} percentile')
+            self.colorbar.set_label('counts/s/channel • ' + self.intensity_scale + ' • ' + limit,
+                                    color=MUTED, fontsize=8)
             self.colorbar.ax.tick_params(which='both', colors=MUTED, labelsize=8)
             self.spg.invert_yaxis()
             self.spg.yaxis.set_major_locator(mdates.AutoDateLocator(tz=dt.timezone.utc, minticks=3, maxticks=8))
@@ -261,7 +295,8 @@ class Charts(FigureCanvasQTAgg):
                 roi_line, = self.count.plot(ends, display_values(roi_rates, self.counts_scale == 'log'),
                                             color=GOLD, linewidth=1.)
                 self.series_artists['counts'].append(roi_line)
-            dose_line, = self.dose.plot(ends, dose_rates, color=GOLD, linewidth=1.4)
+            dose_line, = self.dose.plot(ends, display_values(dose_rates,self.dose_scale=='log'),
+                                        color=GOLD, linewidth=1.4)
             self.series_artists['dose'] = [dose_line]
             for name, artists in self.series_artists.items():
                 for artist in artists:
@@ -292,6 +327,7 @@ class Charts(FigureCanvasQTAgg):
             self.count.set_xlim(starts[0], ends[0])
         apply_scale(self.spg, 'x', self.energy_scale, energy)
         apply_scale(self.count, 'y', self.counts_scale, [*rates, *filtered, *roi_rates])
+        apply_scale(self.dose, 'y', self.dose_scale, dose_rates)
         if self.counts_scale == 'log' and ends and not display_values([*rates, *filtered, *roi_rates], True).count():
             self.count.text(.5, .5, 'No positive count rates\nChoose Linear to display zeros',
                             transform=self.count.transAxes, ha='center', color=MUTED)
@@ -300,10 +336,15 @@ class Charts(FigureCanvasQTAgg):
             notes.append('Log energy shows only bins with positive energy edges')
         if self.counts_scale == 'log':
             notes.append('Log count-rate axis hides zero/nonpositive values')
+        if self.dose_scale == 'log':
+            notes.append('Log dose-rate axis hides zero/nonpositive values')
         if self.intensity_scale == 'log':
             notes.append('Log intensity hides zero bins; Linear shows measured zeros')
+        if self.color_percentile < 100:
+            notes.append(f'Colors clipped at {self.color_percentile:g} percentile; apparent band widths can change')
         self.scale_note = ' • '.join(notes)
         self._draw_annotations(starts, ends)
+        self._pickable_axis_labels()
         self.draw_idle()
 
     def _draw_annotations(self, starts, ends):
