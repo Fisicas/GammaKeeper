@@ -50,7 +50,7 @@ def _user_sid():
     raise OSError('The signed-in Windows user SID could not be read')
 
 
-def _task_xml(run, sid, pythonw):
+def _task_xml(run, sid, pythonw, data_root=None):
     task = ET.Element('Task', {'version': '1.2', 'xmlns': NAMESPACE})
     info = ET.SubElement(task, 'RegistrationInfo')
     ET.SubElement(info, 'Description').text = 'Resume the interrupted GammaKeeper run at Windows sign-in.'
@@ -72,8 +72,10 @@ def _task_xml(run, sid, pythonw):
 
     action = ET.SubElement(ET.SubElement(task, 'Actions', Context='Operator'), 'Exec')
     ET.SubElement(action, 'Command').text = str(pythonw)
-    ET.SubElement(action, 'Arguments').text = subprocess.list2cmdline(
-        ['-X', 'utf8', str(ROOT / 'supervisor.py'), '--run', str(run), '--auto-resume'])
+    arguments = ['-X', 'utf8', str(ROOT / 'supervisor.py'), '--run', str(run), '--auto-resume']
+    if data_root:
+        arguments += ['--recovery-data-root', str(Path(data_root).resolve())]
+    ET.SubElement(action, 'Arguments').text = subprocess.list2cmdline(arguments)
     ET.SubElement(action, 'WorkingDirectory').text = str(ROOT)
     return ET.tostring(task, encoding='utf-16', xml_declaration=True)
 
@@ -86,7 +88,7 @@ def register(run):
     pythonw = PYTHONW.absolute()
     if not pythonw.is_file():
         raise OSError(f'GammaKeeper recovery interpreter is unavailable: {pythonw}')
-    definition = _task_xml(run, _user_sid(), pythonw)
+    definition = _task_xml(run, _user_sid(), pythonw, os.environ.get('GAMMAKEEPER_DATA_ROOT'))
     with tempfile.TemporaryDirectory(prefix='gammakeeper_reboot_') as directory:
         xml = Path(directory) / 'task.xml'
         xml.write_bytes(definition)

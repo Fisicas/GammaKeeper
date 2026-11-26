@@ -112,15 +112,19 @@ class RebootHandoff(unittest.TestCase):
                 shown = root/'opened-run.txt'
                 script = (
                     'import sys; from pathlib import Path; import supervisor; '
-                    'supervisor.open_recovered_window = lambda run: Path(sys.argv[1]).write_text(str(run)); '
+                    'supervisor.open_recovered_window = lambda run, data_root: '
+                    'Path(sys.argv[1]).write_text(str(run) + chr(10) + str(data_root)); '
                     'sys.exit(supervisor.supervise(sys.argv[2:]))'
                 )
                 with (root/'recovered.log').open('wb') as log:
                     processes.append(subprocess.Popen(
-                        [python_command(), '-X', 'utf8', '-c', script, str(shown), '--run', str(run), '--auto-resume'],
+                        [python_command(), '-X', 'utf8', '-c', script, str(shown), '--run', str(run), '--auto-resume',
+                         '--recovery-data-root', str(root)],
                         cwd=ROOT, env=env, stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW))
                 self.assertTrue(wait_for(lambda: snapshots(run) >= n_before + 2 and shown.is_file()))
-                self.assertEqual(Path(shown.read_text()), run)
+                shown_run, shown_root = shown.read_text().splitlines()
+                self.assertEqual(Path(shown_run), run)
+                self.assertEqual(Path(shown_root), root)
                 state = read_health(run)
                 self.assertEqual(state['system_boot_id'], boot_identity())
                 Path(state['stop_request']).touch()

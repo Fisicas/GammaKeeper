@@ -42,6 +42,13 @@ class RebootTaskTests(unittest.TestCase):
             ['-X', 'utf8', str(reboot_task.ROOT / 'supervisor.py'), '--run', str(run), '--auto-resume']))
         self.assertEqual(value('t:Actions/t:Exec/t:WorkingDirectory'), str(reboot_task.ROOT))
 
+        override = Path(r'C:\Isolated lab root')
+        isolated = ET.fromstring(reboot_task._task_xml(run, self.SID, pythonw, override))
+        self.assertEqual(isolated.findtext('t:Actions/t:Exec/t:Arguments', namespaces=namespace),
+                         subprocess.list2cmdline(['-X', 'utf8', str(reboot_task.ROOT / 'supervisor.py'),
+                                                  '--run', str(run), '--auto-resume', '--recovery-data-root',
+                                                  str(override.resolve())]))
+
     def test_register_submits_xml_and_cleans_temporary_file_after_failure(self):
         submitted = []
 

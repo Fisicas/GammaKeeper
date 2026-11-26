@@ -27,12 +27,12 @@ class RestartRecoveryControls(unittest.TestCase):
         self.addCleanup(window.close)
         return window
 
-    def test_new_run_sends_flag_only_after_opt_in(self):
+    def test_new_run_enables_recovery_by_default_and_allows_opt_out(self):
         with tempfile.TemporaryDirectory() as scratch:
             for requested in (False, True):
                 with self.subTest(requested=requested):
                     window = self.window()
-                    self.assertFalse(window.restart_recovery.isChecked())
+                    self.assertTrue(window.restart_recovery.isChecked())
                     window.restart_recovery.setChecked(requested)
                     window.demo.setChecked(True)
                     window.folder.setText(scratch)
@@ -45,7 +45,7 @@ class RestartRecoveryControls(unittest.TestCase):
                     self.assertIn('--demo', args)
                     self.assertNotIn('--no-recover-after-restart', args)
                     window.prepare_new()
-                    self.assertFalse(window.restart_recovery.isChecked())
+                    self.assertTrue(window.restart_recovery.isChecked())
 
     def test_manual_resume_can_explicitly_enable_or_disable_recovery(self):
         with tempfile.TemporaryDirectory() as scratch:

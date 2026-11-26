@@ -62,6 +62,7 @@ class SetupPanelMixin:
         self.restart_recovery.setToolTip(
             'Creates a Windows logon task for this recording only. After a restart, sign in to this account to resume '
             'an interrupted recording within its original schedule.')
+        self.restart_recovery.setChecked(True)
         self.restart_recovery.setEnabled(not self.read_only)
         self.saved_restart_recovery = False
         self.backup_parent=Q.QLineEdit();self.backup_parent.setPlaceholderText('Optional daily backup folder')
@@ -233,7 +234,7 @@ class SetupPanelMixin:
         for widget in self.setup_fields:
             widget.setEnabled(True)
         self.saved_restart_recovery = False
-        self.restart_recovery.setChecked(False)
+        self.restart_recovery.setChecked(True)
         self.restart_recovery.setEnabled(True)
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)

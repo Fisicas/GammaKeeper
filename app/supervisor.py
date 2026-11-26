@@ -142,10 +142,11 @@ def set_reboot_task(run, state, enabled):
         save_health(run, state, event)
 
 
-def open_recovered_window(run):
+def open_recovered_window(run, data_root=None):
+    env = dict(os.environ, GAMMAKEEPER_DATA_ROOT=data_root) if data_root else None
     executable = str(PYTHONW) if PYTHONW.is_file() else python_command()
     subprocess.Popen([executable, '-X', 'utf8', str(ROOT/'gui.py'), '--inspect-run', str(run)],
-                     cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     cwd=ROOT, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                      creationflags=subprocess.CREATE_NO_WINDOW|subprocess.CREATE_NEW_PROCESS_GROUP)
 
 
@@ -157,7 +158,10 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
     opted_out = '--no-recover-after-restart' in arguments
     arguments = [arg for arg in arguments if arg not in (
         '--auto-resume', '--recover-after-restart', '--no-recover-after-restart')]
+    recovery_data_root = None
     if automatic:
+        if '--recovery-data-root' in arguments:
+            recovery_data_root = arguments[arguments.index('--recovery-data-root')+1]
         arguments = ['--run', str(run), '--resume', '--wait-for-resume-clock']
     resuming = '--resume' in arguments
     try:
@@ -200,12 +204,14 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
         prior = prior or {}
         enabled = not opted_out and (automatic or requested or bool(prior.get('recover_after_restart')))
         task_exists = automatic or bool(prior.get('restart_recovery_armed'))
-        return supervise_run(arguments, run, enabled, task_exists, automatic, max_restarts, stall_timeout)
+        return supervise_run(arguments, run, enabled, task_exists, automatic, max_restarts, stall_timeout,
+                             recovery_data_root)
     finally:
         mutex.close()
 
 
-def supervise_run(arguments, run, recover_after_restart, task_exists, automatic, max_restarts, stall_timeout):
+def supervise_run(arguments, run, recover_after_restart, task_exists, automatic, max_restarts, stall_timeout,
+                  recovery_data_root=None):
     monitor_config = (json.loads(arguments[arguments.index('--monitor-config')+1]) if '--monitor-config' in arguments
                       else json.loads((run/'manifest.json').read_text()).get('monitoring',{}) if (run/'manifest.json').exists() else {})
     if monitor_config.get('enabled') and os.environ.get('GAMMAKEEPER_TEST_MODE')!='1':
@@ -302,7 +308,7 @@ def supervise_run(arguments, run, recover_after_restart, task_exists, automatic,
                         if show_pending:
                             show_pending = False
                             try:
-                                open_recovered_window(run)
+                                open_recovered_window(run, recovery_data_root)
                             except (OSError, ValueError) as error:
                                 save_health(run, state, diagnostic('restart_recovery_window_failed', error=str(error)))
                     if not ready:
