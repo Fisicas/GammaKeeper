@@ -8,9 +8,13 @@ GammaKeeper (formerly RadiaLog) records time-resolved gamma spectra from RadiaCo
 - Identifiers shared with those releases are unchanged so old and new versions stay compatible: the Windows mutex `Local\RadiaLog_<serial>` (old and new releases still exclude each other on the same device), the run-folder layout, manifest and journal field names, recorded `software_version` values, and the time-resolved export schema `radialog-time-resolved-v1`.
 - Environment variables are now `GAMMAKEEPER_SCIENCE_PYTHON` and `GAMMAKEEPER_TEST_MODE`; the `RADIALOG_*` names still work.
 
-## Release notes (current code: 0.7.3)
+## Release notes (current code: 0.8.0)
 
-## Plot interaction draft (unreleased source branch)
+## Windows restart recovery (0.8.0)
+
+New recordings enable recovery by default. A run-specific Windows task checks for interruption after the same account signs in on a new boot. Recovery preserves the original schedule, verifies earlier spectra and opens the same run. See [Windows restarts and sign-out](#windows-restarts-and-sign-out).
+
+## Plot interaction (0.8.0)
 
 The dashboard now gives the spectrogram and accumulated spectrum equal plot widths. New runs default to Cividis colors and an unclipped logarithmic heatmap. The 100% upper color limit is held at the highest displayed value seen in the current viewing session for that run; a lower selected percentile is explicitly labelled as clipped. The plot change addresses the display effect documented for the 78 keV charcoal feature; it does not remeasure that peak or alter recorded spectra.
 
@@ -127,9 +131,9 @@ Install with `tools\install_gammakeeper.cmd` (see the README) and use the **Gamm
 
 1. Close the manufacturer app and other device clients. The USB handle is exclusive.
 2. Enter the sample/condition label, enter your detector's serial number (remembered for the next run), interval **10 s**, duration **7 days**, and save folder.
-3. Click **Start new recording**. Check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
+3. **Resume after Windows restart** is checked for each new recording. Clear it if you want to disable recovery for that recording. Click **Start new recording**, then check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
 4. The recorder continues if the GUI closes. Reopen the GUI and use **Open saved run** to monitor it. Use **Stop recording** to end it. Stopping attempts a final short snapshot, explicitly marked in the data.
-5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. Unexpected recorder exits are restarted and resumed automatically by the supervisor. **Resume selected run** remains available for manually stopped or reboot-interrupted runs, until the original planned end. A Windows reboot requires reopening and resuming; no system startup task was installed.
+5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. The supervisor restarts the recorder after an unexpected process exit. **Resume selected run** continues the original schedule of an eligible saved run. You can change **Resume after Windows restart** before manually resuming.
 
 Maintain power and prevent deliberate sleep/reboot during the experiment. The recorder requests inhibition of automatic system sleep while active; success is recorded. A power loss or disconnected device creates a real acquisition gap.
 
@@ -163,7 +167,11 @@ The detector's per-particle click can be set for a recording (**Click sound: off
 
 While a recording is active, GammaKeeper registers a shutdown reason with Windows. A normal restart, shutdown or sign-out then pauses on Windows' "apps are preventing restart" screen, listing GammaKeeper with *"GammaKeeper is recording spectra. Restarting now interrupts the run…"*. Choose **Cancel** to keep recording, or continue anyway. Forced and critical shutdowns are never blocked.
 
-When the session really ends, the recorder takes a short final spectrum (within about two seconds), records `host_shutdown`, and marks the run **interrupted by Windows shutdown**; the supervisor neither restarts nor kills it. After signing in again, open GammaKeeper: the run shows *INTERRUPTED BY WINDOWS SHUTDOWN — resume available* while its schedule is open. **Resume** verifies the saved data and continues; the device kept accumulating while the computer was off, so those counts become one flagged aggregate interval across the gap (as with a USB reconnect). If Windows restarts without any warning (power loss, crash), the run shows *INTERRUPTED BY WINDOWS RESTART (no warning received)* and resumes the same way. Runs record the Windows boot ID, so a reused process ID after a restart never makes a stopped run look active.
+When the session ends, the recorder attempts a short final spectrum (within about two seconds), records `host_shutdown`, and marks the run **interrupted by Windows shutdown**. The supervisor lets the recorder close. Runs record the Windows boot ID to identify a restart after a crash or power loss, even if Windows reuses a process ID.
+
+**Resume after Windows restart** enables a hidden, run-specific Windows Task Scheduler entry for the user who started the recording. Sign in to that same account after Windows restarts. The task checks that the run was interrupted and that its original schedule is still open. A timed detector run needs a fresh verified SNTP reference after restart. GammaKeeper verifies the saved records before collecting again and opens the window on the same run after the recorder initializes. Stop and completion end automatic recovery. Signing out and back in on the same boot, opening a viewer while idle, and reaching the scheduled end do not trigger an automatic restart. GammaKeeper does not add a general Startup Apps entry.
+
+**Run details and diagnostics** shows whether restart recovery is ready or unavailable. If automatic recovery is unavailable, open the saved run after signing in and use **Resume selected run** while its schedule is still open. If the detector counters support inferred continuity, the resumed run records counts across the gap as one flagged aggregate interval. No individual spectra or telemetry are recreated for the downtime. If counter continuity cannot be established, the run records a gap and a new baseline.
 
 For long experiments, pause Windows Update for the run's duration, keep the computer on mains power with sleep disabled, and resume promptly after any interruption.
 
@@ -194,11 +202,11 @@ Do not concatenate cumulative spectra directly as if they were independent time 
 $py = git config --get gammakeeper.python   # the Python with PySide6, NumPy and Matplotlib
 & $py -X utf8 -m unittest discover -s '.\tests' -v
 & $py -X utf8 '.\gui.py'
-& $py -X utf8 '.\supervisor.py' --run '.\runs\example_unique_run' --serial RC-103-000000 --seconds 604800 --interval 10
+& $py -X utf8 '.\supervisor.py' --run '.\runs\example_unique_run' --serial RC-103-000000 --seconds 604800 --interval 10 --recover-after-restart
 & $py -X utf8 '.\export_run.py' '.\runs\example_unique_run'
 ```
 
-Run these commands from the `app` folder. Simulation requires `--demo` and is prominently labeled. Original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_manifest_v*.json`, produced by `release_checks.py`, records current automated/integration/export checks and source hashes. Earlier pilot reports remain in their original version directories.
+Run these commands from the `app` folder. The supervisor CLI enables Windows restart recovery only when you supply `--recover-after-restart`. Simulation requires `--demo` and is prominently labeled. Original spectra elsewhere in the workspace were preserved. The latest numbered `validation/release_manifest_v*.json`, produced by `release_checks.py`, records current automated/integration/export checks and source hashes. Earlier pilot reports remain in their original version directories.
 
 The v0.5.0 suite has 94 checks, including flexible-unit parsing, real GUI export arguments, time-bin conservation, range selection, overlap, integrity and XLSX orientation. Inherited coverage includes baseline/duration/conservation, locking, automatic restart, decoder, historical-status and integrity checks. Original checks cover existing-count baselines, actual duration, unsigned underflow/resets, calibration/events, gaps, count conservation over 60,480 simulated intervals, bounded worker failure, monotonic UTC, SNTP validation, atomic-write recovery, raw integrity, multiple-writer exclusion, forward/backward UTC day transitions, duplicate telemetry timestamps, export round-trip and blocked destructive device commands. GUI integration checks start, closure with recorder survival, reopening, stopping and exporting using synthetic data. Short real-device pilots test the installed Phyton USB driver and software transport close/reopen. These do **not** establish seven-day stability, physical cable-removal recovery, power-loss behavior of the SSD, or independent detector/calibration accuracy.
 

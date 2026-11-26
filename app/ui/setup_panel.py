@@ -58,6 +58,13 @@ class SetupPanelMixin:
         self.folder = Q.QLineEdit(str(DATA_ROOT))
         self.demo = Q.QCheckBox('Simulation mode (no hardware)')
         self.monitor_enabled=Q.QCheckBox('Monitor after this window closes');self.monitor_enabled.setChecked(True)
+        self.restart_recovery = Q.QCheckBox('Resume after Windows restart')
+        self.restart_recovery.setToolTip(
+            'Creates a Windows logon task for this recording only. After a restart, sign in to this account to resume '
+            'an interrupted recording within its original schedule.')
+        self.restart_recovery.setChecked(True)
+        self.restart_recovery.setEnabled(not self.read_only)
+        self.saved_restart_recovery = False
         self.backup_parent=Q.QLineEdit();self.backup_parent.setPlaceholderText('Optional daily backup folder')
         self.backup_choose=Q.QPushButton('Choose daily backup folder…')
         self.backup_choose.clicked.connect(self.choose_backup_parent)
@@ -79,6 +86,7 @@ class SetupPanelMixin:
         settings.addWidget(choose)
         settings.addWidget(self.demo)
         for widget in (self.ten_day_preset,self.click_sound,self.monitor_enabled,self.backup_parent,self.backup_choose):settings.addWidget(widget)
+        settings.addWidget(self.restart_recovery)
         self.start_button = Q.QPushButton('Start new recording')
         self.start_button.setObjectName('primary')
         self.start_button.clicked.connect(self.start_new)
@@ -136,6 +144,10 @@ class SetupPanelMixin:
             return
         selected = str(self.run.resolve())
         if force or self.settings_run != selected:
+            if self.settings_run != selected:
+                self.saved_restart_recovery = False
+                self.restart_recovery.setChecked(False)
+            self.restart_recovery.setEnabled(False)
             self.science_cancel.set();self.science_result=None;self._last_science=-float('inf')
             self.science_figure.clear();self.science_canvas.draw_idle()
             self.accumulation_cancel.set();self.accumulation_key=None;self.accumulation_engine=None;self.accumulation_row=None
@@ -221,6 +233,9 @@ class SetupPanelMixin:
         self.settings_heading.setText('NEW RECORDING')
         for widget in self.setup_fields:
             widget.setEnabled(True)
+        self.saved_restart_recovery = False
+        self.restart_recovery.setChecked(True)
+        self.restart_recovery.setEnabled(True)
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.resume_button.setEnabled(False)
@@ -286,6 +301,8 @@ class SetupPanelMixin:
                 backup_parent=str(Path(backup).resolve()) if backup else '',backup_interval_s=86400,disconnect_warn_s=120))]
             if self.click_sound.currentData() is not None:
                 args += ['--click-sound', 'on' if self.click_sound.currentData() else 'off']
+            if self.restart_recovery.isChecked():
+                args.append('--recover-after-restart')
             if mode == 'demo':
                 args.append('--demo')
             self.launch(args)
@@ -440,9 +457,15 @@ class SetupPanelMixin:
                 raise ValueError('Open a saved run first')
             if self.active():
                 raise RuntimeError('This recording is already running')
+            recover = self.restart_recovery.isChecked()
             self.restore_run_settings(force=True)
             require_resume(self.run)
-            self.launch(['--run', str(self.run), '--resume'])
+            args = ['--run', str(self.run), '--resume']
+            if recover:
+                args.append('--recover-after-restart')
+            elif self.saved_restart_recovery:
+                args.append('--no-recover-after-restart')
+            self.launch(args)
         except Exception as error:
             self.fail(error)
 

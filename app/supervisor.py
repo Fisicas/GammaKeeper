@@ -11,10 +11,11 @@ import time
 import uuid
 
 from analysis import retry_delay
-from runtime import python_command
+from runtime import PYTHONW, python_command
 from storage import DeviceMutex
-from supervisor_store import save_health
-from run_policy import require_resume
+from supervisor_store import read_health, save_health
+from run_policy import require_resume, require_resume_when_ready
+import reboot_task
 from diagnostics import diagnostic
 from recovery_progress import read as read_recovery
 from session_end import start_watcher
@@ -102,19 +103,115 @@ def read_mode(run):
         return None
 
 
+def interrupted_for_reboot(run, health, recorder, current_boot):
+    """Return false on this boot; refuse known terminal or untrusted saved state."""
+    if (run/'BACKUP_PLAN.json').exists():
+        raise ValueError('This is a preserved backup snapshot.')
+    if not health or not health.get('recover_after_restart'):
+        raise ValueError('This run has no automatic restart request.')
+    if health.get('status') not in ('running', 'restart_wait', 'host_shutdown'):
+        raise ValueError('The supervisor was no longer managing an active recording.')
+    if not recorder or recorder.get('status') not in ('running', 'interrupted_by_shutdown'):
+        raise ValueError('The recorder was no longer collecting this run.')
+    stop = health.get('stop_request')
+    if stop and Path(stop).parent == run and Path(stop).exists():
+        raise ValueError('The user requested Stop before Windows restarted.')
+    recorder_boot = recorder.get('boot_id')
+    if recorder_boot and (run/f'stop_{recorder_boot}.request').exists():
+        raise ValueError('The user requested Stop before Windows restarted.')
+    old_boots = health.get('system_boot_id'), recorder.get('system_boot_id')
+    return bool(current_boot and all(old_boots) and current_boot not in old_boots)
+
+
+def set_reboot_task(run, state, enabled):
+    """OS scheduling is optional and cannot stop acquisition."""
+    status = 'armed' if enabled else 'removed'
+    try:
+        (reboot_task.register if enabled else reboot_task.remove)(run)
+    except (OSError, ValueError) as error:
+        state['restart_recovery_error'] = (
+            f'Windows restart recovery could not be {"armed" if enabled else "removed"}: {error}')
+        event = diagnostic('restart_recovery_task_failed', action=status, error=str(error),
+                           task=reboot_task.task_name(run))
+    else:
+        state['restart_recovery_armed'] = enabled
+        if enabled:
+            state.pop('restart_recovery_error', None)
+        event = diagnostic('restart_recovery_task_changed', status=status, task=reboot_task.task_name(run))
+    if not (run/'BACKUP_PLAN.json').exists():
+        save_health(run, state, event)
+
+
+def open_recovered_window(run, data_root=None):
+    env = dict(os.environ, GAMMAKEEPER_DATA_ROOT=data_root) if data_root else None
+    executable = str(PYTHONW) if PYTHONW.is_file() else python_command()
+    subprocess.Popen([executable, '-X', 'utf8', str(ROOT/'gui.py'), '--inspect-run', str(run)],
+                     cwd=ROOT, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     creationflags=subprocess.CREATE_NO_WINDOW|subprocess.CREATE_NEW_PROCESS_GROUP)
+
+
 def supervise(arguments, max_restarts=3, stall_timeout=180):
+    arguments = list(arguments)
     run = Path(arguments[arguments.index('--run')+1]).resolve()
-    serial = arguments[arguments.index('--serial')+1] if '--serial' in arguments else 'UNKNOWN'
-    if '--resume' in arguments:
-        try:
-            require_resume(run)
-        except (OSError, ValueError, KeyError) as error:
-            diagnostic('resume_refused', error=str(error), run=str(run))
-            return 2
-        serial = json.loads((run/'manifest.json').read_text())['serial']
-    elif '--demo' in arguments:
-        serial = 'SIMULATED'
-    mutex = DeviceMutex(serial+'_supervisor')
+    automatic = '--auto-resume' in arguments
+    requested = '--recover-after-restart' in arguments
+    opted_out = '--no-recover-after-restart' in arguments
+    arguments = [arg for arg in arguments if arg not in (
+        '--auto-resume', '--recover-after-restart', '--no-recover-after-restart')]
+    recovery_data_root = None
+    if automatic:
+        if '--recovery-data-root' in arguments:
+            recovery_data_root = arguments[arguments.index('--recovery-data-root')+1]
+        arguments = ['--run', str(run), '--resume', '--wait-for-resume-clock']
+    resuming = '--resume' in arguments
+    try:
+        if resuming:
+            serial = json.loads((run/'manifest.json').read_text(encoding='utf-8'))['serial']
+            if not automatic:
+                require_resume(run)
+        else:
+            serial = ('SIMULATED' if '--demo' in arguments else
+                      arguments[arguments.index('--serial')+1] if '--serial' in arguments else 'UNKNOWN')
+        mutex = DeviceMutex(serial+'_supervisor')
+    except (OSError, sqlite3.Error, ValueError, KeyError, RuntimeError) as error:
+        diagnostic('resume_refused' if resuming else 'supervisor_start_refused', error=str(error), run=str(run))
+        return 2
+    try:
+        prior = None
+        if resuming:
+            try:
+                prior = read_health(run)
+            except (OSError, sqlite3.Error, ValueError) as error:
+                diagnostic('supervisor_history_unavailable', error=str(error), run=str(run))
+                if automatic:
+                    return 2
+        if automatic:
+            try:
+                if not interrupted_for_reboot(run, prior, inspect_run(run)[0], boot_identity()):
+                    return 0
+                require_resume_when_ready(run)
+                # A Stop request can arrive while the network clock check is retrying.
+                if not interrupted_for_reboot(run, prior, inspect_run(run)[0], boot_identity()):
+                    return 0
+            except (OSError, sqlite3.Error, ValueError, KeyError) as error:
+                event = diagnostic('automatic_resume_refused', error=str(error), run=str(run))
+                # Leave acquisition and its journal alone. Persist the reason for the manual GUI.
+                prior = dict(prior or {}, restart_recovery_error=str(error))
+                if not (run/'BACKUP_PLAN.json').exists():
+                    save_health(run, prior, event)
+                set_reboot_task(run, prior, False)
+                return 2
+        prior = prior or {}
+        enabled = not opted_out and (automatic or requested or bool(prior.get('recover_after_restart')))
+        task_exists = automatic or bool(prior.get('restart_recovery_armed'))
+        return supervise_run(arguments, run, enabled, task_exists, automatic, max_restarts, stall_timeout,
+                             recovery_data_root)
+    finally:
+        mutex.close()
+
+
+def supervise_run(arguments, run, recover_after_restart, task_exists, automatic, max_restarts, stall_timeout,
+                  recovery_data_root=None):
     monitor_config = (json.loads(arguments[arguments.index('--monitor-config')+1]) if '--monitor-config' in arguments
                       else json.loads((run/'manifest.json').read_text()).get('monitoring',{}) if (run/'manifest.json').exists() else {})
     if monitor_config.get('enabled') and os.environ.get('GAMMAKEEPER_TEST_MODE')!='1':
@@ -127,11 +224,17 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
     token = uuid.uuid4().hex
     stop = run/f'stop_supervisor_{token}.request'
     state = dict(pid=os.getpid(),token=token,status='starting',restarts=0,stop_request=str(stop),
-                 utc=dt.datetime.now(dt.timezone.utc).isoformat(),system_boot_id=boot_identity())
+                 utc=dt.datetime.now(dt.timezone.utc).isoformat(),system_boot_id=boot_identity(),
+                 recover_after_restart=recover_after_restart, restart_recovery_armed=task_exists)
     # Session end: never restart or kill the recorder while Windows signs out or restarts.
     watcher = start_watcher(f'GammaKeeper supervisor {run.name}')
     host_ending = False
+    signing_out = False
     shutdown_requested_at = None
+    arm_pending = recover_after_restart and not automatic
+    show_pending = automatic
+    if task_exists and not recover_after_restart:
+        set_reboot_task(run, state, False)
     logs = ROOT/'logs'
     logs.mkdir(exist_ok=True)
     (ROOT/'validation').mkdir(exist_ok=True)
@@ -139,11 +242,27 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
     rapid_failures = 0
     child = None
     rc = 0
+
+    def record_session_events(now):
+        nonlocal shutdown_requested_at, signing_out
+        if not watcher:
+            return
+        for kind, details in watcher.drain():
+            if kind == 'host_shutdown_requested':
+                shutdown_requested_at = now
+            elif kind == 'host_shutdown_cancelled':
+                shutdown_requested_at = None
+            elif kind == 'host_shutdown':
+                signing_out = 'logoff' in details.get('flags', ())
+            save_health(run, state, diagnostic(kind, role='supervisor', **details))
+
     try:
         while True:
             if stop.exists():
                 break
             child_args = list(arguments) if first else ['--run',str(run),'--resume']
+            if automatic and '--wait-for-resume-clock' not in child_args:
+                child_args.append('--wait-for-resume-clock')
             previous_recorder,previous_progress=inspect_run(run)
             previous_boot=(previous_recorder or {}).get('boot_id')
             child_args += ['--stop-request',str(stop)]
@@ -159,17 +278,15 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                         else json.loads((run/'manifest.json').read_text())['interval_s'] if (run/'manifest.json').exists() else 10.)
             watchdog = StreamWatchdog(interval, stall_timeout)
             recovery_grace=max(300., ((previous_progress or (None,None,0))[2] or 0)*.05)
+            if automatic:
+                recovery_grace += 620.
             last_persist = -float('inf')
             while child.poll() is None:
                 now = time.monotonic()
                 if watcher:
-                    for kind,details in watcher.drain():
-                        shutdown_requested_at = (now if kind=='host_shutdown_requested' else
-                                                 None if kind=='host_shutdown_cancelled' else shutdown_requested_at)
-                        save_health(run,state,diagnostic(kind,role='supervisor',**details))
+                    record_session_events(now)
                     if watcher.ending.is_set():
-                        for kind,details in watcher.drain():  # notifications queued just before the flag
-                            save_health(run,state,diagnostic(kind,role='supervisor',**details))
+                        record_session_events(now)
                         host_ending = True
                         break
                 if now-last_persist >= 2:
@@ -180,6 +297,20 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                     recovery=read_recovery(run)
                     mode=read_mode(run)
                     ready=recorder_state and recorder_state.get('boot_id')!=previous_boot and recorder_state.get('status')=='running'
+                    if ready and not stop.exists():
+                        if arm_pending and progress and progress[2] is not None:
+                            arm_pending = False
+                            if state['system_boot_id']:
+                                set_reboot_task(run, state, True)
+                            else:
+                                state['restart_recovery_error'] = 'Windows boot identity unavailable; restart recovery could not be armed.'
+                                save_supervisor_state(run, state)
+                        if show_pending:
+                            show_pending = False
+                            try:
+                                open_recovered_window(run, recovery_data_root)
+                            except (OSError, ValueError) as error:
+                                save_health(run, state, diagnostic('restart_recovery_window_failed', error=str(error)))
                     if not ready:
                         mode='recovering'
                         watchdog.overall.timeout=recovery_grace
@@ -205,14 +336,14 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                 time.sleep(.2)
             if watcher and not host_ending:
                 # The recorder can finish its shutdown before this loop's next poll; read what arrived meanwhile.
-                for kind,details in watcher.drain():
-                    shutdown_requested_at = (time.monotonic() if kind=='host_shutdown_requested' else
-                                             None if kind=='host_shutdown_cancelled' else shutdown_requested_at)
-                    save_health(run,state,diagnostic(kind,role='supervisor',**details))
+                record_session_events(time.monotonic())
                 host_ending = watcher.ending.is_set()
-            if not host_ending and (inspect_run(run)[0] or {}).get('status')=='interrupted_by_shutdown':
-                host_ending = True  # the recorder itself saw the session end
-            if not host_ending and shutdown_requested_at is not None and time.monotonic()-shutdown_requested_at<60:
+            last_recorder = inspect_run(run)[0] or {}
+            if (not host_ending and last_recorder.get('boot_id') != previous_boot
+                    and last_recorder.get('status') == 'interrupted_by_shutdown'):
+                host_ending = True  # this child, rather than the prior recorder, saw the session end
+            if (not host_ending and child.returncode != 2 and shutdown_requested_at is not None
+                    and time.monotonic()-shutdown_requested_at < 60):
                 host_ending = True  # the recorder ended during a sign-out/restart; do not restart it
             if host_ending:
                 try:
@@ -221,6 +352,11 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
                     pass
                 state.update(status='host_shutdown',last_exit_code=child.poll(),utc=dt.datetime.now(dt.timezone.utc).isoformat(),
                              reason='Windows session ended; resume the run after signing in if its schedule is still open')
+                if signing_out:
+                    # A same-boot sign-out does not authorize a later automatic restart.
+                    state['recover_after_restart'] = False
+                elif state['restart_recovery_armed'] and not stop.exists():
+                    state['reason'] = 'Windows session ended; GammaKeeper will check this run after restart and sign-in'
                 break
             rc = child.returncode
             _,last_progress = inspect_run(run)
@@ -255,14 +391,24 @@ def supervise(arguments, max_restarts=3, stall_timeout=180):
             save_supervisor_state(run,state)
             deadline = time.monotonic()+delay
             while time.monotonic()<deadline and not stop.exists():
+                if watcher and watcher.ending.is_set():
+                    break
                 time.sleep(.1)
+            if watcher and watcher.ending.is_set():
+                host_ending = True
+                record_session_events(time.monotonic())
+                state.update(status='host_shutdown', reason='Windows session ended before the recorder could restart')
+                if signing_out:
+                    state['recover_after_restart'] = False
+                break
             first = False
         save_supervisor_state(run,state)
+        if state['restart_recovery_armed'] and (not host_ending or signing_out or stop.exists()):
+            set_reboot_task(run, state, False)
         return rc
     finally:
         if child and child.poll() is None and not host_ending:
             terminate_tree(child.pid)
-        mutex.close()
         if watcher:
             watcher.close()
 

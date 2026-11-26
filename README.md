@@ -11,7 +11,7 @@
 ## What it does
 
 - **Time-resolved spectra without a rolling buffer.** Each interval's 1,024-channel spectrum is the exact integer difference of the device's cumulative spectra, normalized by the measured device exposure. Nothing is overwritten, smoothed or resampled.
-- **Automatic recovery.** A supervisor restarts the recorder, USB faults back off and reconnect, and counts recovered across a gap are kept as one flagged aggregate rather than spread over invented bins. Interrupted runs can be resumed until their planned end.
+- **Automatic recovery.** A supervisor restarts the recorder and retries USB connections with backoff. New recordings resume after a Windows restart when the same user signs in, unless you turn this off for the run. Counts recovered across a gap are kept as one flagged aggregate.
 - **Verifiable records.** Raw records are immutable and SHA-256 indexed; resume verifies them before acquiring; completed runs get a background audit and export.
 - **Honest timing.** UTC comes from validated SNTP measurements bound to the monotonic clock, with the uncertainty and reference age saved alongside the data.
 - **Analysis-ready exports.** CSV/NPZ time bins, nonoverlapping or moving-average spectra, native RCSPG, and XLSX matrices for fitting tools, each with full provenance.
@@ -38,17 +38,17 @@ Captured earlier with GammaKeeper 0.7.2. The readings differ because acquisition
 
 You need Windows 10/11, a RadiaCode detector on USB (tested with a RadiaCode 103), and Python 3.12 with PySide6, NumPy and Matplotlib (versions in [`app/requirements-app.txt`](app/requirements-app.txt)).
 
-**Install (recommended).** Double-click [`tools\install_gammakeeper.cmd`](tools/install_gammakeeper.cmd) in Explorer. It fetches the latest `main` (or the tag you pass), exports a clean copy into `GammaKeeper Releases\` next to the repository, rebuilds the device libraries, runs the full test suite, activates the release only if every test passes, and creates **GammaKeeper** shortcuts on the Desktop and in the Start Menu. Run it again to update: each install sits beside the previous ones, so a recording started by an older build keeps running, and rolling back is one command. The repository's working files are only read. [`tools\uninstall_gammakeeper.cmd`](tools/uninstall_gammakeeper.cmd) removes the shortcuts and leaves releases and data alone.
+**Install (recommended).** From a Git checkout, double-click [`tools\install_gammakeeper.cmd`](tools/install_gammakeeper.cmd) in Explorer. It fetches the latest `main` (or the tag you pass), exports a clean copy into `GammaKeeper Releases\` next to the repository, rebuilds the device libraries, runs the full test suite, activates the release only if every test passes, and creates **GammaKeeper** shortcuts on the Desktop and in the Start Menu. Run the installer again to update. Each install sits beside the previous ones, so a recording started by an older build keeps running, and rolling back is one command. The repository's working files are only read. [`tools\uninstall_gammakeeper.cmd`](tools/uninstall_gammakeeper.cmd) removes the shortcuts and leaves releases and data alone. [Published source releases](https://github.com/Fisicas/GammaKeeper/releases)
 
 **Or run from the checkout.** `python -X utf8 tools\vendor_dependencies.py` once, then `app\Launch_GammaKeeper.cmd`.
 
-**Record.** Close the manufacturer's app (the USB handle is exclusive), enter a label, confirm the serial number, interval and duration, and click **Start new recording**. New runs go to `Desktop\Radiacode Data\GammaKeeper Runs` unless you choose another folder (or set `GAMMAKEEPER_DATA_ROOT`). Closing the window does not stop the recording.
+**Record.** Close the manufacturer's app (the USB handle is exclusive), enter a label, and confirm the serial number, interval and duration. **Resume after Windows restart** is on by default. Clear it to disable recovery for this recording, then click **Start new recording**. New runs go to `Desktop\Radiacode Data\GammaKeeper Runs` unless you choose another folder (or set `GAMMAKEEPER_DATA_ROOT`). Closing the window does not stop the recording.
 
 The [manual](docs/manual.md) covers operation, data formats, scientific conventions and limits in detail.
 
 ## Documentation
 
-GammaKeeper 0.7.3 adds cached-first reopening, a clearer live dashboard, larger readings and controls,
+GammaKeeper 0.8.0 adds recovery after a Windows restart and improved plot interaction. GammaKeeper 0.7.3 introduced cached-first reopening, a clearer live dashboard, larger readings and controls,
 and a stable render-status area. Earlier releases provide persistent monitoring, verified backups,
 versioned sample/background metadata, scientific QC and seal-referenced exports.
 See the [ten-day experiment guide](docs/TEN_DAY_EXPERIMENTS.md) for operation, provenance and qualification limits.
