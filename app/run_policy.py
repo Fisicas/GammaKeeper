@@ -3,12 +3,19 @@ import datetime as dt
 import json
 import math
 import time
-import sys
 import subprocess
 from pathlib import Path
 from export_run import readonly
-from analysis import timestamp
+from analysis import retry_delay, timestamp
 from system_time import boot_identity
+
+
+class ClockReferenceUnavailable(ValueError):
+    """A new verified clock sample could not yet be obtained."""
+
+
+class ResumeCancelled(Exception):
+    """The recorder received a stop request while waiting to resume."""
 
 
 def resume_allowed(run, now=None):
@@ -35,30 +42,64 @@ def resume_allowed(run, now=None):
     return True, ''
 
 
-def require_resume(run):
-    config=json.loads((Path(run)/'manifest.json').read_text(encoding='utf-8'))
-    now=None
-    completed_allowed,completed_reason=resume_allowed(run,now=-float('inf'))
+def require_resume(run, *, clock_timeout=8, require_verified=False):
+    """Check eligibility, returning the new SNTP sample when the schedule needs one."""
+    config = json.loads((Path(run) / 'manifest.json').read_text(encoding='utf-8'))
+    now = measurement = None
+    completed_allowed, completed_reason = resume_allowed(run, now=-float('inf'))
     if not completed_allowed:
         raise ValueError(completed_reason)
-    if config.get('schedule_time_basis')=='sntp_reference' and (config.get('created_boot_id') is None or config.get('created_boot_id')!=boot_identity()):
+    created_boot = config.get('created_boot_id')
+    same_boot = created_boot is not None and created_boot == boot_identity()
+    needs_reference = config.get('schedule_time_basis') == 'sntp_reference' or (
+        require_verified and config.get('mode') == 'device')
+    if config.get('planned_end_utc') and needs_reference and not same_boot:
         # After reboot the old monotonic deadline is invalid. Obtain an independent
         # bounded UTC reference before opening any writer or changing state.
+        from device import UTCClock
         from runtime import python_command
         try:
-            result=subprocess.run([python_command(),'-X','utf8',str(Path(__file__).with_name('clock_check.py'))],
-                                  capture_output=True,timeout=8,creationflags=subprocess.CREATE_NO_WINDOW)
-            if result.returncode:raise ValueError('Clock query failed')
-            measurement=json.loads(result.stdout)
-        except (OSError,subprocess.SubprocessError,ValueError) as error:
-            raise ValueError(f'UTC schedule verification unavailable; saved data are preserved: {error}') from error
-        if not measurement.get('verified'):
-            raise ValueError('UTC reference unavailable after reboot; schedule cannot be verified. Saved data are preserved.')
-        from device import UTCClock
-        now=UTCClock(measurement).seconds()
-    allowed, reason = resume_allowed(run,now)
+            result = subprocess.run([python_command(), '-X', 'utf8', str(Path(__file__).with_name('clock_check.py'))],
+                                    capture_output=True, timeout=clock_timeout, creationflags=subprocess.CREATE_NO_WINDOW)
+            if result.returncode:
+                raise ValueError('Clock query failed')
+            measurement = json.loads(result.stdout)
+            if not isinstance(measurement, dict) or measurement.get('verified') is not True:
+                raise ValueError('UTC reference unavailable after reboot')
+            if not all(math.isfinite(measurement[key]) for key in ('reference_unix_s', 'reference_monotonic_s')):
+                raise ValueError('UTC reference contains a nonfinite timestamp')
+            now = UTCClock.reference_seconds(measurement, time.perf_counter())
+        except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError) as error:
+            raise ClockReferenceUnavailable(f'UTC schedule verification unavailable; saved data are preserved: {error}') from error
+    allowed, reason = resume_allowed(run, now)
     if not allowed:
         raise ValueError(reason)
+    return measurement
+
+
+def require_resume_when_ready(run, *, cancelled=None, timeout=600):
+    """Allow the network time to connect at sign-in, while preserving terminal refusals."""
+    deadline = time.monotonic() + timeout
+    attempt = 0
+    while True:
+        if cancelled and cancelled():
+            raise ResumeCancelled
+        try:
+            measurement = require_resume(run, clock_timeout=max(.001, min(8, deadline - time.monotonic())),
+                                         require_verified=True)
+        except ClockReferenceUnavailable:
+            retry_at = min(deadline, time.monotonic() + retry_delay(attempt))
+            while (wait := retry_at - time.monotonic()) > 0:
+                if cancelled and cancelled():
+                    raise ResumeCancelled
+                time.sleep(min(wait, .25) if cancelled else wait)
+            if time.monotonic() >= deadline:
+                raise
+            attempt += 1
+        else:
+            if cancelled and cancelled():
+                raise ResumeCancelled
+            return measurement
 
 
 def validate_schedule(interval, seconds):

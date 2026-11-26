@@ -127,9 +127,9 @@ Install with `tools\install_gammakeeper.cmd` (see the README) and use the **Gamm
 
 1. Close the manufacturer app and other device clients. The USB handle is exclusive.
 2. Enter the sample/condition label, enter your detector's serial number (remembered for the next run), interval **10 s**, duration **7 days**, and save folder.
-3. Click **Start new recording**. Check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
+3. To recover this recording after a Windows restart, select **Resume after Windows restart**. It starts unchecked for each new recording. Click **Start new recording**, then check that spectra and telemetry appear and that the footer reports a recent SNTP clock measurement.
 4. The recorder continues if the GUI closes. Reopen the GUI and use **Open saved run** to monitor it. Use **Stop recording** to end it. Stopping attempts a final short snapshot, explicitly marked in the data.
-5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. Unexpected recorder exits are restarted and resumed automatically by the supervisor. **Resume selected run** remains available for manually stopped or reboot-interrupted runs, until the original planned end. A Windows reboot requires reopening and resuming; no system startup task was installed.
+5. Use **Export CSV + spectra** during or after a run. Each export gets a new folder. The supervisor restarts the recorder after an unexpected process exit. **Resume selected run** continues the original schedule of an eligible saved run. You can change **Resume after Windows restart** before manually resuming.
 
 Maintain power and prevent deliberate sleep/reboot during the experiment. The recorder requests inhibition of automatic system sleep while active; success is recorded. A power loss or disconnected device creates a real acquisition gap.
 
@@ -163,7 +163,11 @@ The detector's per-particle click can be set for a recording (**Click sound: off
 
 While a recording is active, GammaKeeper registers a shutdown reason with Windows. A normal restart, shutdown or sign-out then pauses on Windows' "apps are preventing restart" screen, listing GammaKeeper with *"GammaKeeper is recording spectra. Restarting now interrupts the run…"*. Choose **Cancel** to keep recording, or continue anyway. Forced and critical shutdowns are never blocked.
 
-When the session really ends, the recorder takes a short final spectrum (within about two seconds), records `host_shutdown`, and marks the run **interrupted by Windows shutdown**; the supervisor neither restarts nor kills it. After signing in again, open GammaKeeper: the run shows *INTERRUPTED BY WINDOWS SHUTDOWN — resume available* while its schedule is open. **Resume** verifies the saved data and continues; the device kept accumulating while the computer was off, so those counts become one flagged aggregate interval across the gap (as with a USB reconnect). If Windows restarts without any warning (power loss, crash), the run shows *INTERRUPTED BY WINDOWS RESTART (no warning received)* and resumes the same way. Runs record the Windows boot ID, so a reused process ID after a restart never makes a stopped run look active.
+When the session ends, the recorder attempts a short final spectrum (within about two seconds), records `host_shutdown`, and marks the run **interrupted by Windows shutdown**. The supervisor lets the recorder close. Runs record the Windows boot ID to identify a restart after a crash or power loss, even if Windows reuses a process ID.
+
+**Resume after Windows restart** enables a hidden, run-specific Windows Task Scheduler entry for the user who started the recording. Sign in to that same account after Windows restarts. The task checks that the run was interrupted and that its original schedule is still open. A timed detector run needs a fresh verified SNTP reference after restart. GammaKeeper verifies the saved records before collecting again and opens the window on the same run after the recorder initializes. Stop and completion end automatic recovery. Signing out and back in on the same boot, opening a viewer while idle, and reaching the scheduled end do not trigger an automatic restart. GammaKeeper does not add a general Startup Apps entry.
+
+**Run details and diagnostics** shows whether restart recovery is ready or unavailable. If automatic recovery is unavailable, open the saved run after signing in and use **Resume selected run** while its schedule is still open. If the detector counters support inferred continuity, the resumed run records counts across the gap as one flagged aggregate interval. No individual spectra or telemetry are recreated for the downtime. If counter continuity cannot be established, the run records a gap and a new baseline.
 
 For long experiments, pause Windows Update for the run's duration, keep the computer on mains power with sleep disabled, and resume promptly after any interruption.
 

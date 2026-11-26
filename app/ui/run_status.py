@@ -42,6 +42,7 @@ class RunStatusMixin:
                     self.connection.setText('START FAILED — see diagnostics log')
                     self.start_button.setEnabled(False)
                     self.resume_button.setEnabled(True)
+                    self.restart_recovery.setEnabled(not self.read_only)
                 return
             age = dt.datetime.now(dt.timezone.utc).timestamp() - timestamp(state['utc'])
             self.status_stale = age > 25 and state['state'] in ('starting', 'connecting', 'recording', 'reconnecting')
@@ -78,6 +79,12 @@ class RunStatusMixin:
             self.stop_button.setEnabled(active)
             self.resume_button.setEnabled(not active and allowed)
             self.resume_button.setToolTip(reason or 'Continue the original saved schedule')
+            if 'recover_after_restart' in sup:
+                requested = bool(sup['recover_after_restart'])
+                if self.saved_restart_recovery != requested:
+                    self.saved_restart_recovery = requested
+                    self.restart_recovery.setChecked(requested)
+            self.restart_recovery.setEnabled(not active and allowed and not self.read_only)
             self.setup_button.setEnabled(not active)
             self.saved_spectra_label.setText(f"Saved spectra: {state.get('snapshots', 0):,}")
             db=readonly(self.run/'run.sqlite')
@@ -144,12 +151,16 @@ class RunStatusMixin:
             freshness = f'Spectra {spectrum_age:.1f} s' if spectrum_age is not None else 'No spectrum yet'
             freshness += f'  ·  telemetry {telemetry_age:.1f} s' if telemetry_age is not None else '  ·  no telemetry yet'
             freshness += f'  ·  restarts {sup.get("restarts",0)}'
+            restart_error = sup.get('restart_recovery_error')
+            restart_warning = bool(restart_error and allowed)
+            if restart_warning:
+                freshness += '  ·  Windows restart recovery unavailable'
             if state['state'] == 'reconnecting':
                 freshness = f"Reconnecting · retry in {state.get('retry_delay_s','?')} s  ·  " + freshness
             elif stale:
                 freshness = 'Data may be stale  ·  ' + freshness
             self.live_freshness.setText(freshness)
-            self.live_freshness.setStyleSheet(f'color: {GOLD if stale or state["state"] in ("reconnecting","error") else MUTED};')
+            self.live_freshness.setStyleSheet(f'color: {GOLD if restart_warning or stale or state["state"] in ("reconnecting","error") else MUTED};')
             self.live_freshness.setToolTip(self.health.text())
             if not active and state['state'] in ('completed','stopped'):
                 self.health.setText(f"Saved final spectrum: {(snapshot or {}).get('utc_after','unknown')} • supervisor restarts: {sup.get('restarts',0)} • {lead_text}\nCompleted data are static; dose uses received estimators with uncalibrated sample/filter latency.")
@@ -167,6 +178,10 @@ class RunStatusMixin:
                 diagnostics += '\nTelemetry decoder warning; raw payload retained. See events for details.'
             if state.get('raw_preview_error'):
                 diagnostics += '\nRaw preview unavailable: '+state['raw_preview_error']
+            if restart_error:
+                diagnostics += f'\nWindows restart recovery unavailable. {restart_error}'
+            elif sup.get('restart_recovery_armed'):
+                diagnostics += '\nWindows restart recovery is ready for this recording.'
             if sup.get('reason'):
                 diagnostics += '\n'+sup['reason']
             self.detail.setText(f"{self.run}\n{state.get('message', '')}{retry} • retries: {state.get('retries', 0)}{coverage_text}{diagnostics}")

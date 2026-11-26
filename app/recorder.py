@@ -25,7 +25,7 @@ from runtime import python_command
 import sqlite3
 from status_observations import select_rare
 from telemetry_analysis import observation_from_batch
-from run_policy import require_resume, validate_schedule
+from run_policy import ResumeCancelled, require_resume, require_resume_when_ready, validate_schedule
 from diagnostics import diagnostic
 from session_end import start_watcher, RECORDER_BLOCK_REASON
 
@@ -111,13 +111,24 @@ def versions():
     return out
 
 
-def record(path, config=None, test_reconnect_at=None, stop_request=None):
+def record(path, config=None, test_reconnect_at=None, stop_request=None, *, wait_for_resume_clock=False):
+    resume_measurement = resume_clock = None
     if config is None:
         try:
-            require_resume(path)
+            if wait_for_resume_clock:
+                resume_measurement = require_resume_when_ready(path, cancelled=lambda: bool(stop_request and Path(stop_request).exists()))
+            else:
+                resume_measurement = require_resume(path)
+        except ResumeCancelled:
+            diagnostic('recovery_cancelled', run=str(path))
+            return 0
         except (OSError, ValueError, KeyError) as error:
             diagnostic('resume_refused', error=str(error), run=str(path))
             return 2
+        if resume_measurement:
+            # Bind the verified sample before raw verification. A large run may
+            # take longer to verify than the worker's fresh-sample time window.
+            resume_clock = UTCClock(resume_measurement)
     store = None
     client = None
     mutex = None
@@ -246,19 +257,25 @@ def record(path, config=None, test_reconnect_at=None, stop_request=None):
         dose_observed_s = store.recovered_dose['observed_s']
         dose_elapsed_s = store.recovered_dose['elapsed_s']
         publish( dict(state, utc=utc_now(), message='Checking UTC reference'))
+        created_boot = config.get('created_boot_id')
+        same_boot = created_boot is not None and created_boot == boot_identity()
         if mode == 'device':
-            initial=config.get('initial_clock_measurement') or {}
-            clock=(initial if initial.get('reference_monotonic_s') is not None and
-                   0<=time.perf_counter()-initial['reference_monotonic_s']<120 else clock_measurement())
-            if not clock.get('verified') and store.previous and store.previous.get('clock'):
-                clock=dict(clock,previous_clock=store.previous['clock'])
+            initial = resume_measurement or (config.get('initial_clock_measurement') if same_boot else None) or {}
+            reference_mono = initial.get('reference_monotonic_s')
+            fresh = reference_mono is not None and 0 <= time.perf_counter() - reference_mono < 120
+            clock = initial if fresh else clock_measurement()
+            if not clock.get('verified'):
+                previous_clock = resume_clock.metadata() if resume_clock else (store.previous or {}).get('clock')
+                if previous_clock:
+                    clock = dict(clock, previous_clock=previous_clock)
             store.event('clock_measurement', clock)
             state['clock_measurement'] = clock
         next_audit = time.monotonic() + 900
         if config.get('planned_end_utc'):
-            same_boot=config.get('created_boot_id') is not None and config['created_boot_id']==boot_identity()
             if config.get('deadline_monotonic_s') is not None and same_boot:
                 remaining=config['deadline_monotonic_s']-time.monotonic()
+            elif resume_clock:
+                remaining = timestamp(config['planned_end_utc']) - resume_clock.seconds()
             else:
                 now_utc=UTCClock(clock).seconds() if config.get('schedule_time_basis')=='sntp_reference' else time.time()
                 remaining = timestamp(config['planned_end_utc']) - now_utc
@@ -543,6 +560,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', required=True, type=Path)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--wait-for-resume-clock', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--serial', help='detector serial number; required for a new device recording, read from the manifest on resume')
     from time_units import parse_time
     parser.add_argument('--interval', type=parse_time, default=10.)
@@ -566,7 +584,8 @@ def main():
         config['monitoring'] = args.monitor_config
     if config is not None and args.click_sound:
         config['device_click_sound'] = args.click_sound == 'on'
-    return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request)
+    return record(args.run.resolve(), config, args.test_reconnect_at, args.stop_request,
+                  wait_for_resume_clock=args.wait_for_resume_clock)
 
 
 if __name__ == '__main__':
